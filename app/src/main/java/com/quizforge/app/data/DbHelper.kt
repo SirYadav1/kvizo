@@ -4,7 +4,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", null, 1) {
+class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", null, 2) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -30,6 +30,7 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", nul
                 tags TEXT DEFAULT '',
                 time_limit_seconds INTEGER DEFAULT NULL,
                 status TEXT DEFAULT 'published',
+                description TEXT DEFAULT '',
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL,
                 attempts_count INTEGER DEFAULT 0,
@@ -112,6 +113,8 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", nul
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // v1 only; future migrations go here.
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE quizzes ADD COLUMN description TEXT DEFAULT ''")
+        }
     }
 }

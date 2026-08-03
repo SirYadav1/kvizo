@@ -20,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.quizforge.app.Routes
 import com.quizforge.app.data.Badge
 import com.quizforge.app.logic.XpEngine
 import com.quizforge.app.ui.AppViewModel
@@ -105,6 +108,20 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             MiniStat("${attempts.size}", "Attempts", Modifier.weight(1f))
             MiniStat("$quizzesCreated", "Created", Modifier.weight(1f))
             MiniStat("${(avg * 100).toInt()}%", "Accuracy", Modifier.weight(1f))
+        }
+
+        // settings entry — Settings live under Profile
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable { nav.navigate(Routes.SETTINGS) }
+        ) {
+            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Settings, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                Text("  Settings", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
 
         // badges

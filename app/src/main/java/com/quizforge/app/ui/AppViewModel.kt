@@ -132,7 +132,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         tags: String,
         timeLimit: Int?,
         status: String,
-        questions: List<Question>
+        questions: List<Question>,
+        description: String = ""
     ): Quiz {
         val pid = profile?.id ?: throw IllegalStateException("No active profile")
         val now = System.currentTimeMillis()
@@ -148,7 +149,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             createdAt = now,
             updatedAt = now,
             attemptsCount = 0,
-            averageScore = 0.0
+            averageScore = 0.0,
+            description = description
         )
         repo.insertQuiz(quiz)
         repo.replaceQuestions(quiz.id, questions.mapIndexed { i, q ->
@@ -208,7 +210,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             createdAt = now,
             updatedAt = now,
             attemptsCount = 0,
-            averageScore = 0.0
+            averageScore = 0.0,
+            description = shared.description
         )
         repo.insertQuiz(quiz)
         repo.replaceQuestions(quiz.id, shared.questions.mapIndexed { i, q ->
@@ -245,14 +248,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var hapticsOn = true
     private var toneGen: ToneGenerator? = null
 
-    /** Instant correct/wrong feedback tone. */
+    /** Instant correct/wrong feedback — two-tone: ascending on correct, descending on wrong. */
     fun playSound(correct: Boolean) {
         if (!soundOn) return
-        try {
-            val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80).also { toneGen = it }
-            if (correct) t.startTone(ToneGenerator.TONE_PROP_ACK, 120)
-            else t.startTone(ToneGenerator.TONE_PROP_NACK, 200)
-        } catch (_: Exception) {
+        viewModelScope.launch {
+            try {
+                val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80).also { toneGen = it }
+                if (correct) {
+                    t.startTone(ToneGenerator.TONE_DTMF_5, 80)
+                    kotlinx.coroutines.delay(95)
+                    t.startTone(ToneGenerator.TONE_DTMF_9, 120)
+                    kotlinx.coroutines.delay(130)
+                    t.startTone(ToneGenerator.TONE_PROP_ACK, 220)
+                } else {
+                    t.startTone(ToneGenerator.TONE_DTMF_9, 80)
+                    kotlinx.coroutines.delay(95)
+                    t.startTone(ToneGenerator.TONE_DTMF_5, 120)
+                    kotlinx.coroutines.delay(130)
+                    t.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+                }
+            } catch (_: Exception) {
+            }
         }
     }
 
@@ -263,15 +279,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 85).also { toneGen = it }
                 val notes = intArrayOf(
-                    ToneGenerator.TONE_DTMF_1, ToneGenerator.TONE_DTMF_3,
-                    ToneGenerator.TONE_DTMF_5, ToneGenerator.TONE_DTMF_7,
-                    ToneGenerator.TONE_DTMF_9
+                    ToneGenerator.TONE_DTMF_3, ToneGenerator.TONE_DTMF_5,
+                    ToneGenerator.TONE_DTMF_7, ToneGenerator.TONE_DTMF_9,
+                    ToneGenerator.TONE_DTMF_9, ToneGenerator.TONE_DTMF_9
                 )
                 for (n in notes) {
-                    t.startTone(n, 140)
-                    kotlinx.coroutines.delay(150)
+                    t.startTone(n, 120)
+                    kotlinx.coroutines.delay(140)
                 }
-                t.startTone(ToneGenerator.TONE_PROP_ACK, 320)
+                t.startTone(ToneGenerator.TONE_PROP_ACK, 380)
+                kotlinx.coroutines.delay(400)
+                t.startTone(ToneGenerator.TONE_PROP_ACK, 380)
             } catch (_: Exception) {
             }
         }

@@ -17,7 +17,8 @@ object ShareCodec {
         val difficulty: String,
         val tags: String,
         val timeLimitSeconds: Int?,
-        val questions: List<Question>
+        val questions: List<Question>,
+        val description: String = ""
     )
 
     fun encode(quiz: SharedQuiz): String {
@@ -40,6 +41,7 @@ object ShareCodec {
             put("difficulty", quiz.difficulty)
             put("tags", quiz.tags)
             if (quiz.timeLimitSeconds != null) put("time", quiz.timeLimitSeconds)
+            if (quiz.description.isNotBlank()) put("desc", quiz.description)
             put("questions", arr)
         }
         return Base64.encodeToString(obj.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
@@ -73,7 +75,8 @@ object ShareCodec {
             difficulty = obj.optString("difficulty", "Easy"),
             tags = obj.optString("tags", ""),
             timeLimitSeconds = if (obj.has("time")) obj.getInt("time") else null,
-            questions = questions
+            questions = questions,
+            description = obj.optString("desc", "")
         )
     }
 }

@@ -245,6 +245,44 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         }
 
         // recent quizzes
+        item { SectionTitle("Popular Quizzes") }
+        val popular = quizzes.sortedByDescending { it.attemptsCount }
+        if (popular.isEmpty()) {
+            item {
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(72.dp))
+                        Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
+                        Text("Create one or import a .txt file", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+            }
+        } else {
+            items(popular.take(8), key = { it.id }) { quiz ->
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 1.dp,
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        nav.navigate(Routes.attempt(quiz.id))
+                    }
+                ) {
+                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(38.dp).background(Green.copy(alpha = 0.14f), CircleShape), contentAlignment = Alignment.Center) {
+                            Text("${quiz.attemptsCount}", color = Green, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        }
+                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                            Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("${questionCounts[quiz.id] ?: 0} questions | ${quiz.attemptsCount} attempts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        DifficultyBadge(quiz.difficulty)
+                        Text("  ${quiz.averageScore.toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (quiz.averageScore >= 60) Green else Amber)
+                    }
+                }
+            }
+        }
+
+        // recent quizzes
         item { SectionTitle("Recent Quizzes") }
         if (quizzes.isEmpty()) {
             item {

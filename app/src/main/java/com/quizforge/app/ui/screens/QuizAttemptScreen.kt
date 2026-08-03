@@ -1,5 +1,6 @@
 package com.quizforge.app.ui.screens
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -16,17 +17,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -40,12 +40,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,17 +57,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import com.quizforge.app.Routes
+import com.quizforge.app.data.AppSettings
 import com.quizforge.app.data.Question
 import com.quizforge.app.data.Quiz
 import com.quizforge.app.ui.AppViewModel
-import com.quizforge.app.ui.components.AnswerFeedbackIcon
 import com.quizforge.app.ui.components.DifficultyBadge
 import com.quizforge.app.ui.components.XpPopup
 import com.quizforge.app.ui.theme.Green
@@ -77,6 +77,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private enum class Phase { INFO, PLAYING, SUBMITTING }
+
+private val Orange = Color(0xFFF57C2F)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,10 +100,13 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
     var selected by remember { mutableStateOf<String?>(null) }
     var showNavigator by remember { mutableStateOf(false) }
     var xpPopup by remember { mutableStateOf(false) }
-    var timeLeft by remember { mutableStateOf(quiz?.timeLimitSeconds ?: 0) }
-    var challengeTimeLeft by remember { mutableStateOf(15) }
+    var timed by remember { mutableStateOf(false) }
+    var timeSeconds by remember { mutableStateOf(quiz?.timeLimitSeconds ?: 60) }
+    var timeLeft by remember { mutableStateOf(quiz?.timeLimitSeconds ?: 60) }
+    var runScore by remember { mutableStateOf(0) }
+    var lastCorrect by remember { mutableStateOf(true) }
     val startTime = remember { System.currentTimeMillis() }
-    var settings by remember { mutableStateOf(com.quizforge.app.data.AppSettings("system", true, true, "pause")) }
+    var settings by remember { mutableStateOf(AppSettings("system", true, true, "pause")) }
     LaunchedEffect(Unit) { vm.settings.collect { settings = it } }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -112,50 +117,28 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
         if (phase == Phase.SUBMITTING) return
         phase = Phase.SUBMITTING
         val timeTaken = ((System.currentTimeMillis() - startTime) / 1000).toInt().coerceAtLeast(1)
-        if (mode == "practice") {
-            nav.popBackStack()
-            return
-        }
         scope.launch {
             val result = vm.recordAttempt(quiz!!, questions, answers, timeTaken)
             nav.navigate(Routes.results(result.attempt.id)) {
                 popUpTo(Routes.QUIZZES) { inclusive = false }
             }
         }
-    }    // countdown timer
-    if (phase == Phase.PLAYING) {
-        LaunchedEffect(current, mode) {
-            if (mode == "challenge") {
-                challengeTimeLeft = 15
-                while (challengeTimeLeft > 0) {
-                    if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                        delay(1000)
-                        challengeTimeLeft--
-                    } else {
-                        delay(500)
-                        if (settings.timerOnBackground == "submit") { autoSubmitted = true; submit(); break }
-                    }
+    }
+
+    // countdown timer for the whole quiz (only when timed)
+    if (phase == Phase.PLAYING && timed) {
+        LaunchedEffect(current) {
+            timeLeft = timeSeconds
+            while (timeLeft > 0) {
+                if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                    delay(1000)
+                    timeLeft--
+                } else {
+                    delay(500)
+                    if (settings.timerOnBackground == "submit") { autoSubmitted = true; submit(); break }
                 }
-                if (!autoSubmitted && challengeTimeLeft <= 0) {
-                    // timeout: mark current unanswered and move on
-                    if (!revealed) {
-                        selected = null
-                        revealed = true
-                    }
-                }
-            } else if (quiz?.timeLimitSeconds != null) {
-                timeLeft = quiz.timeLimitSeconds
-                while (timeLeft > 0) {
-                    if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                        delay(1000)
-                        timeLeft--
-                    } else {
-                        delay(500)
-                        if (settings.timerOnBackground == "submit") { autoSubmitted = true; submit(); break }
-                    }
-                }
-                if (!autoSubmitted && timeLeft <= 0) submit()
             }
+            if (!autoSubmitted && timeLeft <= 0) submit()
         }
     }
 
@@ -167,12 +150,12 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
         val correct = opt == q.correctOption
         if (settings.soundEnabled) vm.playSound(correct)
         if (settings.hapticsEnabled) vm.vibrate(correct)
-        if (mode != "practice") {
-            revealed = true
-            if (correct) {
-                xpPopup = true
-                scope.launch { delay(900); xpPopup = false }
-            }
+        lastCorrect = correct
+        runScore = (runScore + (if (correct) 10 else -5)).coerceIn(0, questions.size * 10)
+        revealed = true
+        if (correct) {
+            xpPopup = true
+            scope.launch { delay(900); xpPopup = false }
         }
     }
 
@@ -187,13 +170,21 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
     }
 
     when (phase) {
-        Phase.INFO -> InfoPhase(vm, nav, quiz, questions.size, mode, onStart = { phase = Phase.PLAYING })
+        Phase.INFO -> InfoPhase(
+            vm, nav, quiz, questions.size,
+            timed = timed, timeSeconds = timeSeconds,
+            onTimedChange = { timed = it },
+            onSecondsChange = { timeSeconds = it },
+            onStart = { phase = Phase.PLAYING }
+        )
+
         Phase.SUBMITTING -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator()
                 Text("Saving your result...", modifier = Modifier.padding(top = 14.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+
         Phase.PLAYING -> {
             val q = questions[current]
             Column(modifier = Modifier.fillMaxSize()) {
@@ -203,9 +194,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                     Text(quiz?.title ?: "", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, modifier = Modifier.weight(1f))
-                    if (mode == "challenge") {
-                        TimerChip("$challengeTimeLeft", Red)
-                    } else if (quiz?.timeLimitSeconds != null) {
+                    if (timed) {
                         TimerChip("$timeLeft", if (timeLeft <= 30) Red else Green)
                     }
                     IconButton(onClick = {
@@ -233,6 +222,9 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                     color = Indigo,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
+
+                // live score bar — green up on correct, red down on wrong
+                PointsBar(runScore, questions.size * 10, lastCorrect)
 
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     LazyColumn(
@@ -280,7 +272,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                                     .clickable(
                                         interactionSource = interactionSource,
                                         indication = androidx.compose.foundation.LocalIndication.current,
-                                        enabled = !revealed || mode == "practice"
+                                        enabled = !revealed
                                     ) { selectOption(letter) },
                                 border = androidx.compose.foundation.BorderStroke(1.dp, borderColor)
                             ) {
@@ -302,7 +294,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                                 XpPopup(show = xpPopup && revealed, amount = 10, modifier = Modifier.align(Alignment.Center))
                             }
                         }
-                        if (revealed && mode != "practice") {
+                        if (revealed) {
                             item {
                                 Button(
                                     onClick = { next() },
@@ -310,14 +302,6 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Text(if (current < questions.size - 1) "Next" else "Finish", modifier = Modifier.padding(vertical = 4.dp))
-                                }
-                            }
-                        }
-                        if (mode == "practice") {
-                            item {
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                                    OutlinedButton(onClick = { if (current > 0) { current--; revealed = true } }, modifier = Modifier.weight(1f)) { Text("Prev") }
-                                    OutlinedButton(onClick = { if (current < questions.size - 1) { current++; revealed = true } }, modifier = Modifier.weight(1f)) { Text("Next") }
                                 }
                             }
                         }
@@ -375,7 +359,28 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
     }
 }
 
-private val Orange = Color(0xFFF57C2F)
+/** Live points bar: grows green on a correct answer, drops red on a wrong one. */
+@Composable
+private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
+    val progress by animateFloatAsState(
+        targetValue = if (maxScore > 0) (runScore.toFloat() / maxScore).coerceIn(0f, 1f) else 0f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 200f),
+        label = "pointsBar"
+    )
+    val barColor by animateColorAsState(if (lastCorrect) Green else Red, label = "pointsBarColor")
+    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+            Text("Score", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp).height(8.dp),
+                color = barColor,
+                trackColor = MaterialTheme.colorScheme.surface
+            )
+            Text("$runScore", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = barColor)
+        }
+    }
+}
 
 @Composable
 private fun TimerChip(text: String, color: Color) {
@@ -390,7 +395,10 @@ private fun InfoPhase(
     nav: NavHostController,
     quiz: Quiz?,
     questionCount: Int,
-    mode: String,
+    timed: Boolean,
+    timeSeconds: Int,
+    onTimedChange: (Boolean) -> Unit,
+    onSecondsChange: (Int) -> Unit,
     onStart: () -> Unit
 ) {
     if (quiz == null) {
@@ -423,20 +431,18 @@ private fun InfoPhase(
             }
             if (quiz.timeLimitSeconds != null) {
                 Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(6.dp)) {
-                    Text("${quiz.timeLimitSeconds}s limit", fontSize = 11.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                    Text("${quiz.timeLimitSeconds}s default", fontSize = 11.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                 }
             }
         }
 
+        // quiz description (replaces the old "how it works")
         Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth().padding(top = 20.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("How it works", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text("About this quiz", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 Text(
-                    when (mode) {
-                        "practice" -> "Practice mode: no scoring, no XP. Tap an option to reveal the answer instantly. Browse freely."
-                        "challenge" -> "Challenge mode: 15 seconds per question. Timer runs out = skipped. Score at the end."
-                        else -> "Answer each question, get instant feedback, and earn XP. Use the flag icon to review questions later. Your score counts toward levels and badges."
-                    },
+                    if (quiz.description.isNotBlank()) quiz.description
+                    else "Answer each question and get instant feedback. Use the flag icon to review questions later. Your score counts toward levels and badges.",
                     fontSize = 12.sp,
                     lineHeight = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -445,24 +451,36 @@ private fun InfoPhase(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
-            Button(onClick = onStart, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null)
-                Text(if (mode == "practice") "  Start Practice" else "  Start Quiz", modifier = Modifier.padding(vertical = 6.dp))
+        // timed quiz option
+        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Timed quiz", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Text("Auto-submits when time runs out", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = timed, onCheckedChange = onTimedChange)
+                }
+                if (timed) {
+                    OutlinedTextField(
+                        value = if (timeSeconds > 0) timeSeconds.toString() else "",
+                        onValueChange = { text ->
+                            val v = text.filter { it.isDigit() }.take(4).toIntOrNull()
+                            onSecondsChange((v ?: 0).coerceIn(5, 3600))
+                        },
+                        label = { Text("Time limit (seconds)") },
+                        placeholder = { Text("e.g. 60") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
+                }
             }
         }
 
-        if (mode == "challenge") {
-            Text("Tip: You can pick 5s / 10s / 15s per question in Settings → default 15s.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 10.dp))
-        }
-
-        if (mode == "normal") {
-            TextButton(onClick = { nav.navigate(Routes.attempt(quiz.id, "practice")) }, modifier = Modifier.padding(top = 8.dp)) {
-                Text("Try Practice Mode instead", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-            }
-            TextButton(onClick = { nav.navigate(Routes.attempt(quiz.id, "challenge")) }) {
-                Text("Try Challenge Mode instead", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-            }
+        Button(onClick = onStart, modifier = Modifier.fillMaxWidth().padding(top = 24.dp), shape = RoundedCornerShape(12.dp)) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null)
+            Text("  Start Quiz", modifier = Modifier.padding(vertical = 6.dp))
         }
     }
 }
