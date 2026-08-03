@@ -61,7 +61,7 @@ import com.quizforge.app.data.Question
 import com.quizforge.app.data.STATUS_DRAFT
 import com.quizforge.app.data.STATUS_PUBLISHED
 import com.quizforge.app.parsing.ParseException
-import com.quizforge.app.parsing.TxtParser
+import com.quizforge.app.parsing.QuizImporter
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
@@ -127,14 +127,23 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
         }
     }
 
-    val txtPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         try {
-            val text = vm.getApplication<android.app.Application>().contentResolver.openInputStream(uri)?.bufferedReader()?.use { br -> br.readText() }
+            val resolver = vm.getApplication<android.app.Application>().contentResolver
+            var name: String? = null
+            try {
+                resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                    if (c.moveToFirst()) name = c.getString(0)
+                }
+            } catch (_: Exception) {
+            }
+            val text = resolver.openInputStream(uri)?.bufferedReader()?.use { br -> br.readText() }
             if (text.isNullOrBlank()) { error = "File is empty"; return@rememberLauncherForActivityResult }
-            val parsed = TxtParser.parse(text, "temp")
+            val parsed = QuizImporter.detectAndParse(name, text, "temp")
             questions = (questions + parsed.map { EQ.from(it) }).toMutableList()
-            info = "Imported ${parsed.size} questions"
+            val ext = name?.substringAfterLast('.', "").orEmpty().uppercase().ifBlank { "TXT" }
+            info = "Imported ${parsed.size} questions ($ext)"
             error = null
         } catch (e: ParseException) {
             error = e.message
@@ -154,10 +163,10 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                 Text("${questions.size} questions", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             OutlinedButton(onClick = {
-                txtPicker.launch(arrayOf("text/plain", "text/*", "*/*"))
+                filePicker.launch(arrayOf("text/plain", "text/csv", "application/json", "*/*"))
             }, shape = RoundedCornerShape(10.dp)) {
                 Icon(Icons.Filled.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("  Import TXT", fontSize = 12.sp)
+                Text("  Import TXT / JSON / CSV", fontSize = 12.sp)
             }
         }
 

@@ -85,11 +85,13 @@ private val Orange = Color(0xFFF57C2F)
 fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, mode: String, only: String = "") {
     val quiz = remember(quizId) { vm.getQuiz(quizId) }
     val allQuestions = remember(quizId) { vm.getQuestions(quizId) }
+    // Every attempt gets a fresh random order.
     val questions = remember(allQuestions, only) {
-        if (only.isNotBlank()) {
+        val base = if (only.isNotBlank()) {
             val ids = only.split(",").toSet()
             allQuestions.filter { it.id in ids }
         } else allQuestions
+        base.shuffled()
     }
 
     var phase by remember { mutableStateOf(Phase.INFO) }

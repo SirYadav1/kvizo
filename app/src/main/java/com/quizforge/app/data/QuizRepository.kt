@@ -363,7 +363,8 @@ class QuizRepository(context: Context) {
 
         val newBadges = evaluateBadges(
             profile.id,
-            quiz.category,
+            quiz,
+            sequence,
             correct,
             total,
             timeTakenSeconds,
@@ -439,7 +440,8 @@ class QuizRepository(context: Context) {
 
     private fun evaluateBadges(
         profileId: Long,
-        category: String,
+        quiz: Quiz,
+        sequence: List<Boolean>,
         correct: Int,
         total: Int,
         timeTaken: Int,
@@ -461,36 +463,68 @@ class QuizRepository(context: Context) {
         }
 
         val attempts = getAttempts(profileId)
-        val quizCount = getQuizzes(profileId).size
+        // own quizzes only (remote community quizzes don't count as "created")
+        val ownQuizCount = getQuizzes(profileId).count { !it.isRemote }
         val totalCorrect = attempts.sumOf { it.correctAnswers }
         val totalAnswered = attempts.sumOf { it.totalQuestions }
+        val perfectCount = attempts.count { it.totalQuestions > 0 && it.score == 100 }
         val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
         val streak = XpEngine.currentStreak(daySet)
+        val longestStreakDays = XpEngine.longestStreak(daySet)
+        val remoteAttempts = attempts.count { getQuizById(it.quizId)?.isRemote == true }
+        val profile = getProfileById(profileId)
+        val level = profile?.level ?: 1
 
         if (attempts.size == 1) grant("first_quiz", "First Quiz")
         if (total > 0 && correct == total) grant("perfect_score", "Perfect Score")
+        if (perfectCount >= 3) grant("flawless_3", "Flawless")
         if (streak >= 3) grant("streak_3", "3-Day Streak")
         if (streak >= 7) grant("streak_7", "7-Day Streak")
+        if (longestStreakDays >= 14) grant("streak_14", "Fortnight Streak")
         if (streak >= 30) grant("streak_30", "30-Day Streak")
         if (timeTaken < 60 && total >= 1) grant("speed_demon", "Speed Demon")
+        if (total >= 3 && timeTaken <= total * 2) grant("speed_king", "Speed King")
+        // Comeback: rough first half, near-perfect second half, solid overall score
+        if (total >= 4) {
+            val half = total / 2
+            val firstHalf = sequence.take(half)
+            val secondHalf = sequence.drop(half)
+            if (firstHalf.size >= 2 && secondHalf.size >= 2) {
+                val firstScore = firstHalf.count { it } * 100 / firstHalf.size
+                val secondScore = secondHalf.count { it } * 100 / secondHalf.size
+                val overall = correct * 100 / total
+                if (firstScore <= 40 && secondScore >= 80 && overall >= 60) grant("comeback", "Comeback King")
+            }
+        }
+        // Rapid Fire: 5 consecutive correct answers in one attempt
+        var run = 0
+        var bestRun = 0
+        for (ok in sequence) {
+            run = if (ok) run + 1 else 0
+            if (run > bestRun) bestRun = run
+        }
+        if (bestRun >= 5) grant("rapid_fire", "Rapid Fire")
         if (attempts.size >= 50) grant("bookworm", "Bookworm")
+        if (totalAnswered >= 500) grant("marathon", "Marathon Runner")
         if (totalCorrect >= 100) grant("century", "Century")
         if (attempts.size >= 10 && totalAnswered > 0 && totalCorrect * 100 / totalAnswered >= 90) {
             grant("sharpshooter", "Sharpshooter")
         }
         // Category King: 90%+ accuracy in a category with at least 3 attempts there.
         val catAttempts = attempts.filter { a ->
-            getQuizById(a.quizId)?.category == category
+            getQuizById(a.quizId)?.category == quiz.category
         }
         if (catAttempts.size >= 3) {
             val catCorrect = catAttempts.sumOf { it.correctAnswers }
             val catTotal = catAttempts.sumOf { it.totalQuestions }
             if (catTotal > 0 && catCorrect * 100 / catTotal >= 90) grant("category_king", "Category King")
         }
-        if (quizCount >= 5) grant("creator", "Creator")
-        if (quizCount >= 20) grant("quiz_producer", "Quiz Producer")
+        if (ownQuizCount >= 5) grant("creator", "Creator")
+        if (ownQuizCount >= 20) grant("quiz_producer", "Quiz Producer")
+        if (remoteAttempts >= 3) grant("community_pioneer", "Community Pioneer")
         if (XpEngine.isNight(now)) grant("night_owl", "Night Owl")
         if (XpEngine.isEarlyMorning(now)) grant("early_bird", "Early Bird")
+        if (level >= 6) grant("legend", "Legendary")
         if (totalXp >= 10000) grant("centurion", "Centurion")
         return unlocked
     }

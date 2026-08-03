@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
@@ -44,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.screens.DashboardScreen
+import com.quizforge.app.ui.screens.LeaderboardScreen
 import com.quizforge.app.ui.screens.ProfileSetupScreen
 import com.quizforge.app.ui.screens.ProfileScreen
 import com.quizforge.app.ui.screens.QuizAttemptScreen
@@ -84,6 +86,7 @@ object Routes {
     const val ATTEMPT = "attempt/{quizId}?mode={mode}&only={only}"
     const val RESULTS = "results/{attemptId}"
     const val STATS = "stats"
+    const val LEADERBOARD = "leaderboard"
     const val SETTINGS = "settings"
     const val PROFILE = "profile"
 
@@ -104,6 +107,7 @@ fun QuizForgeRoot(vm: AppViewModel) {
         Tab(Routes.QUIZZES, "Quizzes", Icons.Filled.List),
         Tab(Routes.BUILDER, "Create", Icons.Filled.AddCircle),
         Tab(Routes.STATS, "Stats", Icons.Filled.BarChart),
+        Tab(Routes.LEADERBOARD, "Leaderboard", Icons.Filled.EmojiEvents),
         Tab(Routes.PROFILE, "Profile", Icons.Filled.Person),
     )
     val showBottomBar = route in tabs.map { it.route } || route?.startsWith(Routes.BUILDER) == true
@@ -195,6 +199,7 @@ fun QuizForgeRoot(vm: AppViewModel) {
                 ResultsScreen(vm, nav, entry.arguments?.getString("attemptId") ?: "")
             }
             composable(Routes.STATS) { StatsScreen(vm, nav) }
+            composable(Routes.LEADERBOARD) { LeaderboardScreen(vm, nav) }
             composable(Routes.SETTINGS) { SettingsScreen(vm, nav) }
             composable(Routes.PROFILE) { ProfileScreen(vm, nav) }
         }

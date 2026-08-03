@@ -90,6 +90,18 @@ data class DailyStat(
     val xpEarned: Int
 )
 
+/** One row on the leaderboard. Currently device-local; goes global when the online login system lands. */
+data class LeaderboardEntry(
+    val rank: Int,
+    val username: String,
+    val avatarId: Int,
+    val level: Int,
+    val xp: Int,
+    val accuracy: Int,
+    val attempts: Int,
+    val isSelf: Boolean
+)
+
 /** Payload of a community quiz served by the QuizForge server. */
 data class RemoteQuiz(
     val id: String,
@@ -142,15 +154,23 @@ val BADGE_DEFS = listOf(
     "perfect_score" to "Perfect Score",
     "streak_3" to "3-Day Streak",
     "streak_7" to "7-Day Streak",
+    "streak_14" to "Fortnight Streak",
     "streak_30" to "30-Day Streak",
     "speed_demon" to "Speed Demon",
+    "speed_king" to "Speed King",
+    "comeback" to "Comeback King",
+    "rapid_fire" to "Rapid Fire",
     "bookworm" to "Bookworm",
+    "marathon" to "Marathon Runner",
     "century" to "Century",
     "sharpshooter" to "Sharpshooter",
+    "flawless_3" to "Flawless",
     "category_king" to "Category King",
     "creator" to "Creator",
     "quiz_producer" to "Quiz Producer",
+    "community_pioneer" to "Community Pioneer",
     "night_owl" to "Night Owl",
     "early_bird" to "Early Bird",
+    "legend" to "Legendary",
     "centurion" to "Centurion"
 )
