@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileUpload
@@ -157,6 +158,9 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
             IconButton(onClick = { showImportDialog = true }) {
                 Icon(Icons.Filled.FileUpload, contentDescription = "Import quiz code", tint = Indigo)
             }
+            IconButton(onClick = { vm.syncRemoteQuizzes() }) {
+                Icon(Icons.Filled.CloudDownload, contentDescription = "Sync community quizzes", tint = Indigo)
+            }
         }
 
         Spacer(Modifier.height(6.dp))
@@ -185,8 +189,8 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
             text = { Text("\"${deleteTarget!!.title}\" will be permanently deleted.") },
             confirmButton = {
                 TextButton(onClick = {
-                    vm.deleteQuiz(deleteTarget!!.id)
-                    allQuizzes = allQuizzes.filter { it.id != deleteTarget!!.id }
+                    val ok = vm.deleteQuiz(deleteTarget!!.id)
+                    if (ok) allQuizzes = allQuizzes.filter { it.id != deleteTarget!!.id }
                     deleteTarget = null
                 }) { Text("Delete", color = Red) }
             },
@@ -246,7 +250,19 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     Spacer(Modifier.size(6.dp))
-                    StatusChip(quiz.status)
+                    if (quiz.isRemote) {
+                        Surface(color = Green.copy(alpha = 0.15f), shape = RoundedCornerShape(6.dp)) {
+                            Text(
+                                "Community",
+                                color = Green,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    } else {
+                        StatusChip(quiz.status)
+                    }
                 }
                 Text("${quiz.category} • $questionCount questions • ${quiz.attemptsCount} attempts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                 if (quiz.tags.isNotBlank()) {
@@ -262,7 +278,9 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(text = { Text("Take quiz") }, onClick = { menuOpen = false; nav.navigate(Routes.attempt(quiz.id)) })
-                DropdownMenuItem(text = { Text("Edit") }, onClick = { menuOpen = false; nav.navigate("builder?quizId=${quiz.id}") })
+                if (!quiz.isRemote) {
+                    DropdownMenuItem(text = { Text("Edit") }, onClick = { menuOpen = false; nav.navigate("builder?quizId=${quiz.id}") })
+                }
                 DropdownMenuItem(text = { Text("Duplicate") }, onClick = { menuOpen = false; vm.duplicateQuiz(quiz.id) })
                 DropdownMenuItem(text = { Text("Share code") }, onClick = {
                     menuOpen = false
@@ -280,14 +298,16 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
                         vm.getApplication<android.app.Application>(), android.content.Intent.createChooser(intent, "Share quiz"), null
                     )
                 })
-                DropdownMenuItem(text = { Text(if (quiz.status == STATUS_ARCHIVED) "Unarchive" else "Archive") }, onClick = {
-                    menuOpen = false
-                    vm.repo.updateQuizMeta(
-                        quiz.copy(status = if (quiz.status == STATUS_ARCHIVED) STATUS_PUBLISHED else STATUS_ARCHIVED, updatedAt = System.currentTimeMillis())
-                    )
-                    vm.refreshQuizzes()
-                })
-                DropdownMenuItem(text = { Text("Delete", color = Red) }, onClick = { menuOpen = false; onDelete() })
+                if (!quiz.isRemote) {
+                    DropdownMenuItem(text = { Text(if (quiz.status == STATUS_ARCHIVED) "Unarchive" else "Archive") }, onClick = {
+                        menuOpen = false
+                        vm.repo.updateQuizMeta(
+                            quiz.copy(status = if (quiz.status == STATUS_ARCHIVED) STATUS_PUBLISHED else STATUS_ARCHIVED, updatedAt = System.currentTimeMillis())
+                        )
+                        vm.refreshQuizzes()
+                    })
+                    DropdownMenuItem(text = { Text("Delete", color = Red) }, onClick = { menuOpen = false; onDelete() })
+                }
             }
         }
     }

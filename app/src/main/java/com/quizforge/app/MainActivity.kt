@@ -7,23 +7,31 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -45,6 +53,7 @@ import com.quizforge.app.ui.screens.ResultsScreen
 import com.quizforge.app.ui.screens.SettingsScreen
 import com.quizforge.app.ui.screens.SplashScreen
 import com.quizforge.app.ui.screens.StatsScreen
+import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.QuizForgeTheme
 
 class MainActivity : ComponentActivity() {
@@ -100,6 +109,28 @@ fun QuizForgeRoot(vm: AppViewModel) {
     val showBottomBar = route in tabs.map { it.route } || route?.startsWith(Routes.BUILDER) == true
 
     Scaffold(
+        topBar = {
+            val notice = vm.syncNotice
+            if (notice != null) {
+                Surface(color = Indigo, modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "🎉  $notice",
+                            color = androidx.compose.ui.graphics.Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp)
+                        )
+                        IconButton(onClick = { vm.dismissSyncNotice() }) {
+                            Icon(Icons.Filled.Close, contentDescription = "Dismiss", tint = androidx.compose.ui.graphics.Color.White)
+                        }
+                    }
+                }
+            }
+        },
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {

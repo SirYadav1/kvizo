@@ -25,7 +25,8 @@ data class Quiz(
     val updatedAt: Long,
     val attemptsCount: Int,
     val averageScore: Double,
-    val description: String = ""
+    val description: String = "",
+    val isRemote: Boolean = false
 )
 
 data class Question(
@@ -87,6 +88,28 @@ data class DailyStat(
     val correctAnswers: Int,
     val timeSpentSeconds: Int,
     val xpEarned: Int
+)
+
+/** Payload of a community quiz served by the QuizForge server. */
+data class RemoteQuiz(
+    val id: String,
+    val title: String,
+    val category: String,
+    val difficulty: String,
+    val tags: String,
+    val timeLimitSeconds: Int?,
+    val createdAt: Long,
+    val description: String,
+    val questions: List<RemoteQuestion>
+)
+
+data class RemoteQuestion(
+    val questionText: String,
+    val optionA: String,
+    val optionB: String,
+    val optionC: String,
+    val optionD: String,
+    val correctOption: String
 )
 
 /** Result of recording a quiz attempt: XP + newly unlocked badges. */

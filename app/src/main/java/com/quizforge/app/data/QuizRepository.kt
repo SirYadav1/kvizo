@@ -110,6 +110,7 @@ class QuizRepository(context: Context) {
             put("attempts_count", quiz.attemptsCount)
             put("average_score", quiz.averageScore)
             put("description", quiz.description)
+            put("is_remote", if (quiz.isRemote) 1 else 0)
         }
         db.insertWithOnConflict("quizzes", null, values, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
         return quiz.id
@@ -153,9 +154,81 @@ class QuizRepository(context: Context) {
         db.update("quizzes", values, "id = ?", arrayOf(quiz.id))
     }
 
-    fun deleteQuiz(id: String) {
+    /** Deletes a quiz. Remote (server-managed) quizzes can never be deleted from the app. */
+    fun deleteQuiz(id: String): Boolean {
+        val quiz = getQuizById(id) ?: return true
+        if (quiz.isRemote) return false
         db.delete("questions", "quiz_id = ?", arrayOf(id))
         db.delete("quizzes", "id = ?", arrayOf(id))
+        return true
+    }
+
+    /**
+     * Upserts server quizzes for the given profile. Remote quizzes are never
+     * deletable from the app; stale ones (removed from the server) are removed.
+     * Local attempt stats are preserved across re-syncs.
+     * Returns the list of quiz ids that are brand new (for the in-app banner).
+     */
+    fun syncRemoteQuizzes(profileId: Long, remote: List<RemoteQuiz>): List<String> {
+        if (remote.isEmpty()) return emptyList()
+        val existingRemoteIds = mutableSetOf<String>()
+        db.query(
+            "quizzes", arrayOf("id"), "profile_id = ? AND is_remote = 1",
+            arrayOf(profileId.toString()), null, null, null
+        ).use { c ->
+            while (c.moveToNext()) existingRemoteIds.add(c.getString(0))
+        }
+        val serverIds = remote.map { it.id }.toSet()
+        val added = remote.map { it.id }.filter { it !in existingRemoteIds }
+
+        db.beginTransaction()
+        try {
+            for (r in remote) {
+                val existing = getQuizById(r.id)
+                val now = System.currentTimeMillis()
+                val quiz = Quiz(
+                    id = r.id,
+                    profileId = profileId,
+                    title = r.title,
+                    category = r.category,
+                    difficulty = r.difficulty,
+                    tags = r.tags,
+                    timeLimitSeconds = r.timeLimitSeconds,
+                    status = STATUS_PUBLISHED,
+                    createdAt = existing?.createdAt ?: r.createdAt,
+                    updatedAt = now,
+                    attemptsCount = existing?.attemptsCount ?: 0,
+                    averageScore = existing?.averageScore ?: 0.0,
+                    description = r.description,
+                    isRemote = true
+                )
+                insertQuiz(quiz)
+                replaceQuestions(r.id, r.questions.mapIndexed { i, q ->
+                    Question(
+                        id = "${r.id}:q$i",
+                        quizId = r.id,
+                        questionText = q.questionText,
+                        optionA = q.optionA,
+                        optionB = q.optionB,
+                        optionC = q.optionC,
+                        optionD = q.optionD,
+                        correctOption = q.correctOption,
+                        position = i,
+                        isBookmarked = false
+                    )
+                })
+            }
+            // remove stale remote quizzes no longer on the server
+            for (id in existingRemoteIds) {
+                if (id in serverIds) continue
+                db.delete("questions", "quiz_id = ?", arrayOf(id))
+                db.delete("quizzes", "id = ?", arrayOf(id))
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        return added
     }
 
     // ---------------- QUESTIONS ----------------
@@ -572,6 +645,7 @@ class QuizRepository(context: Context) {
             put("attempts_count", quiz.attemptsCount)
             put("average_score", quiz.averageScore)
             put("description", quiz.description)
+            put("is_remote", if (quiz.isRemote) 1 else 0)
         }
         db.insertWithOnConflict("quizzes", null, values, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -645,6 +719,7 @@ class QuizRepository(context: Context) {
     private fun quizFrom(c: Cursor): Quiz {
         val timeIdx = c.getColumnIndex("time_limit_seconds")
         val timeVal = if (timeIdx >= 0 && !c.isNull(timeIdx)) c.getInt(timeIdx) else null
+        val remoteIdx = c.getColumnIndex("is_remote")
         return Quiz(
             c.getString(c.getColumnIndexOrThrow("id")),
             c.getLong(c.getColumnIndexOrThrow("profile_id")),
@@ -658,7 +733,8 @@ class QuizRepository(context: Context) {
             c.getLong(c.getColumnIndexOrThrow("updated_at")),
             c.getInt(c.getColumnIndexOrThrow("attempts_count")),
             c.getDouble(c.getColumnIndexOrThrow("average_score")),
-            c.getString(c.getColumnIndexOrThrow("description"))
+            c.getString(c.getColumnIndexOrThrow("description")),
+            remoteIdx >= 0 && c.getInt(remoteIdx) == 1
         )
     }
 

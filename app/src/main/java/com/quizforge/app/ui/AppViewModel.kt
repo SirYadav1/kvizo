@@ -16,6 +16,7 @@ import com.quizforge.app.data.Profile
 import com.quizforge.app.data.Quiz
 import com.quizforge.app.data.Question
 import com.quizforge.app.data.QuizRepository
+import com.quizforge.app.data.RemoteApi
 import com.quizforge.app.data.SettingsRepo
 import com.quizforge.app.data.STATUS_PUBLISHED
 import com.quizforge.app.logic.XpEngine
@@ -27,6 +28,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     val repo = QuizRepository(app)
     private val settingsRepo = SettingsRepo(app)
+    private val remoteApi = RemoteApi()
 
     val settings: Flow<AppSettings> = settingsRepo.settings
 
@@ -35,6 +37,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // For dashboard recomposition we re-read these on each navigation refresh.
     var quizzes by mutableStateOf<List<Quiz>>(emptyList())
+        private set
+
+    /** In-app notification banner shown when new community quizzes are available. */
+    var syncNotice by mutableStateOf<String?>(null)
         private set
 
     init {
@@ -48,6 +54,46 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 hapticsOn = s.hapticsEnabled
             }
         }
+        viewModelScope.launch { startSyncLoop() }
+    }
+
+    private suspend fun startSyncLoop() {
+        val deviceId = settingsRepo.getDeviceId()
+        var lastSync = 0L
+        while (true) {
+            remoteApi.sendHeartbeat(deviceId)
+            val now = System.currentTimeMillis()
+            if (now - lastSync > 5 * 60_000L) {
+                syncRemoteQuizzesNow()
+                lastSync = now
+            }
+            kotlinx.coroutines.delay(25_000)
+        }
+    }
+
+    /** Fetch community quizzes from the server (used on app start / manual refresh). */
+    fun syncRemoteQuizzes() {
+        viewModelScope.launch { syncRemoteQuizzesNow() }
+    }
+
+    private suspend fun syncRemoteQuizzesNow() {
+        val pid = profile?.id ?: return
+        try {
+            val remote = remoteApi.fetchQuizzes()
+            if (remote.isEmpty()) return
+            val added = repo.syncRemoteQuizzes(pid, remote)
+            if (added.isNotEmpty()) {
+                syncNotice = if (added.size == 1) "New community quiz added!"
+                else "${added.size} new community quizzes added!"
+            }
+            refreshQuizzes()
+        } catch (_: Exception) {
+            // offline — keep existing data
+        }
+    }
+
+    fun dismissSyncNotice() {
+        syncNotice = null
     }
 
     fun refreshProfile() {
@@ -171,9 +217,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         refreshQuizzes()
     }
 
-    fun deleteQuiz(id: String) {
-        repo.deleteQuiz(id)
-        refreshQuizzes()
+    fun deleteQuiz(id: String): Boolean {
+        val ok = repo.deleteQuiz(id)
+        if (ok) refreshQuizzes()
+        return ok
     }
 
     fun duplicateQuiz(quizId: String) {
