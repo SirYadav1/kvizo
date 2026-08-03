@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizForge Admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f4f2fb; color: #241254; }
+  .container { max-width: 860px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 24px; display: flex; align-items: center; gap: 10px; }
+  h1 .dot { width: 12px; height: 12px; border-radius: 50%; background: #2EBB6E; display: inline-block; }
+  .card { background: #fff; border-radius: 14px; box-shadow: 0 1px 4px rgba(36,18,84,.08); padding: 18px; margin-top: 16px; }
+  .card h2 { font-size: 16px; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; }
+  textarea { min-height: 180px; resize: vertical; }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  button { padding: 10px 18px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #6C4DF6; color: #fff; }
+  .btn-danger { background: #E5484D; color: #fff; }
+  .btn-ghost { background: #eee; color: #241254; }
+  .online-pill { display: inline-flex; align-items: center; gap: 8px; background: #e6f7ee; color: #1d7a46; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; }
+  .quiz-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f0eef8; }
+  .quiz-item:last-child { border-bottom: none; }
+  .quiz-info { flex: 1; }
+  .quiz-info .t { font-weight: 600; }
+  .quiz-info .m { font-size: 12px; color: #888; }
+  .badge { font-size: 11px; background: #e5deff; color: #4b2fc9; border-radius: 6px; padding: 2px 8px; }
+  .hidden { display: none; }
+  #login { max-width: 380px; margin: 60px auto; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #241254; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity .3s; }
+  .toast.show { opacity: 1; }
+  .count { font-weight: 800; color: #6C4DF6; }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <h1><span class="dot"></span> QuizForge Admin</h1>
+
+  <div class="card" id="onlineCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <h2 style="margin:0;">Online Users</h2>
+      <span class="online-pill"><span id="onlineDot">●</span> <span id="onlineCount">0</span> online</span>
+    </div>
+    <div id="deviceList" style="margin-top:10px;font-size:13px;color:#666;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Add Quiz</h2>
+    <div class="row">
+      <div style="flex:2;"><label>Title *</label><input id="fTitle" placeholder="Quiz title"></div>
+      <div><label>Category</label>
+        <select id="fCategory">
+          <option>General Knowledge</option><option>Science</option><option>Mathematics</option>
+          <option>History</option><option>Geography</option><option>Computer Science</option>
+          <option>Programming</option><option>English Grammar</option><option>Biology</option>
+          <option>Chemistry</option><option>Physics</option><option>Sports</option>
+          <option>Entertainment</option><option>Current Affairs</option><option>Literature</option>
+          <option>Economics</option><option>Custom</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Difficulty</label>
+        <select id="fDifficulty"><option>Easy</option><option>Medium</option><option>Hard</option></select>
+      </div>
+      <div><label>Time limit (s, optional)</label><input id="fTime" type="number" min="5" placeholder="e.g. 60"></div>
+    </div>
+    <label>Tags (comma separated, optional)</label><input id="fTags" placeholder="gk, science">
+    <label>Description (shown before the quiz)</label><textarea id="fDesc" style="min-height:60px;" placeholder="Describe the quiz"></textarea>
+    <label>Questions — TXT format (same as app import) or JSON *</label>
+    <textarea id="fQuestions" placeholder="1. What is 2 + 2?
+a) 3
+b) 4
+c) 5
+d) 6
+Answer: b
+
+2. The sun rises in the east. True/False:
+a) True
+b) False
+Answer: a"></textarea>
+    <div style="margin-top:12px;display:flex;gap:10px;">
+      <button class="btn-primary" onclick="addQuiz()">Publish Quiz</button>
+      <button class="btn-ghost" onclick="clearForm()">Clear</button>
+    </div>
+    <div id="parseInfo" style="font-size:12px;color:#888;margin-top:8px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Community Quizzes <span id="quizCount" class="count"></span></h2>
+    <div id="quizList"></div>
+  </div>
+</div>
+
+<div class="card hidden" id="login">
+  <h2>Admin Login</h2>
+  <label>Admin key</label>
+  <input id="keyInput" type="password" placeholder="Enter admin key" onkeydown="if(event.key==='Enter')doLogin()">
+  <button class="btn-primary" style="margin-top:12px;width:100%;" onclick="doLogin()">Login</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let ADMIN_KEY = localStorage.getItem('qf_admin_key') || '';
+let QUIZES = [];
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isErr ? '#E5484D' : '#241254';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY, ...(opts.headers || {}) }
+  });
+  if (res.status === 401) { doLogout(); throw new Error('Unauthorized'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function doLogin() {
+  ADMIN_KEY = document.getElementById('keyInput').value.trim();
+  localStorage.setItem('qf_admin_key', ADMIN_KEY);
+  boot();
+}
+
+function doLogout() {
+  localStorage.removeItem('qf_admin_key');
+  ADMIN_KEY = '';
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+}
+
+function boot() {
+  if (!ADMIN_KEY) {
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('login').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  refreshOnline();
+  refreshQuizzes();
+  setInterval(refreshOnline, 15000);
+}
+
+// ---- TXT parser (mirrors the app's TxtParser) ----
+function parseQuestions(text) {
+  const lines = text.split('\n');
+  const questions = [];
+  let cur = null;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('//') || line.startsWith('#')) continue;
+    const qMatch = line.match(/^(\d+)[.)]\s*(.+)$/);
+    if (qMatch) {
+      if (cur) questions.push(cur);
+      cur = { questionText: qMatch[2].trim(), opts: {}, answer: null };
+      continue;
+    }
+    if (!cur) continue;
+    const ansMatch = line.match(/^(?:Answer|ANS)\s*[:=]\s*([a-dA-D])\.?\s*$/);
+    if (ansMatch) { cur.answer = ansMatch[1].toLowerCase(); continue; }
+    const optMatch = line.match(/^([a-dA-D])[.)]\s*(.+)$/);
+    if (optMatch) { cur.opts[optMatch[1].toLowerCase()] = optMatch[2].trim(); continue; }
+    cur.questionText = (cur.questionText + ' ' + line).trim();
+  }
+  if (cur) questions.push(cur);
+  const out = [];
+  for (const q of questions) {
+    const keys = Object.keys(q.opts);
+    if (keys.length < 2 || !q.answer || !(q.answer in q.opts)) throw new Error('Question "' + q.questionText.slice(0, 40) + '..." needs 2-4 options and Answer: line');
+    out.push({
+      questionText: q.questionText,
+      optionA: q.opts.a || '',
+      optionB: q.opts.b || '',
+      optionC: q.opts.c || '',
+      optionD: q.opts.d || '',
+      correctOption: q.answer
+    });
+  }
+  return out;
+}
+
+async function addQuiz() {
+  const title = document.getElementById('fTitle').value.trim();
+  const raw = document.getElementById('fQuestions').value.trim();
+  if (!title) { showToast('Title required', true); return; }
+  if (!raw) { showToast('Questions required', true); return; }
+  let questions;
+  try {
+    if (raw.startsWith('{')) {
+      const obj = JSON.parse(raw);
+      questions = (obj.questions || []).map(q => ({
+        questionText: q.q || q.questionText,
+        optionA: q.a || '', optionB: q.b || '', optionC: q.c || '', optionD: q.d || '',
+        correctOption: q.ans || q.correctOption
+      }));
+    } else {
+      questions = parseQuestions(raw);
+    }
+  } catch (e) { showToast('Parse error: ' + e.message, true); return; }
+  if (!questions.length) { showToast('No valid questions', true); return; }
+  const tl = parseInt(document.getElementById('fTime').value, 10);
+  try {
+    const payload = {
+      title,
+      category: document.getElementById('fCategory').value,
+      difficulty: document.getElementById('fDifficulty').value,
+      tags: document.getElementById('fTags').value.trim(),
+      description: document.getElementById('fDesc').value.trim(),
+      timeLimitSeconds: tl > 0 ? tl : null,
+      questions
+    };
+    await api('/api/admin/quizzes', { method: 'POST', body: JSON.stringify(payload) });
+    showToast('Quiz published: ' + title + ' (' + questions.length + ' questions)');
+    clearForm();
+    refreshQuizzes();
+  } catch (e) { showToast(e.message, true); }
+}
+
+function clearForm() {
+  ['fTitle', 'fTags', 'fDesc', 'fQuestions'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fTime').value = '';
+  document.getElementById('parseInfo').textContent = '';
+}
+
+async function refreshQuizzes() {
+  try {
+    const data = await api('/api/quizzes');
+    QUIZES = data.quizzes || [];
+    document.getElementById('quizCount').textContent = QUIZES.length;
+    const list = document.getElementById('quizList');
+    list.innerHTML = '';
+    if (!QUIZES.length) { list.innerHTML = '<div style="color:#888;font-size:13px;padding:8px;">No community quizzes yet.</div>'; return; }
+    QUIZES.forEach(q => {
+      const div = document.createElement('div');
+      div.className = 'quiz-item';
+      div.innerHTML =
+        '<div class="quiz-info"><div class="t">' + esc(q.title) + ' <span class="badge">' + esc(q.difficulty) + '</span></div>' +
+        '<div class="m">' + esc(q.category) + ' • ' + q.questions.length + ' questions' +
+        (q.timeLimitSeconds ? ' • ' + q.timeLimitSeconds + 's' : '') + '</div></div>' +
+        '<button class="btn-danger" onclick="deleteQuiz(\'' + q.id + '\')">Delete</button>';
+      list.appendChild(div);
+    });
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function deleteQuiz(id) {
+  if (!confirm('Delete this community quiz? All users will lose it.')) return;
+  try {
+    await api('/api/admin/quizzes/' + id, { method: 'DELETE' });
+    showToast('Quiz deleted');
+    refreshQuizzes();
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function refreshOnline() {
+  try {
+    const data = await api('/api/admin/online');
+    const dot = document.getElementById('onlineDot');
+    const on = data.online || 0;
+    dot.style.color = on > 0 ? '#2EBB6E' : '#E5484D';
+    document.getElementById('onlineCount').textContent = on;
+    const list = document.getElementById('deviceList');
+    if (!on) { list.textContent = 'No users online right now.'; return; }
+    list.textContent = (data.devices || []).map(d => 'Device ' + d.deviceId).join(' • ');
+  } catch (e) { /* admin auth handled in api() */ }
+}
+
+function esc(s) {
+  return s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+boot();
+</script>
+</body>
+</html>
