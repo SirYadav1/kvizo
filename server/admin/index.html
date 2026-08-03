@@ -205,6 +205,8 @@ async function addQuiz() {
         optionA: q.a || '', optionB: q.b || '', optionC: q.c || '', optionD: q.d || '',
         correctOption: q.ans || q.correctOption
       }));
+    } else if (isCsv(raw)) {
+      questions = parseCsvQuestions(raw);
     } else {
       questions = parseQuestions(raw);
     }
@@ -279,6 +281,61 @@ async function refreshOnline() {
 
 function esc(s) {
   return s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+// ---- CSV support (header: question,option_a,option_b,option_c,option_d,answer) ----
+function isCsv(text) {
+  const first = text.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('//') && !l.startsWith('#'));
+  return !!first && first.includes(',') && /(question|option_|,answer|,ans)/i.test(first);
+}
+
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+      else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { row.push(field.trim()); field = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field.trim()); field = '';
+      if (row.some(x => x)) rows.push(row);
+      row = [];
+    } else field += c;
+  }
+  if (field || row.length) { row.push(field.trim()); if (row.some(x => x)) rows.push(row); }
+  return rows;
+}
+
+function parseCsvQuestions(text) {
+  const rows = parseCsvRows(text);
+  const header = rows[0].map(h => h.trim().toLowerCase());
+  const at = (name, alt) => header.indexOf(name) >= 0 ? header.indexOf(name) : (alt ? header.indexOf(alt) : -1);
+  const qi = at('question', 'q'), ai = at('option_a', 'a'), bi = at('option_b', 'b'),
+        ci = at('option_c', 'c'), di = at('option_d', 'd'), ansi = at('answer', 'ans');
+  if (qi < 0 || ai < 0 || bi < 0 || ansi < 0) throw new Error('CSV header needs question, option_a, option_b, answer');
+  const out = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    const get = i => (row[i] !== undefined ? row[i] : '').trim();
+    const q = get(qi);
+    if (!q) continue;
+    const opts = {};
+    if (get(ai)) opts.a = get(ai);
+    if (get(bi)) opts.b = get(bi);
+    if (ci >= 0 && get(ci)) opts.c = get(ci);
+    if (di >= 0 && get(di)) opts.d = get(di);
+    const keys = Object.keys(opts);
+    if (keys.length !== 2 && keys.length !== 4) throw new Error('CSV row ' + (r + 1) + ': need 2 or 4 options');
+    const raw = get(ansi).toLowerCase();
+    const letter = raw.length === 1 && /[a-d]/.test(raw) ? raw : Object.keys(opts).find(k => opts[k].toLowerCase() === raw);
+    if (!letter || !(letter in opts)) throw new Error('CSV row ' + (r + 1) + ': invalid answer "' + get(ansi) + '"');
+    out.push({ questionText: q, optionA: opts.a || '', optionB: opts.b || '', optionC: opts.c || '', optionD: opts.d || '', correctOption: letter });
+  }
+  return out;
 }
 
 boot();

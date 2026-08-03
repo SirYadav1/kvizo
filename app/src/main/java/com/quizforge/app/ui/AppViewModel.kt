@@ -12,6 +12,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.quizforge.app.data.AppSettings
 import com.quizforge.app.data.AttemptResult
+import com.quizforge.app.data.LeaderboardEntry
 import com.quizforge.app.data.Profile
 import com.quizforge.app.data.Quiz
 import com.quizforge.app.data.Question
@@ -21,6 +22,7 @@ import com.quizforge.app.data.SettingsRepo
 import com.quizforge.app.data.STATUS_PUBLISHED
 import com.quizforge.app.logic.XpEngine
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -382,6 +384,43 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- misc ----------
 
     fun avatarEmoji(id: Int): String = AVATARS[id % AVATARS.size]
+
+    // ---------- leaderboard ----------
+
+    /**
+     * Ranks device profiles by XP (or accuracy). When the online login system is
+     * turned on (settingsRepo.setLeaderboardOnline(true)), this switches to the
+     * global server leaderboard.
+     */
+    suspend fun leaderboardEntries(metric: String): List<LeaderboardEntry> {
+        val online = settingsRepo.settings.first().leaderboardOnline
+        if (!online) {
+            return localLeaderboard(metric)
+        }
+        // TODO(login): fetch the global leaderboard from the server once the online
+        // login system ships. Until then the screen shows an empty "coming soon" state.
+        return emptyList()
+    }
+
+    private fun localLeaderboard(metric: String): List<LeaderboardEntry> {
+        val selfId = profile?.id
+        val raw = repo.getAllProfiles().map { p ->
+            val attempts = repo.getAttempts(p.id)
+            val answered = attempts.sumOf { it.totalQuestions }
+            val correct = attempts.sumOf { it.correctAnswers }
+            val acc = if (answered > 0) correct * 100 / answered else 0
+            LeaderboardEntry(rank = 0, username = p.username, avatarId = p.avatarId,
+                level = p.level, xp = p.xp, accuracy = acc, attempts = attempts.size, isSelf = p.id == selfId)
+        }
+        val sorted = when (metric) {
+            "Accuracy" -> raw.sortedWith(compareByDescending<LeaderboardEntry> { it.accuracy }.thenByDescending { it.xp })
+            else -> raw.sortedWith(compareByDescending<LeaderboardEntry> { it.xp }.thenByDescending { it.accuracy })
+        }
+        val ranked = sorted.mapIndexed { i, e -> e.copy(rank = i + 1) }
+        val top = ranked.take(20)
+        val self = ranked.firstOrNull { it.isSelf }
+        return if (self != null && self.rank > 20) top + self else top
+    }
 
     companion object {
         val AVATARS = listOf(

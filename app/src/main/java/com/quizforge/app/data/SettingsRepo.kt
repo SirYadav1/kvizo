@@ -16,7 +16,8 @@ data class AppSettings(
     val themeMode: String,   // "system" | "light" | "dark"
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val timerOnBackground: String // "pause" | "submit"
+    val timerOnBackground: String, // "pause" | "submit"
+    val leaderboardOnline: Boolean = false // flips to true once the online login system is live
 )
 
 class SettingsRepo(private val context: Context) {
@@ -25,13 +26,15 @@ class SettingsRepo(private val context: Context) {
     private val soundKey = booleanPreferencesKey("sound_enabled")
     private val hapticsKey = booleanPreferencesKey("haptics_enabled")
     private val timerBgKey = stringPreferencesKey("timer_background")
+    private val leaderboardOnlineKey = booleanPreferencesKey("leaderboard_online")
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
         AppSettings(
             themeMode = p[themeKey] ?: "system",
             soundEnabled = p[soundKey] ?: true,
             hapticsEnabled = p[hapticsKey] ?: true,
-            timerOnBackground = p[timerBgKey] ?: "pause"
+            timerOnBackground = p[timerBgKey] ?: "pause",
+            leaderboardOnline = p[leaderboardOnlineKey] ?: false
         )
     }
 
@@ -42,6 +45,9 @@ class SettingsRepo(private val context: Context) {
     suspend fun setHapticsEnabled(v: Boolean) = context.dataStore.edit { it[hapticsKey] = v }
 
     suspend fun setTimerOnBackground(v: String) = context.dataStore.edit { it[timerBgKey] = v }
+
+    /** Flip this to true only when the online login system is enabled — leaderboard then reads from the server. */
+    suspend fun setLeaderboardOnline(v: Boolean) = context.dataStore.edit { it[leaderboardOnlineKey] = v }
 
     /** Stable per-install device id used for online tracking (no signup). */
     suspend fun getDeviceId(): String {
