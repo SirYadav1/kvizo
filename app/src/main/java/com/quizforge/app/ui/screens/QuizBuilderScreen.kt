@@ -17,10 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -50,7 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -109,12 +106,12 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
     var category by remember { mutableStateOf(PRESET_CATEGORIES[0]) }
     var difficulty by remember { mutableStateOf(DIFF_EASY) }
     var tags by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
     var timeLimit by remember { mutableStateOf("") }
     var questions by remember { mutableStateOf(mutableListOf<EQ>()) }
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
     var showImportCode by remember { mutableStateOf(false) }
-    var pendingImport by remember { mutableStateOf<List<Question>?>(null) }
 
     if (isEdit) {
         val existing = remember(quizId) { vm.getQuiz(quizId) }
@@ -124,6 +121,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
             category = q.category
             difficulty = q.difficulty
             tags = q.tags
+            description = q.description
             timeLimit = q.timeLimitSeconds?.toString() ?: ""
             questions = vm.getQuestions(quizId).map { EQ.from(it) }.toMutableList()
         }
@@ -135,7 +133,8 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
             val text = vm.getApplication<android.app.Application>().contentResolver.openInputStream(uri)?.bufferedReader()?.use { br -> br.readText() }
             if (text.isNullOrBlank()) { error = "File is empty"; return@rememberLauncherForActivityResult }
             val parsed = TxtParser.parse(text, "temp")
-            pendingImport = parsed
+            questions = (questions + parsed.map { EQ.from(it) }).toMutableList()
+            info = "Imported ${parsed.size} questions"
             error = null
         } catch (e: ParseException) {
             error = e.message
@@ -143,41 +142,6 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
         } catch (e: Exception) {
             error = "Could not read file: ${e.message}"
         }
-    }
-
-    // TXT import preview — user approves before questions are added
-    pendingImport?.let { pq ->
-        AlertDialog(
-            onDismissRequest = { pendingImport = null },
-            title = { Text("Import preview") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text("${pq.size} questions ready to add:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    pq.take(10).forEachIndexed { i, q ->
-                        Text(
-                            "${i + 1}. ${q.questionText}",
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(top = 8.dp),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    if (pq.size > 10) {
-                        Text("...and ${pq.size - 10} more", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    questions = (questions + pq.map { EQ.from(it) }).toMutableList()
-                    info = "Imported ${pq.size} questions"
-                    pendingImport = null
-                }) { Text("Add ${pq.size}") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingImport = null }) { Text("Cancel") }
-            }
-        )
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -195,6 +159,22 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                 Icon(Icons.Filled.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp))
                 Text("  Import TXT", fontSize = 12.sp)
             }
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+        ) {
+            OutlinedButton(
+                onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags, description, timeLimit, questions, STATUS_DRAFT) { error = it } },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp)
+            ) { Text("Save Draft") }
+            Button(
+                onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags, description, timeLimit, questions, STATUS_PUBLISHED) { error = it } },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp)
+            ) { Text("Publish") }
         }
 
         error?.let {
@@ -255,6 +235,13 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                         )
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            label = { Text("Description (shown before the quiz)") },
+                            minLines = 2,
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+                        )
                     }
                 }
             }
@@ -269,7 +256,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                 }
             }
 
-            itemsIndexed(questions) { idx, eq ->
+            itemsIndexed(questions, key = { _, eq -> System.identityHashCode(eq) }) { idx, eq ->
                 QuestionEditor(
                     index = idx,
                     eq = eq,
@@ -278,21 +265,6 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                     onMoveDown = { if (idx < questions.size - 1) questions = questions.toMutableList().apply { val t = this[idx]; this[idx] = this[idx + 1]; this[idx + 1] = t } },
                     onChange = { questions = questions.toMutableList() }
                 )
-            }
-
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 24.dp)) {
-                    OutlinedButton(
-                        onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags, timeLimit, questions, STATUS_DRAFT) { error = it } },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
-                    ) { Text("Save Draft") }
-                    Button(
-                        onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags, timeLimit, questions, STATUS_PUBLISHED) { error = it } },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
-                    ) { Text("Publish") }
-                }
             }
         }
     }
@@ -306,6 +278,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                 category = shared.category
                 difficulty = shared.difficulty
                 tags = shared.tags
+                description = shared.description
                 timeLimit = shared.timeLimitSeconds?.toString() ?: ""
                 questions = shared.questions.map { EQ.from(it) }.toMutableList()
                 info = "Quiz loaded from code (${shared.questions.size} questions)"
@@ -329,6 +302,7 @@ private fun saveQuiz(
     category: String,
     difficulty: String,
     tags: String,
+    description: String,
     timeLimit: String,
     questions: List<EQ>,
     status: String,
@@ -351,6 +325,7 @@ private fun saveQuiz(
                 category = category,
                 difficulty = difficulty,
                 tags = tags.trim(),
+                description = description.trim(),
                 timeLimitSeconds = time,
                 status = status,
                 updatedAt = System.currentTimeMillis()
@@ -358,7 +333,7 @@ private fun saveQuiz(
             qs
         )
     } else {
-        vm.createQuiz(title.trim(), category, difficulty, tags.trim(), time, status, qs)
+        vm.createQuiz(title.trim(), category, difficulty, tags.trim(), time, status, qs, description.trim())
     }
     nav.navigate(Routes.QUIZZES) {
         popUpTo(Routes.BUILDER) { inclusive = true }
@@ -368,7 +343,7 @@ private fun saveQuiz(
 
 @Composable
 private fun QuestionEditor(index: Int, eq: EQ, onDelete: () -> Unit, onMoveUp: () -> Unit, onMoveDown: () -> Unit, onChange: () -> Unit) {
-    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(

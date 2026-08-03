@@ -46,6 +46,7 @@ object BackupManager {
                     put("updated_at", q.updatedAt)
                     put("attempts_count", q.attemptsCount)
                     put("average_score", q.averageScore)
+                    put("description", q.description)
                     val qs = JSONArray()
                     for (question in repo.getQuestions(q.id)) {
                         qs.put(JSONObject().apply {
@@ -174,7 +175,8 @@ object BackupManager {
                         createdAt = qj.getLong("created_at"),
                         updatedAt = qj.getLong("updated_at"),
                         attemptsCount = qj.getInt("attempts_count"),
-                        averageScore = qj.getDouble("average_score")
+                        averageScore = qj.getDouble("average_score"),
+                        description = qj.optString("description", "")
                     )
                     repo.insertQuizRaw(db, quiz)
                     val qsArr = qj.optJSONArray("questions") ?: JSONArray()

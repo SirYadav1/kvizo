@@ -13,7 +13,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -95,7 +95,7 @@ fun QuizForgeRoot(vm: AppViewModel) {
         Tab(Routes.QUIZZES, "Quizzes", Icons.Filled.List),
         Tab(Routes.BUILDER, "Create", Icons.Filled.AddCircle),
         Tab(Routes.STATS, "Stats", Icons.Filled.BarChart),
-        Tab(Routes.SETTINGS, "Settings", Icons.Filled.Settings),
+        Tab(Routes.PROFILE, "Profile", Icons.Filled.Person),
     )
     val showBottomBar = route in tabs.map { it.route } || route?.startsWith(Routes.BUILDER) == true
 

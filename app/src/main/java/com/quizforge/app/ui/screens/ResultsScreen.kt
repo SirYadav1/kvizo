@@ -47,7 +47,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.quizforge.app.R
 import com.quizforge.app.Routes
 import com.quizforge.app.data.Attempt
+import com.quizforge.app.data.AttemptAnswer
 import com.quizforge.app.data.Quiz
+import com.quizforge.app.data.Question
 import com.quizforge.app.ui.AppViewModel
 import kotlinx.coroutines.delay
 import com.quizforge.app.ui.components.AnimatedCounter
@@ -66,13 +68,17 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
     var levelUp by remember { mutableStateOf(false) }
     var xpGained by remember { mutableStateOf(0) }
     var perfect by remember { mutableStateOf(false) }
+    var reviewQuestions by remember { mutableStateOf(listOf<Question>()) }
+    var answerMap by remember { mutableStateOf(mapOf<String, AttemptAnswer>()) }
 
     LaunchedEffect(attemptId) {
         attempt = vm.repo.getAttemptById(attemptId)
         attempt?.let { a ->
             quiz = vm.repo.getQuizById(a.quizId)
             val answers = vm.repo.getAttemptAnswers(a.id)
+            answerMap = answers.associateBy { it.questionId }
             wrongIds = answers.filter { !it.isCorrect }.map { it.questionId }
+            quiz?.let { reviewQuestions = vm.repo.getQuestions(it.id) }
             // Badges: diff = current badges vs badges before this attempt. Simplification:
             // the repository returns newly unlocked ones during record; we re-derive by
             // showing all badges whose unlock time is within 2s of the attempt.
@@ -93,11 +99,14 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
         }
     }
 
-    // Celebration: jingle + epic vibration on result
+    // Celebration: jingle + epic vibration only on a good score
     LaunchedEffect(Unit) {
-        delay(400)
-        vm.playSuccessJingle()
-        vm.epicVibrate()
+        val sc = attempt?.score ?: 0
+        if (sc >= 60) {
+            delay(400)
+            vm.playSuccessJingle()
+            vm.epicVibrate()
+        }
     }
 
     val a = attempt
@@ -110,7 +119,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
     val q = quiz
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ConfettiOverlay(show = true, modifier = Modifier.fillMaxWidth())
+        ConfettiOverlay(show = a.score >= 60, modifier = Modifier.fillMaxWidth())
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -184,6 +193,55 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                 ReviewStat("${a.correctAnswers}", "Correct", Green, Modifier.weight(1f))
                 ReviewStat("${a.totalQuestions - a.correctAnswers}", "Wrong", Red, Modifier.weight(1f))
                 ReviewStat("${a.timeTakenSeconds}s", "Time", Indigo, Modifier.weight(1f))
+            }
+
+            // full answer review — what the user answered for every question
+            if (reviewQuestions.isNotEmpty()) {
+                Text("Your Answers", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp))
+                reviewQuestions.forEach { rq ->
+                    val ans = answerMap[rq.id]
+                    val userSel = ans?.selectedOption
+                    val correct = ans?.isCorrect == true
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (correct) Green.copy(alpha = 0.10f) else Red.copy(alpha = 0.10f),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    if (correct) Icons.Filled.CheckCircle else Icons.Filled.Close,
+                                    contentDescription = null,
+                                    tint = if (correct) Green else Red,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    "  ${rq.questionText}",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+                            }
+                            val opts = rq.options()
+                            val userLabel = opts.firstOrNull { it.first == userSel }?.second ?: "Not answered"
+                            Text(
+                                "Your answer: ${if (userSel.isNullOrBlank()) "Not answered" else "${userSel}) $userLabel"}",
+                                fontSize = 12.sp,
+                                color = if (correct) Green else Red,
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                            if (!correct) {
+                                val correctLabel = opts.firstOrNull { it.first == rq.correctOption }?.second ?: ""
+                                Text(
+                                    "Correct: ${rq.correctOption}) $correctLabel",
+                                    fontSize = 12.sp,
+                                    color = Green,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             // actions

@@ -100,6 +100,7 @@ class QuizRepository(context: Context) {
             put("updated_at", quiz.updatedAt)
             put("attempts_count", quiz.attemptsCount)
             put("average_score", quiz.averageScore)
+            put("description", quiz.description)
         }
         db.insertWithOnConflict("quizzes", null, values, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
         return quiz.id
@@ -138,6 +139,7 @@ class QuizRepository(context: Context) {
             if (quiz.timeLimitSeconds != null) put("time_limit_seconds", quiz.timeLimitSeconds) else putNull("time_limit_seconds")
             put("status", quiz.status)
             put("updated_at", quiz.updatedAt)
+            put("description", quiz.description)
         }
         db.update("quizzes", values, "id = ?", arrayOf(quiz.id))
     }
@@ -570,6 +572,7 @@ class QuizRepository(context: Context) {
             put("updated_at", quiz.updatedAt)
             put("attempts_count", quiz.attemptsCount)
             put("average_score", quiz.averageScore)
+            put("description", quiz.description)
         }
         db.insertWithOnConflict("quizzes", null, values, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -655,7 +658,8 @@ class QuizRepository(context: Context) {
             c.getLong(c.getColumnIndexOrThrow("created_at")),
             c.getLong(c.getColumnIndexOrThrow("updated_at")),
             c.getInt(c.getColumnIndexOrThrow("attempts_count")),
-            c.getDouble(c.getColumnIndexOrThrow("average_score"))
+            c.getDouble(c.getColumnIndexOrThrow("average_score")),
+            c.getString(c.getColumnIndexOrThrow("description"))
         )
     }
 

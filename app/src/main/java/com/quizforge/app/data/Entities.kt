@@ -24,7 +24,8 @@ data class Quiz(
     val createdAt: Long,
     val updatedAt: Long,
     val attemptsCount: Int,
-    val averageScore: Double
+    val averageScore: Double,
+    val description: String = ""
 )
 
 data class Question(
