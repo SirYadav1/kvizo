@@ -39,7 +39,16 @@ class QuizRepository(context: Context) {
             put("created_at", System.currentTimeMillis())
             put("is_active", 1)
         }
-        val id = db.insert("profiles", null, values)
+        db.beginTransaction()
+        val id = try {
+            // only one profile can be active at a time
+            db.execSQL("UPDATE profiles SET is_active = 0")
+            val newId = db.insert("profiles", null, values)
+            db.setTransactionSuccessful()
+            newId
+        } finally {
+            db.endTransaction()
+        }
         return getProfileById(id)!!
     }
 
@@ -149,18 +158,6 @@ class QuizRepository(context: Context) {
         db.delete("quizzes", "id = ?", arrayOf(id))
     }
 
-    fun touchQuizStats(quizId: String, score: Int, total: Int) {
-        val quiz = getQuizById(quizId) ?: return
-        val count = quiz.attemptsCount + 1
-        val avg = (quiz.averageScore * quiz.attemptsCount + (score * 100.0 / total)) / count
-        val values = ContentValues().apply {
-            put("attempts_count", count)
-            put("average_score", avg)
-            put("updated_at", System.currentTimeMillis())
-        }
-        db.update("quizzes", values, "id = ?", arrayOf(quizId))
-    }
-
     // ---------------- QUESTIONS ----------------
 
     fun insertQuestions(questions: List<Question>) {
@@ -230,19 +227,20 @@ class QuizRepository(context: Context) {
     ): AttemptResult = withContext(Dispatchers.IO) {
         var correct = 0
         val sequence = mutableListOf<Boolean>()
+        val now = System.currentTimeMillis()
+        val attemptId = UUID.randomUUID().toString()
         val answerRows = mutableListOf<AttemptAnswer>()
         for (q in questions) {
             val sel = answers[q.id]
             val ok = sel != null && sel == q.correctOption
             if (ok) correct++
             sequence.add(ok)
-            answerRows.add(AttemptAnswer(UUID.randomUUID().toString(), "", q.id, sel ?: "", ok))
+            answerRows.add(AttemptAnswer(UUID.randomUUID().toString(), attemptId, q.id, sel ?: "", ok))
         }
         val total = questions.size
         val xp = XpEngine.xpBreakdown(correct, total, sequence)
-        val now = System.currentTimeMillis()
         val attempt = Attempt(
-            id = UUID.randomUUID().toString(),
+            id = attemptId,
             quizId = quiz.id,
             profileId = profile.id,
             score = if (total > 0) (correct * 100 / total) else 0,
@@ -272,8 +270,8 @@ class QuizRepository(context: Context) {
             db.insert("attempts", null, av)
             for (a in answerRows) {
                 db.insert("attempt_answers", null, ContentValues().apply {
-                    put("id", UUID.randomUUID().toString())
-                    put("attempt_id", attempt.id)
+                    put("id", a.id)
+                    put("attempt_id", a.attemptId)
                     put("question_id", a.questionId)
                     put("selected_option", a.selectedOption)
                     put("is_correct", if (a.isCorrect) 1 else 0)
@@ -537,6 +535,7 @@ class QuizRepository(context: Context) {
         db.execSQL("DELETE FROM questions")
         db.execSQL("DELETE FROM quizzes")
         db.execSQL("DELETE FROM profiles")
+        db.execSQL("DELETE FROM sqlite_sequence")
     }
 
     fun storageBytes(): Long {

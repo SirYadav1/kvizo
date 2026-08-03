@@ -258,10 +258,22 @@ object BackupManager {
                 }
                 restoredNames.add(p.username)
             }
+            // Re-sync AUTOINCREMENT counters so the next auto-generated id never
+            // collides with restored ids.
+            syncSequence(db, "profiles")
+            syncSequence(db, "daily_stats")
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
         }
         return restoredNames
+    }
+
+    private fun syncSequence(db: android.database.sqlite.SQLiteDatabase, table: String) {
+        db.execSQL("DELETE FROM sqlite_sequence WHERE name = ?", arrayOf(table))
+        db.execSQL(
+            "INSERT INTO sqlite_sequence(name, seq) SELECT ?, COALESCE(MAX(id), 0) FROM $table",
+            arrayOf(table)
+        )
     }
 }
