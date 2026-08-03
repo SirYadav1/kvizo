@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Empty state: document with sparkles -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- document -->
+    <path
+        android:fillColor="#D9D2F9"
+        android:pathData="M28,10 h28 l14,14 v62 h-42 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M56,10 L42,10 v14 a4,4 0 0,0 4,4 h14 z" />
+    <!-- folded corner -->
+    <path
+        android:fillColor="#6C4DF6"
+        android:pathData="M56,10 L42,10 v14 a4,4 0 0,0 4,4 h14 z M56,24 L56,10 L70,24 z" />
+    <!-- question lines -->
+    <path
+        android:fillColor="#6C4DF6"
+        android:pathData="M34,42 h26 v4 h-26 z M34,52 h26 v4 h-26 z M34,62 h18 v4 h-18 z" />
+    <!-- sparkles -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M70,30 L71.5,35 L76.5,36.5 L71.5,38 L70,43 L68.5,38 L63.5,36.5 L68.5,35 Z" />
+    <path
+        android:fillColor="#FF6EC7"
+        android:pathData="M22,72 L23.5,77 L28.5,78.5 L23.5,80 L22,85 L20.5,80 L15.5,78.5 L20.5,77 Z" />
+</vector>
