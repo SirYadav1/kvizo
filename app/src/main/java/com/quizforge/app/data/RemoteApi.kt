@@ -88,6 +88,6 @@ class RemoteApi(private val baseUrl: String = DEFAULT_BASE_URL) {
     }
 
     companion object {
-        const val DEFAULT_BASE_URL = "http://13.60.45.157:3000"
+        const val DEFAULT_BASE_URL = "http://ocean.13.60.45.157.nip.io"
     }
 }
