@@ -4,7 +4,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", null, 2) {
+class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", null, 3) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -35,6 +35,7 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", nul
                 updated_at INTEGER NOT NULL,
                 attempts_count INTEGER DEFAULT 0,
                 average_score REAL DEFAULT 0.0,
+                is_remote INTEGER DEFAULT 0,
                 FOREIGN KEY (profile_id) REFERENCES profiles(id)
             )"""
         )
@@ -115,6 +116,9 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", nul
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             db.execSQL("ALTER TABLE quizzes ADD COLUMN description TEXT DEFAULT ''")
+        }
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE quizzes ADD COLUMN is_remote INTEGER DEFAULT 0")
         }
     }
 }

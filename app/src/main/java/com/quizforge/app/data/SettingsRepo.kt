@@ -6,7 +6,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
@@ -40,4 +42,16 @@ class SettingsRepo(private val context: Context) {
     suspend fun setHapticsEnabled(v: Boolean) = context.dataStore.edit { it[hapticsKey] = v }
 
     suspend fun setTimerOnBackground(v: String) = context.dataStore.edit { it[timerBgKey] = v }
+
+    /** Stable per-install device id used for online tracking (no signup). */
+    suspend fun getDeviceId(): String {
+        context.dataStore.data.first().let { p ->
+            p[deviceIdKey]?.let { return it }
+        }
+        val id = UUID.randomUUID().toString().replace("-", "").take(20)
+        context.dataStore.edit { it[deviceIdKey] = id }
+        return id
+    }
+
+    private val deviceIdKey = stringPreferencesKey("device_id")
 }
