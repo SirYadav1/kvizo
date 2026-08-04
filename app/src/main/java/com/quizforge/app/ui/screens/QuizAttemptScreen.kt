@@ -261,8 +261,8 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                             val interactionSource = remember { MutableInteractionSource() }
                             val pressed by interactionSource.collectIsPressedAsState()
                             val scale by animateFloatAsState(
-                                targetValue = if (pressed) 0.95f else 1f,
-                                animationSpec = spring(dampingRatio = 0.55f, stiffness = 380f),
+                                targetValue = if (pressed) 0.97f else 1f,
+                                animationSpec = spring(dampingRatio = 0.75f, stiffness = 900f),
                                 label = "optionScale"
                             )
                             Surface(
@@ -366,7 +366,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
 private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
     val progress by animateFloatAsState(
         targetValue = if (maxScore > 0) (runScore.toFloat() / maxScore).coerceIn(0f, 1f) else 0f,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 200f),
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
         label = "pointsBar"
     )
     val barColor by animateColorAsState(if (lastCorrect) Green else Red, label = "pointsBarColor")

@@ -21,9 +21,12 @@ import com.quizforge.app.data.RemoteApi
 import com.quizforge.app.data.SettingsRepo
 import com.quizforge.app.data.STATUS_PUBLISHED
 import com.quizforge.app.logic.XpEngine
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.URL
 import java.util.UUID
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -420,6 +423,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val top = ranked.take(20)
         val self = ranked.firstOrNull { it.isSelf }
         return if (self != null && self.rank > 20) top + self else top
+    }
+
+    // ---------- updates ----------
+
+    /** Checks GitHub for the newest release. Returns (tag, html url) or null on failure. */
+    suspend fun latestRelease(): Pair<String, String>? = withContext(Dispatchers.IO) {
+        try {
+            val conn = URL("https://api.github.com/repos/SirYadav1/quizforge/releases/latest").openConnection() as java.net.HttpURLConnection
+            conn.setRequestProperty("Accept", "application/vnd.github+json")
+            conn.setRequestProperty("User-Agent", "QuizForge")
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+            if (conn.responseCode !in 200..299) return@withContext null
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            val json = org.json.JSONObject(body)
+            val tag = json.optString("tag_name", "").trim().removePrefix("v")
+            val url = json.optString("html_url", "")
+            if (tag.isEmpty()) null else tag to url
+        } catch (_: Exception) {
+            null
+        }
     }
 
     companion object {
