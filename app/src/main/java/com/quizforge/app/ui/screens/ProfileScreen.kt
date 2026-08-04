@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.quizforge.app.Routes
-import com.quizforge.app.data.Badge
 import com.quizforge.app.data.DIFF_EASY
 import com.quizforge.app.data.DIFF_HARD
 import com.quizforge.app.data.DIFF_MEDIUM
@@ -65,20 +64,20 @@ import com.quizforge.app.ui.theme.Red
 @Composable
 fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
     val profile = vm.profile ?: return
-    var badges by remember { mutableStateOf(listOf<Badge>()) }
     var showEdit by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf(profile.username) }
     var editStatus by remember { mutableStateOf(profile.status) }
     var editBio by remember { mutableStateOf(profile.bio) }
     var selectedAvatar by remember { mutableStateOf(profile.avatarId) }
 
-    val attempts = remember(profile.id) { vm.repo.getAttempts(profile.id) }
-    val quizzesCreated = remember(profile.id) { vm.repo.getQuizzes(profile.id) }
-    val totalTime = remember(profile.id) { vm.repo.totalTimeSpent(profile.id) }
-    val diffStats = remember(profile.id) { vm.repo.difficultyStats(profile.id) }
+    val attempts = vm.profileData?.attempts ?: emptyList()
+    val quizzesCreated = vm.profileData?.quizzes ?: emptyList()
+    val totalTime = vm.profileData?.totalTime ?: 0L
+    val diffStats = vm.profileData?.diffStats ?: emptyMap()
+    val badges = vm.profileData?.badges ?: emptyList()
 
     LaunchedEffect(profile.id) {
-        badges = vm.repo.getBadges(profile.id)
+        vm.ensureProfileLoaded()
     }
 
     val avatarCount = vm.avatarCount()

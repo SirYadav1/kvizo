@@ -80,12 +80,14 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
     var deleteTarget by remember { mutableStateOf<Quiz?>(null) }
 
     LaunchedEffect(profile?.id) {
-        profile?.let { allQuizzes = vm.repo.getQuizzes(it.id) }
+        vm.ensureQuizListLoaded()
+        androidx.compose.runtime.snapshotFlow { vm.quizListData }.collect { d ->
+            if (d != null) {
+                allQuizzes = d.quizzes
+            }
+        }
     }
-    var questionCounts by remember { mutableStateOf(mapOf<String, Int>()) }
-    LaunchedEffect(allQuizzes) {
-        questionCounts = allQuizzes.associate { it.id to vm.repo.getQuestions(it.id).size }
-    }
+    val questionCounts = vm.quizListData?.questionCounts ?: emptyMap()
 
     val categories = allQuizzes.map { it.category }.distinct().sorted()
     var visible = allQuizzes
