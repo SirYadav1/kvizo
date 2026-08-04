@@ -163,10 +163,10 @@ fun QuizForgeRoot(vm: AppViewModel) {
             navController = nav,
             startDestination = Routes.SPLASH,
             modifier = Modifier.padding(padding),
-            enterTransition = { fadeIn(tween(260)) },
-            exitTransition = { fadeOut(tween(200)) },
-            popEnterTransition = { fadeIn(tween(260)) },
-            popExitTransition = { fadeOut(tween(200)) }
+            enterTransition = { fadeIn(tween(120)) },
+            exitTransition = { fadeOut(tween(90)) },
+            popEnterTransition = { fadeIn(tween(120)) },
+            popExitTransition = { fadeOut(tween(90)) }
         ) {
             composable(Routes.SPLASH) { SplashScreen(vm, nav) }
             composable(Routes.SETUP) { ProfileSetupScreen(vm, nav) }
