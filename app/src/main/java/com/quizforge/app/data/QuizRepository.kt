@@ -151,6 +151,17 @@ class QuizRepository(context: Context) {
         return out
     }
 
+    /** Maps quiz id -> title so history/attempt lists can show quiz names in one pass. */
+    fun getQuizTitlesById(): Map<String, String> {
+        val out = linkedMapOf<String, String>()
+        db.query("quizzes", arrayOf("id", "title"), null, null, null, null, null).use { c ->
+            while (c.moveToNext()) {
+                out[c.getString(0)] = c.getString(1) ?: "Unknown quiz"
+            }
+        }
+        return out
+    }
+
     fun updateQuizMeta(quiz: Quiz) {
         val values = ContentValues().apply {
             put("title", quiz.title)
