@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,10 +22,13 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -39,17 +43,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.quizforge.app.Routes
 import com.quizforge.app.data.Badge
+import com.quizforge.app.data.DIFF_EASY
+import com.quizforge.app.data.DIFF_HARD
+import com.quizforge.app.data.DIFF_MEDIUM
+import com.quizforge.app.data.Quiz
 import com.quizforge.app.logic.XpEngine
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.components.SectionTitle
 import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
+import com.quizforge.app.ui.theme.Red
 
 @Composable
 fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
@@ -61,11 +72,21 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
     var editBio by remember { mutableStateOf(profile.bio) }
     var selectedAvatar by remember { mutableStateOf(profile.avatarId) }
 
+    val attempts = remember(profile.id) { vm.repo.getAttempts(profile.id) }
+    val quizzesCreated = remember(profile.id) { vm.repo.getQuizzes(profile.id) }
+    val totalTime = remember(profile.id) { vm.repo.totalTimeSpent(profile.id) }
+    val diffStats = remember(profile.id) { vm.repo.difficultyStats(profile.id) }
+
     LaunchedEffect(profile.id) {
         badges = vm.repo.getBadges(profile.id)
     }
 
     val avatarCount = vm.avatarCount()
+    val answeredTotal = attempts.sumOf { it.totalQuestions }.coerceAtLeast(1)
+    val correctTotal = attempts.sumOf { it.correctAnswers }
+    val avg = correctTotal * 100 / answeredTotal
+    val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
+    val streak = XpEngine.currentStreak(daySet)
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -88,7 +109,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                 Text(profile.username, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
                 if (profile.status.isNotBlank()) Text(profile.status, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (profile.bio.isNotBlank()) {
-                    Text(profile.bio, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(profile.bio, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp), textAlign = TextAlign.Center)
                 }
                 Surface(color = Amber.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp), modifier = Modifier.padding(top = 12.dp)) {
                     Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -96,31 +117,75 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                         Text("  ${profile.xp} XP", color = Amber, fontSize = 12.sp)
                     }
                 }
-                Text(XpEngine.levelTitle(profile.level), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                LinearProgressIndicator(
+                    progress = { XpEngine.levelProgress(profile.xp) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(8.dp),
+                    color = Indigo,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                Text(
+                    XpEngine.levelTitle(profile.level) + if (profile.level < 6) "  •  ${(XpEngine.levelProgress(profile.xp) * 100).toInt()}% to Level ${profile.level + 1}" else "  •  Max level",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
             }
         }
 
         // stats row
-        val attempts = remember(profile.id) { vm.repo.getAttempts(profile.id) }
-        val quizzesCreated = remember(profile.id) { vm.repo.getQuizzes(profile.id).size }
-        val avg = if (attempts.isEmpty()) 0f else attempts.sumOf { it.correctAnswers }.toFloat() / attempts.sumOf { it.totalQuestions }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-            MiniStat("${attempts.size}", "Attempts", Modifier.weight(1f))
-            MiniStat("$quizzesCreated", "Created", Modifier.weight(1f))
-            MiniStat("${(avg * 100).toInt()}%", "Accuracy", Modifier.weight(1f))
+            MiniStat("${attempts.size}", "Attempts", Modifier.weight(1f), Indigo)
+            MiniStat("${quizzesCreated.size}", "Created", Modifier.weight(1f), Green)
+            MiniStat("$avg%", "Accuracy", Modifier.weight(1f), Amber)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+            MiniStat("$streak-day", "Streak", Modifier.weight(1f), Red)
+            MiniStat(formatTime(totalTime), "Time", Modifier.weight(1f), Indigo)
+            MiniStat("${badges.size}", "Badges", Modifier.weight(1f), Amber)
         }
 
-        // settings entry — Settings live under Profile
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 1.dp,
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable { nav.navigate(Routes.SETTINGS) }
-        ) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Settings, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                Text("  Settings", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        // difficulty performance
+        if (attempts.isNotEmpty()) {
+            SectionTitle("Performance by Difficulty")
+            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    listOf(DIFF_EASY, DIFF_MEDIUM, DIFF_HARD).forEach { d ->
+                        val (c, t) = diffStats[d] ?: (0 to 0)
+                        val pct = if (t > 0) c * 100 / t else 0
+                        val color = when (d) {
+                            DIFF_EASY -> Green
+                            DIFF_HARD -> Red
+                            else -> Amber
+                        }
+                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Star, contentDescription = null, tint = color, modifier = Modifier.size(15.dp))
+                            Text("  $d", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            LinearProgressIndicator(
+                                progress = { pct / 100f },
+                                modifier = Modifier.width(90.dp).height(6.dp),
+                                color = color,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            Text("  $pct%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, modifier = Modifier.width(40.dp), textAlign = TextAlign.End)
+                        }
+                    }
+                }
+            }
+        }
+
+        // my quizzes
+        SectionTitle("My Quizzes (${quizzesCreated.size})")
+        if (quizzesCreated.isEmpty()) {
+            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                Text("No quizzes yet — create one from the Create tab!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
+            }
+        } else {
+            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    quizzesCreated.sortedByDescending { it.updatedAt }.take(6).forEach { q ->
+                        QuizRow(q, modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.attempt(q.id)) })
+                    }
+                }
             }
         }
 
@@ -137,10 +202,25 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(18.dp))
                             Text("  ${b.badgeName}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                            Text(com.quizforge.app.logic.XpEngine.dateStr(b.unlockedAt), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(XpEngine.dateStr(b.unlockedAt), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
+            }
+        }
+
+        // settings entry — at the very bottom
+        Spacer(Modifier.height(12.dp))
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.SETTINGS) }
+        ) {
+            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Settings, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                Text("  Settings", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -208,11 +288,38 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
 }
 
 @Composable
-private fun MiniStat(value: String, label: String, modifier: Modifier = Modifier) {
+private fun QuizRow(q: Quiz, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(32.dp).background(Indigo.copy(alpha = 0.12f), CircleShape), contentAlignment = Alignment.Center) {
+            Text("Q", color = Indigo, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        }
+        Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
+            Text(q.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("${q.attemptsCount} attempts  •  ${q.averageScore.toInt()}% avg", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(
+            q.status.capitalize(),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = if (q.status == "draft") Amber else Green
+        )
+    }
+}
+
+@Composable
+private fun MiniStat(value: String, label: String, modifier: Modifier = Modifier, tint: androidx.compose.ui.graphics.Color = Indigo) {
     Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = modifier) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 12.dp)) {
-            Text(value, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Indigo)
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = tint)
             Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
+
+private fun formatTime(totalSeconds: Long): String {
+    val h = totalSeconds / 3600
+    val m = (totalSeconds % 3600) / 60
+    return if (h > 0) "${h}h ${m}m" else "${m}m"
+}
+
+private fun String.capitalize(): String = replaceFirstChar { it.uppercase() }
