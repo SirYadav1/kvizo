@@ -2,11 +2,16 @@ package com.quizforge.app.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,37 +22,53 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,9 +84,12 @@ import com.quizforge.app.data.STATUS_PUBLISHED
 import com.quizforge.app.parsing.ParseException
 import com.quizforge.app.parsing.QuizImporter
 import com.quizforge.app.ui.AppViewModel
+import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
+
+private val Cream = Color(0xFFFBF7EF)
 
 private class EQ(
     var text: String = "",
@@ -102,16 +126,19 @@ private class EQ(
 @Composable
 fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?) {
     val isEdit = quizId != null
+    val dark = isSystemInDarkTheme()
     var title by remember { mutableStateOf("") }
     var category by remember { mutableStateOf(PRESET_CATEGORIES[0]) }
     var difficulty by remember { mutableStateOf(DIFF_EASY) }
-    var tags by remember { mutableStateOf("") }
+    var tags by remember { mutableStateOf(mutableStateListOf<String>()) }
+    var newTag by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var timeLimit by remember { mutableStateOf("") }
+    var timeLimitSec by remember { mutableStateOf(30) }
     var questions by remember { mutableStateOf(mutableListOf<EQ>()) }
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
     var showImportCode by remember { mutableStateOf(false) }
+    var showPreview by remember { mutableStateOf(false) }
 
     if (isEdit) {
         val existing = remember(quizId) { vm.getQuiz(quizId) }
@@ -120,9 +147,9 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
             title = q.title
             category = q.category
             difficulty = q.difficulty
-            tags = q.tags
+            tags = q.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toMutableStateList()
             description = q.description
-            timeLimit = q.timeLimitSeconds?.toString() ?: ""
+            timeLimitSec = q.timeLimitSeconds ?: 30
             questions = vm.getQuestions(quizId).map { EQ.from(it) }.toMutableList()
         }
     }
@@ -153,116 +180,109 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    val addTag: (String) -> Unit = { t ->
+        val v = t.trim().trimEnd { it == ',' }
+        if (v.isNotEmpty() && tags.none { it.equals(v, ignoreCase = true) }) tags.add(v)
+        newTag = ""
+    }
+
+    Column(modifier = Modifier.fillMaxSize().background(if (dark) MaterialTheme.colorScheme.background else Cream)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(if (isEdit) "Edit Quiz" else "Create Quiz", fontWeight = FontWeight.Bold, fontSize = 24.sp)
-                Text("${questions.size} questions", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("(${questions.size} questions)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            OutlinedButton(onClick = {
-                filePicker.launch(arrayOf("text/plain", "text/csv", "application/json", "*/*"))
-            }, shape = RoundedCornerShape(10.dp)) {
-                Icon(Icons.Filled.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("  Import TXT / JSON / CSV", fontSize = 12.sp)
+            IconButton(
+                onClick = { showPreview = true },
+                enabled = title.isNotBlank() || questions.isNotEmpty(),
+            ) {
+                Icon(Icons.Filled.Visibility, contentDescription = "Preview", tint = Indigo)
             }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-        ) {
             OutlinedButton(
-                onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags, description, timeLimit, questions, STATUS_DRAFT) { error = it } },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp)
-            ) { Text("Save Draft") }
-            Button(
-                onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags, description, timeLimit, questions, STATUS_PUBLISHED) { error = it } },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp)
-            ) { Text("Publish") }
+                onClick = { filePicker.launch(arrayOf("text/plain", "text/csv", "application/json", "*/*")) },
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(Icons.Filled.FileUpload, contentDescription = null, modifier = Modifier.size(15.dp))
+                Text("  TXT / JSON", fontSize = 12.sp)
+            }
         }
 
         error?.let {
-            Text(it, color = Red, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp))
+            Text(it, color = Red, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 20.dp))
         }
         info?.let {
-            Text(it, color = Green, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp))
+            Text(it, color = Green, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 20.dp))
         }
 
         LazyColumn(
-            modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.weight(1f),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item { TitleCard(title, { title = it }) }
+
             item {
-                Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        OutlinedTextField(
-                            value = title,
-                            onValueChange = { title = it },
-                            label = { Text("Quiz title *") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box {
-                                var catMenu by remember { mutableStateOf(false) }
-                                OutlinedButton(onClick = { catMenu = true }) {
-                                    Text("Category: $category", maxLines = 1)
-                                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null)
-                                }
-                                DropdownMenu(expanded = catMenu, onDismissRequest = { catMenu = false }) {
-                                    PRESET_CATEGORIES.forEach { c ->
-                                        DropdownMenuItem(text = { Text(c) }, onClick = { category = c; catMenu = false })
-                                    }
-                                }
-                            }
-                            Spacer(Modifier.width(8.dp))
-                            OutlinedTextField(
-                                value = timeLimit,
-                                onValueChange = { timeLimit = it.filter { ch -> ch.isDigit() }.take(5) },
-                                label = { Text("Time limit (s)") },
-                                placeholder = { Text("None") },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.width(130.dp)
-                            )
-                        }
-                        Text("Difficulty", fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf(DIFF_EASY, DIFF_MEDIUM, DIFF_HARD).forEach { d ->
-                                FilterChip(selected = difficulty == d, onClick = { difficulty = d }, label = { Text(d) })
-                            }
-                        }
-                        OutlinedTextField(
-                            value = tags,
-                            onValueChange = { tags = it },
-                            label = { Text("Tags (comma separated)") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
-                        )
-                        OutlinedTextField(
-                            value = description,
-                            onValueChange = { description = it },
-                            label = { Text("Description (shown before the quiz)") },
-                            minLines = 2,
-                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
-                        )
+                DetailsCard(
+                    category = category,
+                    onCategoryChange = { category = it },
+                    timeLimitSec = timeLimitSec,
+                    onTimeLimitChange = { timeLimitSec = it }
+                )
+            }
+
+            item { DifficultyCard(difficulty, { difficulty = it }) }
+
+            item {
+                TagsCard(
+                    tags = tags,
+                    newTag = newTag,
+                    onNewTagChange = { newTag = it },
+                    onAddTag = { addTag(newTag) },
+                    onRemoveTag = { tags.remove(it) }
+                )
+            }
+
+            item { DescriptionCard(description, { description = it }) }
+
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags.joinToString(", "), description, timeLimitSec, questions, STATUS_DRAFT) { error = it } },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Indigo),
+                        border = BorderStroke(1.5.dp, Indigo)
+                    ) {
+                        Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Text("  Save Draft", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    Button(
+                        onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags.joinToString(", "), description, timeLimitSec, questions, STATUS_PUBLISHED) { error = it } },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Indigo)
+                    ) {
+                        Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Text("  Publish Quiz", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
 
             item {
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Questions", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Questions (${questions.size})", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
                     TextButton(onClick = { questions = (questions + EQ()).toMutableList() }) {
                         Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Text("  Add question")
+                        Text("  Add Question")
                     }
                 }
+            }
+
+            if (questions.isEmpty()) {
+                item { EmptyStateCard(onAdd = { questions = (questions + EQ()).toMutableList() }) }
             }
 
             itemsIndexed(questions, key = { _, eq -> System.identityHashCode(eq) }) { idx, eq ->
@@ -278,6 +298,19 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
         }
     }
 
+    if (showPreview) {
+        PreviewDialog(
+            title = title,
+            category = category,
+            difficulty = difficulty,
+            tags = tags,
+            description = description,
+            timeLimitSec = timeLimitSec,
+            questions = questions,
+            onDismiss = { showPreview = false }
+        )
+    }
+
     if (showImportCode) {
         ImportCodeDialog(
             onDismiss = { showImportCode = false },
@@ -286,15 +319,293 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                 title = shared.title
                 category = shared.category
                 difficulty = shared.difficulty
-                tags = shared.tags
+                tags = shared.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toMutableStateList()
                 description = shared.description
-                timeLimit = shared.timeLimitSeconds?.toString() ?: ""
+                timeLimitSec = shared.timeLimitSeconds ?: 30
                 questions = shared.questions.map { EQ.from(it) }.toMutableList()
                 info = "Quiz loaded from code (${shared.questions.size} questions)"
             },
             onError = { error = it }
         )
     }
+}
+
+@Composable
+private fun CardFrame(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, Color(0xFFEDE8F5)),
+        shadowElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.padding(14.dp), content = content)
+    }
+}
+
+@Composable
+private fun CardLabel(text: String, modifier: Modifier = Modifier) {
+    Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier)
+}
+
+@Composable
+private fun TitleCard(title: String, onTitleChange: (String) -> Unit) {
+    CardFrame {
+        OutlinedTextField(
+            value = title,
+            onValueChange = onTitleChange,
+            label = { Text("Quiz title *") },
+            placeholder = { Text("e.g. General Knowledge Master") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun DetailsCard(category: String, onCategoryChange: (String) -> Unit, timeLimitSec: Int, onTimeLimitChange: (Int) -> Unit) {
+    CardFrame {
+        CardLabel("Details")
+        Spacer(Modifier.height(10.dp))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box {
+                var catMenu by remember { mutableStateOf(false) }
+                OutlinedButton(
+                    onClick = { catMenu = true },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(category, maxLines = 1, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null)
+                }
+                DropdownMenu(expanded = catMenu, onDismissRequest = { catMenu = false }) {
+                    PRESET_CATEGORIES.forEach { c ->
+                        DropdownMenuItem(text = { Text(c) }, onClick = { onCategoryChange(c); catMenu = false })
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            CardLabel("Time limit", modifier = Modifier.weight(1f))
+            Text(
+                if (timeLimitSec <= 0) "None" else "[ $timeLimitSec sec ]",
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = Indigo
+            )
+        }
+        Slider(
+            value = timeLimitSec.toFloat(),
+            onValueChange = { onTimeLimitChange(it.toInt()) },
+            valueRange = 0f..120f
+        )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("None", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("120 sec", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private fun difficultyColor(d: String): Color = when (d) {
+    DIFF_EASY -> Green
+    DIFF_HARD -> Red
+    else -> Amber
+}
+
+@Composable
+private fun DifficultyCard(current: String, onSelect: (String) -> Unit) {
+    CardFrame {
+        CardLabel("Difficulty")
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(DIFF_EASY, DIFF_MEDIUM, DIFF_HARD).forEach { d ->
+                val c = difficultyColor(d)
+                val selected = current == d
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (selected) c.copy(alpha = 0.13f) else Color(0xFFFAF8F3),
+                    border = BorderStroke(1.dp, if (selected) c else Color(0xFFEDE8F5)),
+                    modifier = Modifier.weight(1f).clickable { onSelect(d) }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.Star, contentDescription = null, tint = c, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(d, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = if (selected) c else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TagsCard(
+    tags: List<String>,
+    newTag: String,
+    onNewTagChange: (String) -> Unit,
+    onAddTag: () -> Unit,
+    onRemoveTag: (String) -> Unit
+) {
+    CardFrame {
+        CardLabel("Tags (optional)")
+        Spacer(Modifier.height(10.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            tags.forEach { t ->
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Indigo.copy(alpha = 0.10f),
+                    border = BorderStroke(1.dp, Indigo.copy(alpha = 0.35f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(start = 12.dp, end = 6.dp, top = 5.dp, bottom = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(t, fontSize = 12.sp, color = Indigo)
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = "Remove $t",
+                            tint = Indigo,
+                            modifier = Modifier.size(16.dp).clip(CircleShape).clickable { onRemoveTag(t) }
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = newTag,
+            onValueChange = onNewTagChange,
+            label = { Text("Add tag") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onAddTag() }),
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = "Add tag",
+                    tint = Indigo,
+                    modifier = Modifier.clip(CircleShape).clickable { onAddTag() }
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun DescriptionCard(description: String, onChange: (String) -> Unit) {
+    CardFrame {
+        CardLabel("Description")
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = description,
+            onValueChange = onChange,
+            placeholder = { Text("Tell players what this quiz is about, how hard it is, what they'll be tested on...") },
+            minLines = 3,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun EmptyStateCard(onAdd: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, Color(0xFFEDE8F5))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier.size(64.dp).background(Indigo.copy(alpha = 0.10f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.EditNote, contentDescription = null, tint = Indigo, modifier = Modifier.size(34.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            Text("No questions yet", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Add your first question to start building this quiz",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(14.dp))
+            Button(
+                onClick = onAdd,
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Indigo)
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(17.dp))
+                Text("  Add First Question", fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviewDialog(
+    title: String,
+    category: String,
+    difficulty: String,
+    tags: List<String>,
+    description: String,
+    timeLimitSec: Int,
+    questions: List<EQ>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Preview", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+        text = {
+            LazyColumn(modifier = Modifier.height(360.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                item {
+                    Text(if (title.isBlank()) "Untitled quiz" else title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(
+                        "$category  •  $difficulty" + if (timeLimitSec > 0) "  •  $timeLimitSec sec" else "",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (tags.isNotEmpty()) {
+                        Text(tags.joinToString(" · "), fontSize = 12.sp, color = difficultyColor(difficulty))
+                    }
+                    if (description.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(description, fontSize = 13.sp)
+                    }
+                }
+                if (questions.isEmpty()) {
+                    item { Text("No questions yet.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
+                itemsIndexed(questions) { idx, q ->
+                    Column {
+                        HorizontalDivider()
+                        Spacer(Modifier.height(8.dp))
+                        Text("Q${idx + 1}. ${if (q.text.isBlank()) "(empty question)" else q.text}", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Spacer(Modifier.height(6.dp))
+                        val letters = listOf("a", "b", "c", "d")
+                        q.opts.forEachIndexed { oi, opt ->
+                            Text(
+                                "${letters[oi]}. ${if (opt.isBlank()) "(empty)" else opt}",
+                                fontSize = 12.sp,
+                                color = if (oi == q.correct) Green else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+    )
 }
 
 @Composable
@@ -312,7 +623,7 @@ private fun saveQuiz(
     difficulty: String,
     tags: String,
     description: String,
-    timeLimit: String,
+    timeLimitSec: Int,
     questions: List<EQ>,
     status: String,
     onError: (String) -> Unit
@@ -325,7 +636,7 @@ private fun saveQuiz(
         if (eq.opts.any { it.isBlank() }) { onError("Question ${i + 1}: all options must be filled"); return }
         qs.add(eq.toQuestion("", i))
     }
-    val time = timeLimit.toIntOrNull()?.takeIf { it > 0 }
+    val time = timeLimitSec.takeIf { it > 0 }
     if (isEdit) {
         val existing = vm.getQuiz(quizId!!) ?: return
         vm.updateQuiz(
@@ -352,7 +663,12 @@ private fun saveQuiz(
 
 @Composable
 private fun QuestionEditor(index: Int, eq: EQ, onDelete: () -> Unit, onMoveUp: () -> Unit, onMoveDown: () -> Unit, onChange: () -> Unit) {
-    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, Color(0xFFEDE8F5)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -376,7 +692,6 @@ private fun QuestionEditor(index: Int, eq: EQ, onDelete: () -> Unit, onMoveUp: (
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 minLines = 2
             )
-            // T/F toggle
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                 Text("True/False", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(6.dp))
