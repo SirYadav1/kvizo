@@ -56,13 +56,15 @@ import com.quizforge.app.util.Exporter
 @Composable
 fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
     val profile = vm.profile
-    var attempts by remember { mutableStateOf(listOf<Attempt>()) }
     var range by remember { mutableStateOf("All Time") }
     var exportMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(profile?.id) {
-        profile?.let { attempts = vm.repo.getAttempts(it.id) }
+        vm.ensureStatsLoaded()
     }
+
+    val attempts = vm.statsData?.attempts ?: emptyList()
+    val quizCategories = vm.statsData?.categories ?: emptyMap()
 
     val filtered = when (range) {
         "This Week" -> attempts.filter { it.attemptedAt >= System.currentTimeMillis() - 7L * 86400000 }
@@ -87,7 +89,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
     val categoryStats = remember(filtered) {
         val map = linkedMapOf<String, Pair<Int, Int>>()
         filtered.forEach { a ->
-            val cat = vm.repo.getQuizById(a.quizId)?.category ?: "Other"
+            val cat = quizCategories[a.quizId] ?: "Other"
             val e = map[cat] ?: (0 to 0)
             map[cat] = (e.first + a.correctAnswers) to (e.second + a.totalQuestions)
         }

@@ -11,7 +11,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.quizforge.app.data.AppSettings
+import com.quizforge.app.data.Attempt
 import com.quizforge.app.data.AttemptResult
+import com.quizforge.app.data.Badge
 import com.quizforge.app.data.LeaderboardEntry
 import com.quizforge.app.data.Profile
 import com.quizforge.app.data.Quiz
@@ -19,6 +21,7 @@ import com.quizforge.app.data.Question
 import com.quizforge.app.data.QuizRepository
 import com.quizforge.app.data.RemoteApi
 import com.quizforge.app.data.SettingsRepo
+import com.quizforge.app.data.STATUS_DRAFT
 import com.quizforge.app.data.STATUS_PUBLISHED
 import com.quizforge.app.logic.XpEngine
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +31,43 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
 import java.util.UUID
+
+/** Cached snapshot of everything the Home tab renders. */
+class HomeData(
+    val todayCount: Int,
+    val totalAttempts: Int,
+    val quizzes: List<Quiz>,
+    val questionCounts: Map<String, Int>,
+    val totalTime: Long,
+    val streak: Int,
+    val recentBadges: List<String>,
+    val weeklyAccuracy: Float,
+    val weakAreas: List<String>
+)
+
+/** Cached snapshot of everything the Profile tab renders. */
+class ProfileData(
+    val attempts: List<Attempt>,
+    val quizzes: List<Quiz>,
+    val totalTime: Long,
+    val diffStats: Map<String, Pair<Int, Int>>,
+    val badges: List<Badge>
+)
+
+/** Cached snapshot of everything the Stats tab renders. */
+class StatsData(
+    val attempts: List<Attempt>,
+    val categories: Map<String, String>
+)
+
+/** Cached snapshot of everything the Quizzes tab renders. */
+class QuizListData(
+    val quizzes: List<Quiz>,
+    val questionCounts: Map<String, Int>
+)
+
+/** Runs a DB read off the main thread and returns its result. */
+private suspend fun<T> ioLoad(block: () -> T): T = withContext(Dispatchers.IO) { block() }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -43,6 +83,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // For dashboard recomposition we re-read these on each navigation refresh.
     var quizzes by mutableStateOf<List<Quiz>>(emptyList())
         private set
+
+    /** Cached tab data — loaded off the main thread so tab switches stay instant. */
+    var homeData by mutableStateOf<HomeData?>(null)
+        private set
+    var profileData by mutableStateOf<ProfileData?>(null)
+        private set
+    var statsData by mutableStateOf<StatsData?>(null)
+        private set
+    var quizListData by mutableStateOf<QuizListData?>(null)
+        private set
+
+    /** Flags so repeated calls don't spawn duplicate loads for the same profile. */
+    private var loadedHomeFor = -1L
+    private var loadedProfileFor = -1L
+    private var loadedStatsFor = -1L
+    private var loadedQuizzesFor = -1L
 
     /** In-app notification banner shown when new community quizzes are available. */
     var syncNotice by mutableStateOf<String?>(null)
@@ -92,6 +148,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 else "${added.size} new community quizzes added!"
             }
             refreshQuizzes()
+            invalidateData()
         } catch (_: Exception) {
             // offline — keep existing data
         }
@@ -109,6 +166,116 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         profile?.let { quizzes = repo.getQuizzes(it.id) }
     }
 
+    // ---------- async tab data (off main thread) ----------
+
+    private fun loadHome(pid: Long) = viewModelScope.launch {
+        val data = ioLoad {
+            val attempts = repo.getAttempts(pid)
+            val q = (repo.getQuizzes(pid, STATUS_PUBLISHED) + repo.getQuizzes(pid, STATUS_DRAFT))
+                .sortedByDescending { it.updatedAt }
+            val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
+            val weekAgo = System.currentTimeMillis() - 7L * 86400000
+            val weekAttempts = attempts.filter { it.attemptedAt >= weekAgo }
+            HomeData(
+                todayCount = repo.getAttemptCountToday(pid),
+                totalAttempts = attempts.size,
+                quizzes = q,
+                questionCounts = q.associate { it.id to repo.getQuestions(it.id).size },
+                totalTime = repo.totalTimeSpent(pid),
+                streak = XpEngine.currentStreak(daySet),
+                recentBadges = repo.getBadges(pid).takeLast(3).map { it.badgeName },
+                weeklyAccuracy = if (weekAttempts.isEmpty()) 0f
+                else weekAttempts.sumOf { it.correctAnswers }.toFloat() / weekAttempts.sumOf { it.totalQuestions }.coerceAtLeast(1),
+                weakAreas = repo.categoryAccuracy(pid)
+                    .filter { (c, p) -> p.second >= 3 && p.first * 100 / p.second < 60 }
+                    .map { it.key }
+                    .take(3)
+            )
+        }
+        homeData = data
+    }
+
+    private fun loadProfile(pid: Long) = viewModelScope.launch {
+        val data = ioLoad {
+            ProfileData(
+                attempts = repo.getAttempts(pid),
+                quizzes = repo.getQuizzes(pid),
+                totalTime = repo.totalTimeSpent(pid),
+                diffStats = repo.difficultyStats(pid),
+                badges = repo.getBadges(pid)
+            )
+        }
+        profileData = data
+    }
+
+    private fun loadStats(pid: Long) = viewModelScope.launch {
+        val data = ioLoad {
+            StatsData(
+                attempts = repo.getAttempts(pid),
+                categories = repo.getQuizCategoriesById()
+            )
+        }
+        statsData = data
+    }
+
+    private fun loadQuizList(pid: Long) = viewModelScope.launch {
+        val data = ioLoad {
+            val q = repo.getQuizzes(pid)
+            QuizListData(
+                quizzes = q,
+                questionCounts = q.associate { it.id to repo.getQuestions(it.id).size }
+            )
+        }
+        quizListData = data
+    }
+
+    /** Ensure Home cache is loaded (fast on repeat visits). */
+    fun ensureHomeLoaded() {
+        profile?.let { p ->
+            if (homeData == null || loadedHomeFor != p.id) {
+                loadedHomeFor = p.id
+                loadHome(p.id)
+            }
+        }
+    }
+
+    /** Ensure Profile cache is loaded. */
+    fun ensureProfileLoaded() {
+        profile?.let { p ->
+            if (profileData == null || loadedProfileFor != p.id) {
+                loadedProfileFor = p.id
+                loadProfile(p.id)
+            }
+        }
+    }
+
+    /** Ensure Stats cache is loaded. */
+    fun ensureStatsLoaded() {
+        profile?.let { p ->
+            if (statsData == null || loadedStatsFor != p.id) {
+                loadedStatsFor = p.id
+                loadStats(p.id)
+            }
+        }
+    }
+
+    fun ensureQuizListLoaded() {
+        profile?.let { p ->
+            if (quizListData == null || loadedQuizzesFor != p.id) {
+                loadedQuizzesFor = p.id
+                loadQuizList(p.id)
+            }
+        }
+    }
+
+    /** Invalidate caches so the next tab visit reloads fresh data. */
+    fun invalidateData() {
+        homeData = null
+        profileData = null
+        statsData = null
+        quizListData = null
+    }
+
     // ---------- settings ----------
 
     fun setThemeMode(mode: String) = viewModelScope.launch { settingsRepo.setThemeMode(mode) }
@@ -123,6 +290,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val p = repo.createProfile(username, avatarId, status, bio)
         profile = p
         refreshQuizzes()
+        invalidateData()
         return p
     }
 
@@ -131,6 +299,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val np = p.copy(bio = bio, status = status)
             repo.updateProfile(np)
             profile = np
+            invalidateData()
         }
     }
 
@@ -139,6 +308,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val np = p.copy(username = name)
             repo.updateProfile(np)
             profile = np
+            invalidateData()
         }
     }
 
@@ -146,6 +316,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.switchProfile(id)
         refreshProfile()
         refreshQuizzes()
+        invalidateData()
     }
 
     fun deleteProfile(id: Long) {
@@ -161,6 +332,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val np = p.copy(username = username, status = status, bio = bio, avatarId = avatarId)
             repo.updateProfile(np)
             profile = np
+            invalidateData()
         }
     }
 
@@ -172,6 +344,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.resetAll()
         profile = null
         quizzes = emptyList()
+        invalidateData()
     }
 
     // ---------- quiz CRUD ----------
@@ -211,6 +384,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.firstQuizBonus(pid)
         refreshProfile()
         refreshQuizzes()
+        invalidateData()
         return quiz
     }
 
@@ -220,6 +394,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             q.copy(id = if (q.id.isEmpty()) UUID.randomUUID().toString() else q.id, quizId = quiz.id, position = i)
         })
         refreshQuizzes()
+        invalidateData()
     }
 
     fun deleteQuiz(id: String): Boolean {
@@ -245,6 +420,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         repo.insertQuestions(qs)
         refreshQuizzes()
+        invalidateData()
     }
 
     fun importSharedQuiz(shared: com.quizforge.app.util.ShareCodec.SharedQuiz): Quiz {
@@ -272,6 +448,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.firstQuizBonus(pid)
         refreshProfile()
         refreshQuizzes()
+        invalidateData()
         return quiz
     }
 
@@ -291,6 +468,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         } else result
         profile = repo.getProfileById(p.id)
         refreshQuizzes()
+        invalidateData()
         return finalResult
     }
 

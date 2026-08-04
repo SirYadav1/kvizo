@@ -76,26 +76,20 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     var questionCounts by remember { mutableStateOf(mapOf<String, Int>()) }
 
     LaunchedEffect(profile.id) {
-        val attempts = vm.repo.getAttempts(profile.id)
-        todayCount = vm.repo.getAttemptCountToday(profile.id)
-        totalAttempts = attempts.size
-        quizzes = vm.repo.getQuizzes(profile.id, "published") + vm.repo.getQuizzes(profile.id, "draft")
-        quizzes = quizzes.sortedByDescending { it.updatedAt }
-        questionCounts = quizzes.associate { it.id to vm.repo.getQuestions(it.id).size }
-        totalTime = vm.repo.totalTimeSpent(profile.id)
-        val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
-        streak = XpEngine.currentStreak(daySet)
-        recentBadges = vm.repo.getBadges(profile.id).takeLast(3).map { it.badgeName }
-        // weekly accuracy: last 7 days
-        val weekAgo = System.currentTimeMillis() - 7L * 86400000
-        val weekAttempts = attempts.filter { it.attemptedAt >= weekAgo }
-        weeklyAccuracy = if (weekAttempts.isEmpty()) 0f
-        else weekAttempts.sumOf { it.correctAnswers }.toFloat() / weekAttempts.sumOf { it.totalQuestions }.coerceAtLeast(1)
-        // weak areas: categories below 60%
-        weakAreas = vm.repo.categoryAccuracy(profile.id)
-            .filter { (c, p) -> p.second >= 3 && p.first * 100 / p.second < 60 }
-            .map { it.key }
-            .take(3)
+        vm.ensureHomeLoaded()
+        androidx.compose.runtime.snapshotFlow { vm.homeData }.collect { d ->
+            if (d != null) {
+                todayCount = d.todayCount
+                totalAttempts = d.totalAttempts
+                quizzes = d.quizzes
+                questionCounts = d.questionCounts
+                totalTime = d.totalTime
+                streak = d.streak
+                recentBadges = d.recentBadges
+                weeklyAccuracy = d.weeklyAccuracy
+                weakAreas = d.weakAreas
+            }
+        }
     }
 
     LazyColumn(
