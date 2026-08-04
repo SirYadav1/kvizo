@@ -12,8 +12,8 @@ android {
         applicationId = "com.quizforge.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.2.2"
+        versionCode = 7
+        versionName = "1.2.3"
     }
 
     buildTypes {

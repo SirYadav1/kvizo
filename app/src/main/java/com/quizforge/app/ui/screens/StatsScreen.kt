@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Timer
@@ -58,6 +59,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
     val profile = vm.profile
     var range by remember { mutableStateOf("All Time") }
     var exportMenu by remember { mutableStateOf(false) }
+    var selectedDate by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(profile?.id) {
         vm.ensureStatsLoaded()
@@ -65,6 +67,32 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
     val attempts = vm.statsData?.attempts ?: emptyList()
     val quizCategories = vm.statsData?.categories ?: emptyMap()
+    val quizTitles = vm.statsData?.quizTitles ?: emptyMap()
+
+    // dates that have attempts, newest first
+    val availableDates = remember(attempts) {
+        attempts.map { com.quizforge.app.logic.XpEngine.dateStr(it.attemptedAt) }.distinct().sortedDescending()
+    }
+    val effectiveDate = selectedDate ?: availableDates.firstOrNull()
+
+    // history: attempts grouped by quiz for the selected date
+    val dayAttempts = remember(attempts, effectiveDate) {
+        attempts.filter { com.quizforge.app.logic.XpEngine.dateStr(it.attemptedAt) == effectiveDate }
+    }
+    val historyByQuiz = remember(dayAttempts) {
+        dayAttempts.groupBy { it.quizId }.map { (qid, list) ->
+            val sorted = list.sortedBy { it.attemptedAt }
+            Triple(
+                qid,
+                list.size,
+                Triple(
+                    sorted.maxOf { it.correctAnswers * 100 / it.totalQuestions.coerceAtLeast(1) },
+                    sorted.sumOf { it.timeTakenSeconds.toLong() },
+                    sorted
+                )
+            )
+        }.sortedByDescending { it.second }
+    }
 
     val filtered = when (range) {
         "This Week" -> attempts.filter { it.attemptedAt >= System.currentTimeMillis() - 7L * 86400000 }
@@ -212,6 +240,64 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
                     }
                 }
             }
+
+            // history by date
+            item {
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        SectionTitle("History by Date")
+                        if (availableDates.isEmpty()) {
+                            Text("No attempts yet — take a quiz to see history here!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                        } else {
+                            Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box {
+                                    var dateMenu by remember { mutableStateOf(false) }
+                                    OutlinedButton(onClick = { dateMenu = true }, shape = RoundedCornerShape(10.dp)) {
+                                        Text(formatDateStr(effectiveDate ?: ""), fontSize = 12.sp)
+                                        Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null)
+                                    }
+                                    DropdownMenu(expanded = dateMenu, onDismissRequest = { dateMenu = false }) {
+                                        availableDates.forEach { d ->
+                                            val count = attempts.count { com.quizforge.app.logic.XpEngine.dateStr(it.attemptedAt) == d }
+                                            DropdownMenuItem(text = { Text("${formatDateStr(d)}  •  $count attempts") }, onClick = { selectedDate = d; dateMenu = false })
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    "${dayAttempts.size} attempts  •  ${historyByQuiz.size} quizzes",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Indigo
+                                )
+                            }
+
+                            if (historyByQuiz.isEmpty()) {
+                                Text("Nothing on this day.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+                            } else {
+                                historyByQuiz.forEach { (qid, count, info) ->
+                                    val (bestPct, totalSecs, sortedAttempts) = info
+                                    val title = quizTitles[qid] ?: "Unknown quiz"
+                                    Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Box(modifier = Modifier.size(34.dp).background(Indigo.copy(alpha = 0.12f), RoundedCornerShape(9.dp)), contentAlignment = Alignment.Center) {
+                                            Text("$count", fontWeight = FontWeight.Bold, color = Indigo, fontSize = 13.sp)
+                                        }
+                                        Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
+                                            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                            Text(
+                                                "$count ${if (count == 1) "attempt" else "attempts"}  •  best $bestPct%  •  ${formatHm(totalSecs)}",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Text("${sortedAttempts.first().correctAnswers}/${sortedAttempts.first().totalQuestions}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Green)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             item { Spacer(Modifier.height(16.dp)) }
         }
     }
@@ -230,4 +316,14 @@ private fun formatHm(seconds: Long): String {
     val h = seconds / 3600
     val m = (seconds % 3600) / 60
     return if (h > 0) "${h}h ${m}m" else "${m}m"
+}
+
+private fun formatDateStr(date: String): String {
+    if (date.isBlank()) return ""
+    return try {
+        java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.US)
+            .format(java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).parse(date)!!)
+    } catch (_: Exception) {
+        date
+    }
 }

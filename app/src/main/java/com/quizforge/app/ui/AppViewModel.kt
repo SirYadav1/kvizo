@@ -57,7 +57,8 @@ class ProfileData(
 /** Cached snapshot of everything the Stats tab renders. */
 class StatsData(
     val attempts: List<Attempt>,
-    val categories: Map<String, String>
+    val categories: Map<String, String>,
+    val quizTitles: Map<String, String>
 )
 
 /** Cached snapshot of everything the Quizzes tab renders. */
@@ -212,7 +213,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val data = ioLoad {
             StatsData(
                 attempts = repo.getAttempts(pid),
-                categories = repo.getQuizCategoriesById()
+                categories = repo.getQuizCategoriesById(),
+                quizTitles = repo.getQuizTitlesById()
             )
         }
         statsData = data
