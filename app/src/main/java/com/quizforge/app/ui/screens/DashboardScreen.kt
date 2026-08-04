@@ -102,20 +102,13 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // header: title, profile avatar circle, settings
+        // header: title, stats icon, settings
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Text("QuizForge", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Indigo.copy(alpha = 0.15f), CircleShape)
-                        .clickable { nav.navigate(Routes.PROFILE) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(vm.avatarEmoji(profile.avatarId), fontSize = 22.sp)
+                IconButton(onClick = { nav.navigate(Routes.STATS) }) {
+                    Icon(Icons.Filled.BarChart, contentDescription = "Statistics", tint = Indigo)
                 }
-                Spacer(Modifier.width(6.dp))
                 IconButton(onClick = { nav.navigate(Routes.SETTINGS) }) {
                     Icon(Icons.Filled.Settings, contentDescription = "Settings")
                 }

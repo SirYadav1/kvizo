@@ -12,11 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
@@ -106,7 +106,7 @@ fun QuizForgeRoot(vm: AppViewModel) {
         Tab(Routes.QUIZZES, "Quizzes", Icons.Filled.List),
         Tab(Routes.BUILDER, "Create", Icons.Filled.AddCircle),
         Tab(Routes.LEADERBOARD, "Leaderboard", Icons.Filled.EmojiEvents),
-        Tab(Routes.STATS, "Stats", Icons.Filled.BarChart),
+        Tab(Routes.PROFILE, "Profile", Icons.Filled.Person),
     )
     val showBottomBar = route in tabs.map { it.route } || route?.startsWith(Routes.BUILDER) == true
 
