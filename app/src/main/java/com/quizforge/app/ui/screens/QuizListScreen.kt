@@ -110,7 +110,13 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        Text("My Quizzes", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.padding(top = 12.dp, bottom = 8.dp))
+        Text(
+            "My Quizzes",
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp,
+            letterSpacing = (-0.3).sp,
+            modifier = Modifier.padding(top = 14.dp, bottom = 10.dp)
+        )
 
         OutlinedTextField(
             value = query,
@@ -118,6 +124,7 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
             placeholder = { Text("Search by title, category or tag") },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             singleLine = true,
+            shape = RoundedCornerShape(14.dp),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -242,18 +249,19 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
     var menuOpen by remember { mutableStateOf(false) }
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 1.dp,
+        shadowElevation = 0.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
         modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.attempt(quiz.id)) }
     ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     Spacer(Modifier.size(6.dp))
                     if (quiz.isRemote) {
-                        Surface(color = Green.copy(alpha = 0.15f), shape = RoundedCornerShape(6.dp)) {
+                        Surface(color = Green.copy(alpha = 0.13f), shape = RoundedCornerShape(6.dp)) {
                             Text(
                                 "Community",
                                 color = Green,

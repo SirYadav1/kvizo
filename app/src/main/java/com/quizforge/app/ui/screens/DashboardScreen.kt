@@ -58,6 +58,7 @@ import com.quizforge.app.ui.components.StatCard
 import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
+import com.quizforge.app.ui.theme.IndigoDark
 
 @Composable
 fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
@@ -111,31 +112,49 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
 
         // profile card
         item {
-            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            Surface(
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 0.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            modifier = Modifier.size(52.dp).background(Indigo.copy(alpha = 0.15f), CircleShape),
+                            modifier = Modifier
+                                .size(54.dp)
+                                .background(
+                                    androidx.compose.ui.graphics.Brush.linearGradient(
+                                        listOf(Indigo, IndigoDark)
+                                    ),
+                                    CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(vm.avatarEmoji(profile.avatarId), fontSize = 26.sp)
+                            Text(vm.avatarEmoji(profile.avatarId), fontSize = 25.sp)
                         }
-                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text(profile.username, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
+                            Text(profile.username, fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = (-0.2).sp)
                             if (profile.status.isNotBlank()) Text(profile.status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Surface(color = Amber.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp)) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
-                                Text("LVL ${profile.level}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Amber)
-                                Text("${profile.xp} XP", fontSize = 10.sp, color = Amber)
+                        Surface(
+                            color = Indigo.copy(alpha = 0.10f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Indigo.copy(alpha = 0.25f))
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)) {
+                                Text("LVL ${profile.level}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Indigo)
+                                Text("${profile.xp} XP", fontSize = 10.sp, letterSpacing = 0.3.sp, color = Indigo)
                             }
                         }
                     }
                     LinearProgressIndicator(
                         progress = { XpEngine.levelProgress(profile.xp) },
-                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(8.dp),
                         color = Indigo,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                     )
                     Text(
                         XpEngine.levelTitle(profile.level) + if (profile.level < 6) "  •  ${(XpEngine.levelProgress(profile.xp) * 100).toInt()}% to Level ${profile.level + 1}" else "  •  Max level",
@@ -322,13 +341,16 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
 @Composable
 private fun QuickAction(icon: ImageVector, label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = color.copy(alpha = 0.12f),
-        modifier = modifier.clickable(onClick = onClick)
+        shape = RoundedCornerShape(16.dp),
+        color = color.copy(alpha = 0.10f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.18f)),
+        modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 14.dp)) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = color, modifier = Modifier.padding(top = 4.dp), maxLines = 1)
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp)) {
+            Box(modifier = Modifier.size(34.dp).background(color.copy(alpha = 0.16f), CircleShape), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(19.dp))
+            }
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = color, modifier = Modifier.padding(top = 7.dp), maxLines = 1)
         }
     }
 }

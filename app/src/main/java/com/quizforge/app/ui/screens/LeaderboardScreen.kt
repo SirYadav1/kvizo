@@ -58,7 +58,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
             Box(modifier = Modifier.size(34.dp).background(Amber.copy(alpha = 0.15f), CircleShape), contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(18.dp))
             }
-            Text("  Leaderboard", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
+            Text("  Leaderboard", fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp, modifier = Modifier.weight(1f))
         }
         Text(
             if (onlineMode) "Global rankings • live with login" else "Top quiz masters on this device",
@@ -100,22 +100,26 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
 
 @Composable
 private fun LeaderRow(vm: AppViewModel, e: LeaderboardEntry) {
+    val isMedal = e.rank <= 3
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (e.isSelf) Indigo.copy(alpha = 0.10f) else MaterialTheme.colorScheme.surface,
-        shadowElevation = if (e.isSelf) 2.dp else 1.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (e.isSelf) Indigo.copy(alpha = 0.30f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        ),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(rankLabel(e.rank), fontWeight = FontWeight.Black, fontSize = 15.sp, color = rankColor(e.rank), modifier = Modifier.size(34.dp))
-            Box(modifier = Modifier.size(36.dp).background(Indigo.copy(alpha = 0.14f), CircleShape), contentAlignment = Alignment.Center) {
+        Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(rankLabel(e.rank), fontWeight = FontWeight.Black, fontSize = if (isMedal) 20.sp else 15.sp, color = rankColor(e.rank), modifier = Modifier.size(36.dp))
+            Box(modifier = Modifier.size(38.dp).background(Indigo.copy(alpha = 0.14f), CircleShape), contentAlignment = Alignment.Center) {
                 Text(vm.avatarEmoji(e.avatarId), fontSize = 18.sp)
             }
             Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(e.username, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1)
                     if (e.isSelf) {
-                        Surface(color = Green.copy(alpha = 0.15f), shape = RoundedCornerShape(6.dp), modifier = Modifier.padding(start = 6.dp)) {
+                        Surface(color = Green.copy(alpha = 0.13f), shape = RoundedCornerShape(6.dp), modifier = Modifier.padding(start = 6.dp)) {
                             Text(" YOU", color = Green, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                         }
                     }

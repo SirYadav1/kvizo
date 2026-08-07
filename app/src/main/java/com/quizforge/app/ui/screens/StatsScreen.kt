@@ -126,7 +126,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Statistics", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
+            Text("Statistics", fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp, modifier = Modifier.weight(1f))
             var rangeMenu by remember { mutableStateOf(false) }
             OutlinedButton(onClick = { rangeMenu = true }, shape = RoundedCornerShape(10.dp)) {
                 Text(range, fontSize = 12.sp)

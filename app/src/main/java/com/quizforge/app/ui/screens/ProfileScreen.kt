@@ -92,7 +92,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             IconButton(onClick = { nav.popBackStack() }) {
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
             }
-            Text("My Profile", fontWeight = FontWeight.Bold, fontSize = 22.sp)
+            Text("My Profile", fontWeight = FontWeight.Bold, fontSize = 22.sp, letterSpacing = (-0.3).sp)
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { showEdit = true }) {
                 Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = Indigo)

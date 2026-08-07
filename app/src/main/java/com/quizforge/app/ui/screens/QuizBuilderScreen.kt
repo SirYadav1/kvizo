@@ -5,7 +5,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,8 +88,6 @@ import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
 
-private val Cream = Color(0xFFFBF7EF)
-
 private class EQ(
     var text: String = "",
     var opts: MutableList<String> = mutableListOf("", "", "", ""),
@@ -126,7 +123,6 @@ private class EQ(
 @Composable
 fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?) {
     val isEdit = quizId != null
-    val dark = isSystemInDarkTheme()
     var title by remember { mutableStateOf("") }
     var category by remember { mutableStateOf(PRESET_CATEGORIES[0]) }
     var difficulty by remember { mutableStateOf(DIFF_EASY) }
@@ -186,7 +182,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
         newTag = ""
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(if (dark) MaterialTheme.colorScheme.background else Cream)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -336,10 +332,10 @@ private fun CardFrame(modifier: Modifier = Modifier, content: @Composable Column
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, Color(0xFFEDE8F5)),
-        shadowElevation = 1.dp
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+        shadowElevation = 0.dp
     ) {
-        Column(modifier = Modifier.padding(14.dp), content = content)
+        Column(modifier = Modifier.padding(16.dp), content = content)
     }
 }
 
@@ -423,8 +419,8 @@ private fun DifficultyCard(current: String, onSelect: (String) -> Unit) {
                 val selected = current == d
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (selected) c.copy(alpha = 0.13f) else Color(0xFFFAF8F3),
-                    border = BorderStroke(1.dp, if (selected) c else Color(0xFFEDE8F5)),
+                    color = if (selected) c.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, if (selected) c.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
                     modifier = Modifier.weight(1f).clickable { onSelect(d) }
                 ) {
                     Row(
@@ -519,7 +515,7 @@ private fun EmptyStateCard(onAdd: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, Color(0xFFEDE8F5))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
@@ -666,7 +662,7 @@ private fun QuestionEditor(index: Int, eq: EQ, onDelete: () -> Unit, onMoveUp: (
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, Color(0xFFEDE8F5)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
