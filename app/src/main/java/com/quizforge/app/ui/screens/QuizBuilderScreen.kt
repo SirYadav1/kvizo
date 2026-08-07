@@ -249,8 +249,8 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                         onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags.joinToString(", "), description, timeLimitSec, questions, STATUS_DRAFT) { error = it } },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Indigo),
-                        border = BorderStroke(1.5.dp, Indigo)
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = com.quizforge.app.ui.theme.Charcoal),
+                        border = BorderStroke(1.5.dp, com.quizforge.app.ui.theme.Charcoal.copy(alpha = 0.5f))
                     ) {
                         Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(17.dp))
                         Text("  Save Draft", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -259,7 +259,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                         onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags.joinToString(", "), description, timeLimitSec, questions, STATUS_PUBLISHED) { error = it } },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Indigo)
+                        colors = ButtonDefaults.buttonColors(containerColor = com.quizforge.app.ui.theme.Charcoal)
                     ) {
                         Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.size(17.dp))
                         Text("  Publish Quiz", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -539,7 +539,7 @@ private fun EmptyStateCard(onAdd: () -> Unit) {
             Button(
                 onClick = onAdd,
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Indigo)
+                colors = ButtonDefaults.buttonColors(containerColor = com.quizforge.app.ui.theme.Charcoal)
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(17.dp))
                 Text("  Add First Question", fontWeight = FontWeight.SemiBold)

@@ -113,10 +113,10 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         // profile card
         item {
             Surface(
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 0.dp,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+                shadowElevation = 2.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.9f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
@@ -139,12 +139,12 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                             if (profile.status.isNotBlank()) Text(profile.status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Surface(
-                            color = Indigo.copy(alpha = 0.10f),
+                            color = Indigo.copy(alpha = 0.14f),
                             shape = RoundedCornerShape(12.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Indigo.copy(alpha = 0.25f))
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Indigo.copy(alpha = 0.4f))
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)) {
-                                Text("LVL ${profile.level}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Indigo)
+                                Text("LVL ${profile.level}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = IndigoDark)
                                 Text("${profile.xp} XP", fontSize = 10.sp, letterSpacing = 0.3.sp, color = Indigo)
                             }
                         }

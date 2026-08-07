@@ -122,7 +122,10 @@ fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             },
             modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 32.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = com.quizforge.app.ui.theme.Charcoal
+            )
         ) {
             Text("Start Learning", fontSize = 15.sp, modifier = Modifier.padding(vertical = 8.dp))
         }

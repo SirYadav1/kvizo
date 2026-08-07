@@ -301,7 +301,10 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                                 Button(
                                     onClick = { next() },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        containerColor = com.quizforge.app.ui.theme.Charcoal
+                                    )
                                 ) {
                                     Text(if (current < questions.size - 1) "Next" else "Finish", modifier = Modifier.padding(vertical = 4.dp))
                                 }
@@ -480,7 +483,14 @@ private fun InfoPhase(
             }
         }
 
-        Button(onClick = onStart, modifier = Modifier.fillMaxWidth().padding(top = 24.dp), shape = RoundedCornerShape(12.dp)) {
+        Button(
+            onClick = onStart,
+            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = com.quizforge.app.ui.theme.Charcoal
+            )
+        ) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Text("  Start Quiz", modifier = Modifier.padding(vertical = 6.dp))
         }
