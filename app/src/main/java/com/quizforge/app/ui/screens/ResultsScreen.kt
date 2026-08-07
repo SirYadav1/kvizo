@@ -296,7 +296,10 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                             }
                         },
                         modifier = Modifier.weight(1.4f),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = com.quizforge.app.ui.theme.Charcoal
+                        )
                     ) {
                         Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                         Text("  Retry ${wrongIds.size} wrong", fontSize = 13.sp)

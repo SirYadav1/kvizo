@@ -13,72 +13,76 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /* ------------------------------------------------------------------ */
-/* Brand palette — a deep, refined violet with clean near-white neutrals */
+/* Soft-Pastel palette — lavender accents, off-white bg, charcoal text  */
 /* ------------------------------------------------------------------ */
 
-val Indigo = Color(0xFF5A46E0)          // primary violet
-val IndigoDark = Color(0xFF4736C0)
-val IndigoSoft = Color(0xFFE9E5FF)      // primary container (light)
-val Amber = Color(0xFFF2A33C)
-val Green = Color(0xFF2FB47C)
-val Red = Color(0xFFE5484D)
-val Orange = Color(0xFFF57C2F)
-val Grey = Color(0xFF9AA0A6)
-val Night = Color(0xFF0F0D17)
-val NightSurface = Color(0xFF171521)
+val Indigo = Color(0xFF8F7BF7)          // soft pastel lavender (primary)
+val IndigoDark = Color(0xFF6F5AE6)      // deeper lavender for gradients/filled
+val IndigoSoft = Color(0xFFEAE3FF)      // light lavender container
+val Amber = Color(0xFFF2B24C)
+val Green = Color(0xFF4CC38A)
+val Red = Color(0xFFE5586B)
+val Orange = Color(0xFFF08A5A)
+val Grey = Color(0xFF9C97AC)
+val Night = Color(0xFF14121D)
+val NightSurface = Color(0xFF1D1A29)
 
-/* Surfaces — light */
+/* Charcoal — text & primary buttons */
+val Charcoal = Color(0xFF2F2B3A)
+val CharcoalLight = Color(0xFF6E6879)
+
+/* Surfaces — light (off-white w/ purple tint + pure white + lavender) */
 val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceVariantLight = Color(0xFFF0EEF9)
-val BackgroundLight = Color(0xFFF6F6FB)
-val OutlineLight = Color(0xFFE4E1F1)
+val SurfaceVariantLight = Color(0xFFF2EEFC)   // light pastel lavender
+val BackgroundLight = Color(0xFFF8F6FD)       // off-white w/ light purple tint
+val OutlineLight = Color(0xFFEAE5F8)
 
-/* Surfaces — dark */
-val SurfaceDark = Color(0xFF171521)
-val SurfaceVariantDark = Color(0xFF221F33)
-val BackgroundDark = Color(0xFF0F0D17)
-val OutlineDark = Color(0xFF2C2940)
+/* Surfaces — dark (soft lavender-tinted night) */
+val SurfaceDark = Color(0xFF1D1A29)
+val SurfaceVariantDark = Color(0xFF282436)
+val BackgroundDark = Color(0xFF14121D)
+val OutlineDark = Color(0xFF35304A)
 
 private val LightColors = lightColorScheme(
     primary = Indigo,
     onPrimary = Color.White,
     primaryContainer = IndigoSoft,
-    onPrimaryContainer = Color(0xFF221554),
-    secondary = Amber,
+    onPrimaryContainer = Color(0xFF322A63),
+    secondary = Charcoal,
     onSecondary = Color.White,
     tertiary = Green,
     onTertiary = Color.White,
     background = BackgroundLight,
-    onBackground = Color(0xFF191A22),
+    onBackground = Charcoal,
     surface = SurfaceLight,
-    onSurface = Color(0xFF191A22),
+    onSurface = Charcoal,
     surfaceVariant = SurfaceVariantLight,
-    onSurfaceVariant = Color(0xFF555565),
+    onSurfaceVariant = CharcoalLight,
     outline = OutlineLight,
-    outlineVariant = Color(0xFFECEAf6),
+    outlineVariant = Color(0xFFEFEBFA),
     error = Red,
     onError = Color.White
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFACA4FF),
-    onPrimary = Color(0xFF241764),
-    primaryContainer = Color(0xFF4636A8),
-    onPrimaryContainer = Color(0xFFE9E4FF),
-    secondary = Color(0xFFFFC566),
-    onSecondary = Color(0xFF3E2A00),
-    tertiary = Color(0xFF7FD9AC),
-    onTertiary = Color(0xFF003825),
+    primary = Color(0xFFC3B6FF),
+    onPrimary = Color(0xFF322A63),
+    primaryContainer = Color(0xFF4F43A8),
+    onPrimaryContainer = Color(0xFFEAE3FF),
+    secondary = Color(0xFFE4E1EE),
+    onSecondary = Color(0xFF2F2B3A),
+    tertiary = Color(0xFF85D9AE),
+    onTertiary = Color(0xFF0B3A26),
     background = BackgroundDark,
-    onBackground = Color(0xFFECEBF4),
+    onBackground = Color(0xFFE8E5F2),
     surface = SurfaceDark,
-    onSurface = Color(0xFFECEBF4),
+    onSurface = Color(0xFFE8E5F2),
     surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = Color(0xFFB9B6CC),
+    onSurfaceVariant = Color(0xFFB4AECE),
     outline = OutlineDark,
-    outlineVariant = Color(0xFF2B2840),
-    error = Color(0xFFFF8A90),
-    onError = Color(0xFF3A0003)
+    outlineVariant = Color(0xFF322E46),
+    error = Color(0xFFFF8FA0),
+    onError = Color(0xFF3F0712)
 )
 
 /* ------------------------------------------------------------------ */
@@ -104,15 +108,15 @@ val QuizForgeTypography = androidx.compose.material3.Typography(
 )
 
 /* ------------------------------------------------------------------ */
-/* Shapes — generous, consistent radii                                 */
+/* Shapes — generous, rounded, soft                                     */
 /* ------------------------------------------------------------------ */
 
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(28.dp)
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(30.dp)
 )
 
 @Composable

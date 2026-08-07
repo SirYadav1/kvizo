@@ -92,23 +92,23 @@ fun StatusChip(status: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Stat card used on the dashboard — premium tinted tile with icon chip. */
+/** Stat card used on the dashboard — pastel tinted tile with soft border. */
 @Composable
 fun StatCard(value: String, label: String, modifier: Modifier = Modifier, tint: Color = Indigo) {
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(18.dp),
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 1.dp,
         border = androidx.compose.foundation.BorderStroke(
-            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Box(
                 modifier = Modifier
-                    .size(30.dp)
-                    .background(tint.copy(alpha = 0.14f), CircleShape),
+                    .size(32.dp)
+                    .background(tint.copy(alpha = 0.16f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text("•", color = tint, fontWeight = FontWeight.Black, fontSize = 15.sp)
@@ -118,6 +118,7 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier, tint: 
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 24.sp,
                 letterSpacing = (-0.3).sp,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 10.dp)
             )
             Text(
