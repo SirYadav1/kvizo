@@ -53,6 +53,9 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
         onlineMode = vm.settings.first().leaderboardOnline
     }
 
+    val total = entries.size
+    val selfEntry = entries.firstOrNull { it.isSelf }
+
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
             Box(modifier = Modifier.size(34.dp).background(Amber.copy(alpha = 0.15f), CircleShape), contentAlignment = Alignment.Center) {
@@ -61,7 +64,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
             Text("  Leaderboard", fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp, modifier = Modifier.weight(1f))
         }
         Text(
-            if (onlineMode) "Global rankings • live with login" else "Top quiz masters on this device",
+            if (onlineMode) "Global rankings • live with login" else "${total.coerceAtLeast(1)} quiz masters on this device",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp)
@@ -88,16 +91,38 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(entries, key = { "${it.rank}-${it.username}" }) { e ->
+            // compact: show only top 5 + highlight "You" so the page never eats the whole screen
+            val visible = when {
+                selfEntry == null -> entries.take(5)
+                selfEntry.rank <= 5 -> entries.take(5)
+                else -> entries.take(5) + selfEntry
+            }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f, fill = false)) {
+                items(visible, key = { "${it.rank}-${it.username}" }) { e ->
                     LeaderRow(vm, e)
                 }
-                item { Spacer(Modifier.height(16.dp)) }
+                item {
+                    if (selfEntry != null && selfEntry.rank > 5) {
+                        Text(
+                            "…and ${entries.size - 5} more — you're #${selfEntry.rank} of $total",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    } else if (selfEntry != null) {
+                        Text(
+                            "You're ranked #${selfEntry.rank} of $total",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
             }
         }
     }
 }
-
 @Composable
 private fun LeaderRow(vm: AppViewModel, e: LeaderboardEntry) {
     val isMedal = e.rank <= 3

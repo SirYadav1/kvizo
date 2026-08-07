@@ -137,10 +137,10 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier, tint: 
 fun ConfettiOverlay(show: Boolean, modifier: Modifier = Modifier) {
     AnimatedVisibility(visible = show, enter = fadeIn(), exit = fadeOut()) {
         val pieces = remember {
-            List(80) { i ->
+            List(120) { i ->
                 ConfettiPiece(
                     angle = Random.nextInt(360),
-                    speed = 0.5f + Random.nextFloat() * 0.8f,
+                    speed = 0.5f + Random.nextFloat() * 0.9f,
                     strip = i % 3 != 0,
                     colorIndex = i % 6
                 )
@@ -149,29 +149,29 @@ fun ConfettiOverlay(show: Boolean, modifier: Modifier = Modifier) {
         val progress = remember { Animatable(0f) }
         LaunchedEffect(show) {
             progress.snapTo(0f)
-            progress.animateTo(1f, animationSpec = tween(durationMillis = 2400, easing = LinearEasing))
+            progress.animateTo(1f, animationSpec = tween(durationMillis = 2600, easing = LinearEasing))
         }
-        Canvas(modifier = modifier.fillMaxWidth().height(420.dp)) {
+        Canvas(modifier = modifier.fillMaxSize()) {
             val colors = listOf(Indigo, Amber, Green, Red, Color(0xFFFF6EC7), Color(0xFF00BCD4))
             pieces.forEach { p ->
                 val t = progress.value
-                // two staggered bursts: even pieces at t=0, odd pieces at t=0.42
-                val burstStart = if (p.colorIndex % 2 == 0) 0f else 0.42f
+                // three staggered bursts: showers rain from all edges
+                val burstStart = listOf(0f, 0.3f, 0.6f)[p.colorIndex % 3]
                 val local = ((t - burstStart) / (1f - burstStart)).coerceIn(0f, 1f)
                 val rad = Math.toRadians(p.angle.toDouble())
-                val dist = local * size.width * (0.35f + 0.55f * p.speed)
+                val dist = local * size.width * (0.4f + 0.6f * p.speed)
                 val x = size.width / 2f + (Math.cos(rad) * dist).toFloat()
-                // gravity: y accelerates as pieces fall
-                val y = 60f + (Math.sin(rad).toFloat() * dist).coerceAtLeast(0f) + local * local * 90f
+                // gravity: y accelerates as pieces fall; start from every row so "You" is covered
+                val y = size.height * 0.08f + (Math.sin(rad).toFloat() * dist).coerceAtLeast(0f) + local * local * size.height * 0.85f
                 val color = colors[p.colorIndex]
                 val alpha = (1f - local).coerceIn(0.15f, 1f)
                 if (p.strip) {
-                    val s = 2.5f + (p.colorIndex % 3) * 0.8f
+                    val s = 2.5f + (p.colorIndex % 3) * 0.9f
                     rotate(p.angle + t * 540f) {
-                        drawRect(color.copy(alpha = alpha), topLeft = Offset(x, y), size = Size(s * 2.2f, s))
+                        drawRect(color.copy(alpha = alpha), topLeft = Offset(x, y), size = Size(s * 2.4f, s))
                     }
                 } else {
-                    drawCircle(color.copy(alpha = alpha), radius = 2.5f + (p.colorIndex % 3), center = Offset(x, y))
+                    drawCircle(color.copy(alpha = alpha), radius = 2.8f + (p.colorIndex % 3), center = Offset(x, y))
                 }
             }
         }

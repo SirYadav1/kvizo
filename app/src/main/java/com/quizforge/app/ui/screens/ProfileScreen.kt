@@ -120,7 +120,8 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                     progress = { XpEngine.levelProgress(profile.xp) },
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(8.dp),
                     color = Indigo,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                 )
                 Text(
                     XpEngine.levelTitle(profile.level) + if (profile.level < 6) "  •  ${(XpEngine.levelProgress(profile.xp) * 100).toInt()}% to Level ${profile.level + 1}" else "  •  Max level",
@@ -163,7 +164,8 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                                 progress = { pct / 100f },
                                 modifier = Modifier.width(90.dp).height(6.dp),
                                 color = color,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                             )
                             Text("  $pct%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, modifier = Modifier.width(40.dp), textAlign = TextAlign.End)
                         }
