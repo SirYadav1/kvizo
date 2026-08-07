@@ -105,7 +105,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
     }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-        Text("Settings", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
+        Text("Settings", fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
 
         message?.let {
             Surface(color = Green.copy(alpha = 0.12f), shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {

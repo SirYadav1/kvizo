@@ -53,10 +53,15 @@ fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Welcome to QuizForge", fontWeight = FontWeight.Bold, fontSize = 26.sp, modifier = Modifier.padding(top = 24.dp))
+        Text("Welcome to QuizForge", fontWeight = FontWeight.Bold, fontSize = 26.sp, letterSpacing = (-0.4).sp, modifier = Modifier.padding(top = 24.dp))
         Text("Create your local profile — no login needed", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
 
-        Text("Pick an avatar", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 28.dp, bottom = 12.dp).align(Alignment.Start))
+        Text(
+            "Pick an avatar",
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            modifier = Modifier.padding(top = 28.dp, bottom = 12.dp).align(Alignment.Start)
+        )
 
         // Avatar grid
         val avatars = AppViewModel.AVATARS
@@ -117,9 +122,9 @@ fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             },
             modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 32.dp),
-            shape = RoundedCornerShape(14.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Start Learning", modifier = Modifier.padding(vertical = 6.dp))
+            Text("Start Learning", fontSize = 15.sp, modifier = Modifier.padding(vertical = 8.dp))
         }
     }
 }

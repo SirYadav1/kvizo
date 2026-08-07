@@ -1,6 +1,7 @@
 package com.quizforge.app.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -125,20 +126,43 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(12.dp))
-            Text("Quiz Complete!", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+            Text("Quiz Complete!", fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp)
             if (q != null) Text(q.title, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
 
-            // score ring
+            // score ring — premium ring with soft glow
             Box(
                 modifier = Modifier
                     .padding(top = 24.dp)
                     .size(150.dp)
                     .background(
-                        if (a.score >= 60) Green.copy(alpha = 0.15f) else Red.copy(alpha = 0.15f),
+                        if (a.score >= 60) Green.copy(alpha = 0.10f) else Red.copy(alpha = 0.10f),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stroke = 12.dp.toPx()
+                    val inset = stroke / 2
+                    val arcSize = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke)
+                    val color = if (a.score >= 60) Green else Red
+                    drawArc(
+                        color = color.copy(alpha = 0.18f),
+                        startAngle = 0f, sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                        size = arcSize,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    )
+                    drawArc(
+                        color = color,
+                        startAngle = -90f,
+                        sweepAngle = 360f * (a.score / 100f).coerceIn(0f, 1f),
+                        useCenter = false,
+                        topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                        size = arcSize,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    )
+                }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("${a.score}", fontWeight = FontWeight.Black, fontSize = 44.sp, color = if (a.score >= 60) Green else Red)
                     Text("out of 100", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -153,9 +177,18 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
             )
 
             // XP card
-            Surface(shape = RoundedCornerShape(16.dp), color = Indigo, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth().padding(top = 20.dp)) {
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = Indigo,
+                shadowElevation = 0.dp,
+                modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
+            ) {
                 Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painterResource(R.drawable.ic_trophy), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(32.dp))
+                    Surface(color = Color.White.copy(alpha = 0.16f), shape = CircleShape, modifier = Modifier.size(46.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(painterResource(R.drawable.ic_trophy), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(26.dp))
+                        }
+                    }
                     Column(modifier = Modifier.padding(start = 14.dp)) {
                         Text("+", color = Color.White, fontSize = 13.sp)
                         Row(verticalAlignment = Alignment.Bottom) {

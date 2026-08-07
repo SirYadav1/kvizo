@@ -2,6 +2,7 @@ package com.quizforge.app.ui.screens
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,7 +41,19 @@ fun SplashScreen(vm: AppViewModel, nav: NavHostController) {
         if (vm.profile == null) nav.navigate(Routes.SETUP) { popUpTo(Routes.SPLASH) { inclusive = true } }
         else nav.navigate(Routes.HOME) { popUpTo(Routes.SPLASH) { inclusive = true } }
     }
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
+    val brand = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
+    ) {
+        // soft radial brand glow behind the logo
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val c = brand
+            drawCircle(color = c.copy(alpha = 0.06f), radius = size.minDimension * 0.42f, center = center)
+            drawCircle(color = c.copy(alpha = 0.05f), radius = size.minDimension * 0.30f, center = center)
+        }
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             androidx.compose.material3.Icon(
                 painter = painterResource(R.drawable.ic_logo),
@@ -57,10 +71,22 @@ fun SplashScreen(vm: AppViewModel, nav: NavHostController) {
                 "QuizForge",
                 fontWeight = FontWeight.Bold,
                 fontSize = 30.sp,
+                letterSpacing = (-0.5).sp,
                 modifier = Modifier.padding(top = 20.dp),
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Text("Forge knowledge. Earn XP.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            androidx.compose.material3.HorizontalDivider(
+                modifier = Modifier.padding(top = 12.dp).width(48.dp),
+                thickness = 3.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            )
+            Text(
+                "Forge knowledge. Earn XP.",
+                fontSize = 13.sp,
+                letterSpacing = 0.3.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 10.dp)
+            )
         }
     }
 }

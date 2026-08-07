@@ -135,7 +135,7 @@ fun QuizForgeRoot(vm: AppViewModel) {
         },
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                     tabs.forEach { tab ->
                         val selected = route == tab.route
                         NavigationBarItem(
@@ -150,7 +150,14 @@ fun QuizForgeRoot(vm: AppViewModel) {
                                 }
                             },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label, fontSize = 11.sp) }
+                            label = { Text(tab.label, fontSize = 11.sp) },
+                            colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
                     }
                 }

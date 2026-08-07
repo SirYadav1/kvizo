@@ -59,7 +59,7 @@ fun DifficultyBadge(difficulty: String, modifier: Modifier = Modifier) {
     }
     Surface(
         modifier = modifier,
-        color = color.copy(alpha = 0.15f),
+        color = color.copy(alpha = 0.12f),
         shape = RoundedCornerShape(6.dp)
     ) {
         Text(
@@ -67,6 +67,7 @@ fun DifficultyBadge(difficulty: String, modifier: Modifier = Modifier) {
             color = color,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.3.sp,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         )
     }
@@ -79,37 +80,53 @@ fun StatusChip(status: String, modifier: Modifier = Modifier) {
         "draft" -> Amber
         else -> Color.Gray
     }
-    Surface(modifier = modifier, color = color.copy(alpha = 0.15f), shape = RoundedCornerShape(6.dp)) {
+    Surface(modifier = modifier, color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(6.dp)) {
         Text(
             status.replaceFirstChar { it.uppercase() },
             color = color,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.3.sp,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         )
     }
 }
 
-/** Stat card used on the dashboard. */
+/** Stat card used on the dashboard — premium tinted tile with icon chip. */
 @Composable
 fun StatCard(value: String, label: String, modifier: Modifier = Modifier, tint: Color = Indigo) {
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(16.dp),
-        shadowElevation = 1.dp
+        shape = RoundedCornerShape(18.dp),
+        shadowElevation = 0.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+        )
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Box(
                 modifier = Modifier
-                    .size(28.dp)
-                    .background(tint.copy(alpha = 0.15f), CircleShape),
+                    .size(30.dp)
+                    .background(tint.copy(alpha = 0.14f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("•", color = tint, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("•", color = tint, fontWeight = FontWeight.Black, fontSize = 15.sp)
             }
-            Text(value, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.padding(top = 8.dp))
-            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                value,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 24.sp,
+                letterSpacing = (-0.3).sp,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+            Text(
+                label,
+                fontSize = 11.sp,
+                letterSpacing = 0.3.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 1.dp)
+            )
         }
     }
 }
@@ -198,8 +215,9 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         text,
         fontWeight = FontWeight.Bold,
         fontSize = 15.sp,
+        letterSpacing = 0.2.sp,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.padding(vertical = 6.dp)
+        modifier = modifier.padding(top = 8.dp, bottom = 6.dp)
     )
 }
 
