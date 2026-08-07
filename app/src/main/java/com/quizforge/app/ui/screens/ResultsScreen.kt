@@ -100,13 +100,16 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
         }
     }
 
-    // Celebration: jingle + epic vibration only on a good score
-    LaunchedEffect(Unit) {
-        val sc = attempt?.score ?: 0
-        if (sc >= 60) {
-            delay(400)
+    // Celebration: trophy fanfare + confetti + epic vibration when the quiz wraps up.
+    // Fires once attempt data is available (guarded above), so it never plays on a blank screen.
+    LaunchedEffect(attempt?.id) {
+        val a = attempt ?: return@LaunchedEffect
+        delay(350)
+        if (a.score >= 60) {
             vm.playSuccessJingle()
             vm.epicVibrate()
+        } else {
+            vm.playBell()
         }
     }
 
@@ -120,7 +123,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
     val q = quiz
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ConfettiOverlay(show = a.score >= 60, modifier = Modifier.fillMaxWidth())
+        ConfettiOverlay(show = a.score >= 60, modifier = Modifier.fillMaxSize())
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -298,7 +301,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                         modifier = Modifier.weight(1.4f),
                         shape = RoundedCornerShape(14.dp),
                         colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                            containerColor = com.quizforge.app.ui.theme.Charcoal
+                            containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary
                         )
                     ) {
                         Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))

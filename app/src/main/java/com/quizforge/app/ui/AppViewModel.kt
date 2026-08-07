@@ -2,9 +2,11 @@ package com.quizforge.app.ui
 
 import android.app.Application
 import android.content.Context
-import android.media.ToneGenerator
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.os.VibrationEffect
 import android.os.Vibrator
+import com.quizforge.app.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -478,52 +480,59 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private var soundOn = true
     private var hapticsOn = true
-    private var toneGen: ToneGenerator? = null
+    private val appContext: Context = getApplication()
+    private var soundPool: SoundPool? = null
+    private var soundCorrectId = 0
+    private var soundWrongId = 0
+    private var soundWin = 0
+    private var soundBell = 0
 
-    /** Instant correct/wrong feedback — two-tone: ascending on correct, descending on wrong. */
-    fun playSound(correct: Boolean) {
-        if (!soundOn) return
-        viewModelScope.launch {
-            try {
-                val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80).also { toneGen = it }
-                if (correct) {
-                    t.startTone(ToneGenerator.TONE_DTMF_5, 80)
-                    kotlinx.coroutines.delay(95)
-                    t.startTone(ToneGenerator.TONE_DTMF_9, 120)
-                    kotlinx.coroutines.delay(130)
-                    t.startTone(ToneGenerator.TONE_PROP_ACK, 220)
-                } else {
-                    t.startTone(ToneGenerator.TONE_DTMF_9, 80)
-                    kotlinx.coroutines.delay(95)
-                    t.startTone(ToneGenerator.TONE_DTMF_5, 120)
-                    kotlinx.coroutines.delay(130)
-                    t.startTone(ToneGenerator.TONE_PROP_NACK, 300)
-                }
-            } catch (_: Exception) {
-            }
+    private fun ensureSoundPool(): SoundPool? {
+        soundPool?.let { return it }
+        return try {
+            val attrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            val sp = SoundPool.Builder().setMaxStreams(4).setAudioAttributes(attrs).build()
+            soundCorrectId = sp.load(appContext, R.raw.sound_correct, 1)
+            soundWrongId = sp.load(appContext, R.raw.sound_wrong, 1)
+            soundWin = sp.load(appContext, R.raw.sound_win, 1)
+            soundBell = sp.load(appContext, R.raw.sound_bell, 1)
+            soundPool = sp
+            sp
+        } catch (_: Exception) {
+            null
         }
     }
 
-    /** Ascending celebratory jingle for quiz completion. */
+    /** Real sound effect for correct/wrong answers (crisp chime vs buzzer). */
+    fun playSound(correct: Boolean) {
+        if (!soundOn) return
+        val sp = ensureSoundPool() ?: return
+        try {
+            sp.play(if (correct) soundCorrectId else soundWrongId, 1f, 1f, 1, 0, 1f)
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Upbeat victory fanfare used when a quiz is completed with a good score. */
     fun playSuccessJingle() {
         if (!soundOn) return
-        viewModelScope.launch {
-            try {
-                val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 85).also { toneGen = it }
-                val notes = intArrayOf(
-                    ToneGenerator.TONE_DTMF_3, ToneGenerator.TONE_DTMF_5,
-                    ToneGenerator.TONE_DTMF_7, ToneGenerator.TONE_DTMF_9,
-                    ToneGenerator.TONE_DTMF_9, ToneGenerator.TONE_DTMF_9
-                )
-                for (n in notes) {
-                    t.startTone(n, 120)
-                    kotlinx.coroutines.delay(140)
-                }
-                t.startTone(ToneGenerator.TONE_PROP_ACK, 380)
-                kotlinx.coroutines.delay(400)
-                t.startTone(ToneGenerator.TONE_PROP_ACK, 380)
-            } catch (_: Exception) {
-            }
+        val sp = ensureSoundPool() ?: return
+        try {
+            sp.play(soundWin, 1f, 1f, 1, 0, 1f)
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Gentle bell tone — e.g. UX accent / notification ding. */
+    fun playBell() {
+        if (!soundOn) return
+        val sp = ensureSoundPool() ?: return
+        try {
+            sp.play(soundBell, 1f, 1f, 1, 0, 1f)
+        } catch (_: Exception) {
         }
     }
 
@@ -559,7 +568,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
-        try { toneGen?.release() } catch (_: Exception) {
+        try { soundPool?.release() } catch (_: Exception) {
         }
         super.onCleared()
     }

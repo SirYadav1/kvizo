@@ -222,7 +222,8 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                     progress = { (current + 1f) / questions.size },
                     modifier = Modifier.fillMaxWidth().height(4.dp),
                     color = Indigo,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                 )
 
                 // live score bar — green up on correct, red down on wrong
@@ -303,7 +304,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                        containerColor = com.quizforge.app.ui.theme.Charcoal
+                                        containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary
                                     )
                                 ) {
                                     Text(if (current < questions.size - 1) "Next" else "Finish", modifier = Modifier.padding(vertical = 4.dp))
@@ -380,7 +381,8 @@ private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
                 progress = { progress },
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp).height(8.dp),
                 color = barColor,
-                trackColor = MaterialTheme.colorScheme.surface
+                trackColor = MaterialTheme.colorScheme.surface,
+                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
             Text("$runScore", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = barColor)
         }
@@ -488,7 +490,7 @@ private fun InfoPhase(
             modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
             shape = RoundedCornerShape(14.dp),
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = com.quizforge.app.ui.theme.Charcoal
+                containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary
             )
         ) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)

@@ -89,17 +89,29 @@ fun GlassBottomBar(
             .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
+        val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+        val glassColor = if (isDark) {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+        } else {
+            Color.White.copy(alpha = 0.82f)
+        }
+        val glassBorder = if (isDark) {
+            Indigo.copy(alpha = 0.45f)
+        } else {
+            Indigo.copy(alpha = 0.28f)
+        }
+        val shadowTint = if (isDark) Color.Black.copy(alpha = 0.45f) else Indigo.copy(alpha = 0.35f)
         // glass pill container
         Box(
             modifier = Modifier
-                .shadow(elevation = 10.dp, shape = RoundedCornerShape(28.dp), ambientColor = Indigo.copy(alpha = 0.35f), spotColor = Indigo.copy(alpha = 0.35f))
+                .shadow(elevation = 10.dp, shape = RoundedCornerShape(28.dp), ambientColor = shadowTint, spotColor = shadowTint)
                 .background(
-                    color = Color.White.copy(alpha = 0.72f),
+                    color = glassColor,
                     shape = RoundedCornerShape(28.dp)
                 )
                 .border(
                     width = 1.dp,
-                    color = Indigo.copy(alpha = 0.28f),
+                    color = glassBorder,
                     shape = RoundedCornerShape(28.dp)
                 )
                 .padding(horizontal = 6.dp, vertical = 6.dp)

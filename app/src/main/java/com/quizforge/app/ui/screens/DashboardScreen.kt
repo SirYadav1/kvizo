@@ -60,6 +60,7 @@ import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.IndigoDark
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     val profile = vm.profile ?: run {
@@ -184,7 +185,8 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                         progress = { weeklyAccuracy },
                         modifier = Modifier.fillMaxWidth().height(10.dp),
                         color = Green,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                     )
                     Text("${(weeklyAccuracy * 100).toInt()}% accuracy (7 days)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
                 }
@@ -221,12 +223,16 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         SectionTitle("Recent Badges")
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             recentBadges.forEach { name ->
-                                Surface(color = Amber.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp)) {
-                                    Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(14.dp))
-                                        Text(" $name", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Amber)
+                                Surface(color = Amber.copy(alpha = 0.14f), shape = RoundedCornerShape(12.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Amber.copy(alpha = 0.35f))) {
+                                    Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(16.dp))
+                                        Text(" $name", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Amber, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
                                 }
                             }
