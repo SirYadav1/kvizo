@@ -55,6 +55,8 @@ import com.quizforge.app.ui.screens.ResultsScreen
 import com.quizforge.app.ui.screens.SettingsScreen
 import com.quizforge.app.ui.screens.SplashScreen
 import com.quizforge.app.ui.screens.StatsScreen
+import com.quizforge.app.ui.components.GlassBarItem
+import com.quizforge.app.ui.components.GlassBottomBar
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.QuizForgeTheme
 
@@ -136,32 +138,39 @@ fun QuizForgeRoot(vm: AppViewModel) {
         },
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
-                    tabs.forEach { tab ->
-                        val selected = route == tab.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                if (!selected) {
-                                    nav.navigate(tab.route) {
-                                        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label, fontSize = 11.sp) },
-                            colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                GlassBottomBar(
+                    items = mapOf(
+                        Routes.HOME to "Home",
+                        Routes.QUIZZES to "Quizzes",
+                        Routes.BUILDER to "Create",
+                        Routes.LEADERBOARD to "Leaderboard",
+                        Routes.PROFILE to "Profile"
+                    ).map { (r, l) ->
+                        GlassBarItem(
+                            route = r,
+                            label = l,
+                            icon = when (r) {
+                                Routes.HOME -> Icons.Filled.Home
+                                Routes.QUIZZES -> Icons.Filled.List
+                                Routes.BUILDER -> Icons.Filled.AddCircle
+                                Routes.LEADERBOARD -> Icons.Filled.EmojiEvents
+                                else -> Icons.Filled.Person
+                            }
                         )
+                    },
+                    selectedRoute = route?.let { r ->
+                        tabs.map { it.route }.firstOrNull { r == it || r.startsWith(it) } ?: route
+                    } ?: "",
+                    onSelect = { r ->
+                        if (route != r) {
+                            nav.navigate(r) {
+                                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     }
-                }
+                )
             }
         }
     ) { padding ->
