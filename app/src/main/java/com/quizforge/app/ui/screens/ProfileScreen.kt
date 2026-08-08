@@ -88,7 +88,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
     val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
     val streak = XpEngine.currentStreak(daySet)
 
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { nav.popBackStack() }) {
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -115,7 +115,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                 )
                 Surface(
                     shape = RoundedCornerShape(26.dp),
-                    color = com.quizforge.app.ui.theme.VioletPale,
+                    color = com.quizforge.app.ui.theme.violetPale(),
                     border = androidx.compose.foundation.BorderStroke(2.dp, com.quizforge.app.ui.theme.VioletBorderStrong),
                     modifier = Modifier.size(78.dp)
                 ) {
@@ -127,7 +127,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .offset(x = 8.dp, y = 8.dp)
-                        .background(com.quizforge.app.ui.theme.VioletGradient, RoundedCornerShape(99.dp))
+                        .background(com.quizforge.app.ui.theme.violetGradient(), RoundedCornerShape(99.dp))
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(

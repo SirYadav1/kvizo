@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -110,7 +111,7 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
         else -> visible.sortedByDescending { it.updatedAt }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 16.dp)) {
         Text(
             "My Quizzes",
             fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk,
@@ -279,7 +280,7 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
                     Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     Spacer(Modifier.size(6.dp))
                     if (quiz.isRemote) {
-                        StatusPill("Community", com.quizforge.app.ui.theme.Green, com.quizforge.app.ui.theme.GreenBg)
+                        StatusPill("Community", com.quizforge.app.ui.theme.Green, com.quizforge.app.ui.theme.greenBg())
                     } else {
                         StatusPill(
                             quiz.status.replaceFirstChar { it.uppercase() },
@@ -289,9 +290,9 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
                                 else -> com.quizforge.app.ui.theme.Green
                             },
                             when (quiz.status) {
-                                "draft" -> com.quizforge.app.ui.theme.AmberBg
-                                "archived" -> com.quizforge.app.ui.theme.RedBg
-                                else -> com.quizforge.app.ui.theme.GreenBg
+                                "draft" -> com.quizforge.app.ui.theme.amberBg()
+                                "archived" -> com.quizforge.app.ui.theme.redBg()
+                                else -> com.quizforge.app.ui.theme.greenBg()
                             }
                         )
                     }

@@ -8,7 +8,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -90,13 +93,13 @@ fun ForgeSectionLabel(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** Gradient text (Figma .grad-text) — violet → light-violet sweep. */
+/** Gradient text (Figma .grad-text) — violet → light-violet sweep (dark-aware). */
 @Composable
 fun GradientText(text: String, fontSize: androidx.compose.ui.unit.TextUnit, fontWeight: FontWeight = FontWeight.Bold, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = TextStyle(
-            brush = VioletGradient,
+            brush = violetGradient(),
             fontFamily = SpaceGrotesk,
             fontSize = fontSize,
             fontWeight = fontWeight,
@@ -123,7 +126,7 @@ fun PillChip(
         Box(
             modifier = Modifier
                 .background(
-                    if (selected) VioletGradient else androidx.compose.ui.graphics.SolidColor(androidx.compose.ui.graphics.Color.Transparent),
+                    if (selected) violetGradient() else androidx.compose.ui.graphics.SolidColor(androidx.compose.ui.graphics.Color.Transparent),
                     RoundedCornerShape(99.dp)
                 )
                 .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -162,7 +165,7 @@ fun StatusPill(
     }
 }
 
-/** Figma progress bar — 5–7px, rounded 99, gradient fill. */
+/** Figma progress bar — 5–7px, rounded 99, gradient fill (dark-aware). */
 @Composable
 fun ForgeProgressBar(progress: Float, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 6.dp) {
     Box(
@@ -174,7 +177,7 @@ fun ForgeProgressBar(progress: Float, modifier: Modifier = Modifier, height: and
             modifier = Modifier
                 .fillMaxWidth(progress.coerceIn(0f, 1f))
                 .height(height)
-                .background(VioletGradient, RoundedCornerShape(99.dp))
+                .background(violetGradient(), RoundedCornerShape(99.dp))
         )
     }
 }
@@ -190,6 +193,76 @@ fun ForgeKicker(text: String, modifier: Modifier = Modifier) {
         color = Indigo,
         modifier = modifier
     )
+}
+
+/**
+ * Primary action button with a purple press-glow: on touch the whole area
+ * around the button blooms with a soft violet radial halo + subtle scale-down.
+ */
+@Composable
+fun PressGlowButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(14.dp),
+    containerColor: Color = MaterialTheme.colorScheme.secondary,
+    contentColor: Color = MaterialTheme.colorScheme.onSecondary,
+    glowColor: Color = Violet,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val glow by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (pressed) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 450f),
+        label = "pressGlow"
+    )
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (pressed) 0.97f else 1f,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.75f, stiffness = 700f),
+        label = "pressScale"
+    )
+    Box(
+        modifier = modifier
+            .drawBehind {
+                if (glow > 0f) {
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            listOf(
+                                glowColor.copy(alpha = 0.42f * glow),
+                                glowColor.copy(alpha = 0.14f * glow),
+                                Color.Transparent
+                            ),
+                            center = center,
+                            radius = size.minDimension * 0.95f
+                        )
+                    )
+                }
+            }
+            .clickable(
+                enabled = enabled,
+                interactionSource = interaction,
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            shape = shape,
+            color = containerColor,
+            contentColor = contentColor,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+                .scale(scale)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp)
+            ) { content() }
+        }
+    }
 }
 
 /** Difficulty badge with color coding. */

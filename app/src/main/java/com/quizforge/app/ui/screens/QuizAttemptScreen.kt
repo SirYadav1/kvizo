@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -191,7 +192,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
 
         Phase.PLAYING -> {
             val q = questions[current]
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
                 // top bar — Figma: surface + bottom border, back tile, centered title, timer chip
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -343,13 +344,12 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                         }
                         if (revealed) {
                             item {
-                                Button(
+                                com.quizforge.app.ui.components.PressGlowButton(
                                     onClick = { next() },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(14.dp),
-                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary
-                                    )
+                                    containerColor = MaterialTheme.colorScheme.secondary,
+                                    contentColor = MaterialTheme.colorScheme.onSecondary
                                 ) {
                                     Text(if (current < questions.size - 1) "Next" else "Finish", modifier = Modifier.padding(vertical = 4.dp))
                                 }
@@ -437,7 +437,7 @@ private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
 /** Figma timer chip — red pill with clock icon. */
 private fun TimerChip(text: String, color: Color) {
     Surface(
-        color = com.quizforge.app.ui.theme.RedBg,
+        color = com.quizforge.app.ui.theme.redBg(),
         shape = RoundedCornerShape(99.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, com.quizforge.app.ui.theme.RedBorder)
     ) {
@@ -545,13 +545,12 @@ private fun InfoPhase(
             }
         }
 
-        Button(
+        com.quizforge.app.ui.components.PressGlowButton(
             onClick = onStart,
             modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
             shape = RoundedCornerShape(14.dp),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary
-            )
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSecondary
         ) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Text("  Start Quiz", modifier = Modifier.padding(vertical = 6.dp))

@@ -13,14 +13,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,14 +43,13 @@ import com.quizforge.app.data.LeaderboardEntry
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.components.ForgeCard
 import com.quizforge.app.ui.theme.Amber
-import com.quizforge.app.ui.theme.AmberBg
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
-import com.quizforge.app.ui.theme.InkSub
 import com.quizforge.app.ui.theme.SpaceGrotesk
 import com.quizforge.app.ui.theme.Violet
 import com.quizforge.app.ui.theme.VioletGradient
-import com.quizforge.app.ui.theme.VioletPale
+import com.quizforge.app.ui.theme.amberBg
+import com.quizforge.app.ui.theme.violetPale
 import kotlinx.coroutines.flow.first
 
 @Composable
@@ -67,7 +67,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
     val selfEntry = entries.firstOrNull { it.isSelf }
     val top3 = entries.take(3)
 
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 16.dp)) {
         Text(
             "Leaderboard",
             fontFamily = SpaceGrotesk,
@@ -182,13 +182,13 @@ private fun Podium(top3: List<LeaderboardEntry>, vm: AppViewModel, metric: Strin
         order.forEachIndexed { i, e ->
             val color = when (e.rank) {
                 1 -> Amber
-                2 -> InkSub
+                2 -> MaterialTheme.colorScheme.onSurfaceVariant
                 else -> Violet
             }
             val bg = when (e.rank) {
-                1 -> AmberBg
-                2 -> Color(0xFFF3F4F6)
-                else -> VioletPale
+                1 -> amberBg()
+                2 -> MaterialTheme.colorScheme.surfaceVariant
+                else -> violetPale()
             }
             val displayValue = if (metric == "XP") "${e.xp}" else "${e.accuracy}%"
             Column(
@@ -197,7 +197,7 @@ private fun Podium(top3: List<LeaderboardEntry>, vm: AppViewModel, metric: Strin
                     .weight(if (e.rank == 1) 1.2f else 1f)
                     .padding(horizontal = 4.dp)
             ) {
-                Text(e.username, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = InkSub, maxLines = 1)
+                Text(e.username, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 Text(
                     displayValue,
                     fontSize = 11.sp,
@@ -235,7 +235,7 @@ private fun Podium(top3: List<LeaderboardEntry>, vm: AppViewModel, metric: Strin
                         .padding(top = 6.dp)
                         .width(60.dp)
                         .height(if (e.rank == 1) 56.dp else if (e.rank == 2) 42.dp else 30.dp)
-                        .background(if (e.rank == 1) VioletPale else Color(0xFFF3F4F6), RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        .background(if (e.rank == 1) violetPale() else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                 )
             }
         }
@@ -256,9 +256,8 @@ private fun LeaderRow(vm: AppViewModel, e: LeaderboardEntry) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(rankLabel(e.rank), fontWeight = FontWeight.Black, fontSize = if (isMedal) 20.sp else 15.sp, color = rankColor(e.rank), modifier = Modifier.size(36.dp))
-            Box(modifier = Modifier.size(38.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                Text(vm.avatarEmoji(e.avatarId), fontSize = 18.sp)
+            Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+                RankBadge(e.rank)
             }
             Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -281,17 +280,12 @@ private fun LeaderRow(vm: AppViewModel, e: LeaderboardEntry) {
     }
 }
 
-private fun rankLabel(rank: Int): String = when (rank) {
-    1 -> "🥇"
-    2 -> "🥈"
-    3 -> "🥉"
-    else -> "#$rank"
-}
-
 @Composable
-private fun rankColor(rank: Int): Color = when (rank) {
-    1 -> Color(0xFFFFC107)
-    2 -> Color(0xFF9E9E9E)
-    3 -> Color(0xFFCD7F32)
-    else -> MaterialTheme.colorScheme.onSurfaceVariant
+private fun RankBadge(rank: Int) {
+    when (rank) {
+        1 -> Icon(Icons.Filled.EmojiEvents, contentDescription = "1st", tint = Color(0xFFFFC107), modifier = Modifier.size(22.dp))
+        2 -> Icon(Icons.Filled.Star, contentDescription = "2nd", tint = Color(0xFF9E9E9E), modifier = Modifier.size(22.dp))
+        3 -> Icon(Icons.Filled.Star, contentDescription = "3rd", tint = Color(0xFFCD7F32), modifier = Modifier.size(22.dp))
+        else -> Text("#$rank", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }

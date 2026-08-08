@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -58,14 +59,16 @@ import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.components.AnimatedCounter
 import com.quizforge.app.ui.components.ConfettiOverlay
 import com.quizforge.app.ui.components.ForgeCard
+import com.quizforge.app.ui.components.PressGlowButton
 import com.quizforge.app.ui.theme.Amber
-import com.quizforge.app.ui.theme.AmberBg
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
 import com.quizforge.app.ui.theme.SpaceGrotesk
-import com.quizforge.app.ui.theme.VioletGradient
+import com.quizforge.app.ui.theme.VioletGrad
 import com.quizforge.app.ui.theme.VioletLight
+import com.quizforge.app.ui.theme.amberBg
+import com.quizforge.app.ui.theme.violetGradient
 import kotlinx.coroutines.delay
 
 @Composable
@@ -127,7 +130,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
     Box(modifier = Modifier.fillMaxSize()) {
         ConfettiOverlay(show = a.score >= 60, modifier = Modifier.fillMaxSize())
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp),
+            modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Figma header: "QUIZ COMPLETE" kicker + title
@@ -166,10 +169,10 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                         color = Color.Transparent
                     ) {
                         Box(
-                            modifier = Modifier.background(VioletGradient, RoundedCornerShape(12.dp)),
+                            modifier = Modifier.background(violetGradient(), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("⚡", fontSize = 20.sp)
+                            Icon(Icons.Filled.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
                     Column(modifier = Modifier.padding(start = 14.dp)) {
@@ -190,7 +193,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
             if (newBadges.isNotEmpty()) {
                 Surface(
                     shape = RoundedCornerShape(99.dp),
-                    color = AmberBg,
+                    color = amberBg(),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
@@ -267,21 +270,21 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                 }
             }
 
-            // actions — Figma: Try Again (gradient) + Continue
+            // actions — Figma: Try Again (gradient) + Continue (purple press glow)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
-                Button(
+                PressGlowButton(
                     onClick = { nav.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true }; launchSingleTop = true } },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(99.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    glowColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Text("Home", fontSize = 13.sp, modifier = Modifier.padding(vertical = 3.dp))
+                    Icon(Icons.Filled.Home, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text("  Home", fontSize = 13.sp)
                 }
                 if (wrongIds.isNotEmpty()) {
-                    Button(
+                    PressGlowButton(
                         onClick = {
                             nav.navigate(Routes.attempt(a.quizId, "normal", wrongIds.joinToString(","))) {
                                 popUpTo(nav.graph.findStartDestination().id) { saveState = true }
@@ -290,9 +293,8 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                         },
                         modifier = Modifier.weight(1.4f),
                         shape = RoundedCornerShape(99.dp),
-                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary
-                        )
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary
                     ) {
                         Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                         Text("  Retry ${wrongIds.size} wrong", fontSize = 13.sp)
