@@ -285,8 +285,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun setThemeMode(mode: String) = viewModelScope.launch { settingsRepo.setThemeMode(mode) }
     fun setSoundEnabled(v: Boolean) = viewModelScope.launch { settingsRepo.setSoundEnabled(v) }
     fun setHapticsEnabled(v: Boolean) = viewModelScope.launch { settingsRepo.setHapticsEnabled(v) }
-    fun setTimerOnBackground(v: String) = viewModelScope.launch { settingsRepo.setTimerOnBackground(v) }
-    fun setTimerBehavior(v: String) = setTimerOnBackground(v)
+    fun setAutoUpdateCheck(v: Boolean) = viewModelScope.launch { settingsRepo.setAutoUpdateCheck(v) }
+    fun setUpdateNotifications(v: Boolean) = viewModelScope.launch { settingsRepo.setUpdateNotifications(v) }
 
     // ---------- profile ----------
 
@@ -632,6 +632,68 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             if (tag.isEmpty()) null else tag to url
         } catch (_: Exception) {
             null
+        }
+    }
+
+    /** Result of an update check. */
+    data class UpdateInfo(val available: Boolean, val remoteVersion: String = "", val url: String = "")
+
+    /** Compares GitHub's latest release with the installed version. */
+    suspend fun checkForUpdates(): UpdateInfo = withContext(Dispatchers.IO) {
+        val release = latestRelease() ?: return@withContext UpdateInfo(false)
+        val (tag, url) = release
+        val current = BuildConfig.VERSION_NAME
+        UpdateInfo(isNewerThan(current, tag), tag, url)
+    }
+
+    private fun isNewerThan(current: String, remote: String): Boolean {
+        val a = current.split('.').map { it.toIntOrNull() ?: 0 }
+        val b = remote.split('.').map { it.toIntOrNull() ?: 0 }
+        for (i in 0 until maxOf(a.size, b.size)) {
+            val x = a.getOrElse(i) { 0 }
+            val y = b.getOrElse(i) { 0 }
+            if (y != x) return y > x
+        }
+        return false
+    }
+
+    /** Posts a system notification that a new version is available on the releases page. */
+    fun notifyUpdateAvailable() {
+        try {
+            val app = getApplication<Application>()
+            val nm = app.getSystemService(android.app.NotificationManager::class.java)
+            nm.createNotificationChannel(
+                android.app.NotificationChannel("updates", "Update notifications", android.app.NotificationManager.IMPORTANCE_DEFAULT)
+            )
+            val openReleases = android.app.PendingIntent.getActivity(
+                app, 0,
+                android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/SirYadav1/quizforge/releases")),
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            val notif = androidx.core.app.NotificationCompat.Builder(app, "updates")
+                .setSmallIcon(R.drawable.ic_logo)
+                .setContentTitle("QuizForge update available")
+                .setContentText("A new version is out — tap to open the release page")
+                .setContentIntent(openReleases)
+                .setAutoCancel(true)
+                .build()
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    app, android.Manifest.permission.POST_NOTIFICATIONS
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                androidx.core.app.NotificationManagerCompat.from(app).notify(42, notif)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Silent launch-time check: if a newer GitHub version exists and notifications are on, notify. */
+    fun checkForUpdatesAtLaunch() {
+        viewModelScope.launch {
+            val s = settingsRepo.settings.first()
+            if (!s.autoUpdateCheck || !s.updateNotifications) return@launch
+            val info = checkForUpdates()
+            if (info.available) notifyUpdateAvailable()
         }
     }
 

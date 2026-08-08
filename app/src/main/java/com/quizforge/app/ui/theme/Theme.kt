@@ -56,12 +56,12 @@ val SurfaceAltLight = Color(0xFFEDE9FE)
 val OutlineLight = Color(0xFFE4DAFF)
 val OutlineStrongLight = Color(0xFFC4B5FD)
 
-/* Surfaces — dark (deep violet-tinted night) */
-val SurfaceDark = Color(0xFF1D1828)
-val SurfaceAltDark = Color(0xFF251E36)
-val BackgroundDark = Color(0xFF14101E)
-val OutlineDark = Color(0xFF2F2747)
-val OutlineStrongDark = Color(0xFF3E3260)
+/* Surfaces — dark (Telegram-style night: blue-gray, not pitch black) */
+val SurfaceDark = Color(0xFF1F2C3A)          // cards / panels
+val SurfaceAltDark = Color(0xFF2B3A4A)        // chips, inputs
+val BackgroundDark = Color(0xFF17212B)        // app background (Telegram windowBg)
+val OutlineDark = Color(0xFF2B3B4B)           // card borders
+val OutlineStrongDark = Color(0xFF40566B)     // stronger borders
 
 /* Legacy aliases — kept so existing screens keep compiling */
 val Indigo = Violet
@@ -77,15 +77,15 @@ fun violetGradient(): Brush =
     if (isSystemInDarkTheme()) Brush.linearGradient(listOf(Color(0xFFB3A0FF), Color(0xFFC4B5FD)))
     else VioletGradient
 
-/* Dark-aware semantic fills — light pastels are blinding on dark surfaces */
+/* Dark-aware semantic fills — Telegram-style deep tints for dark surfaces */
 @Composable
-fun greenBg(): Color = if (isSystemInDarkTheme()) Color(0xFF0D2B1F) else GreenBg
+fun greenBg(): Color = if (isSystemInDarkTheme()) Color(0xFF0E3A2C) else GreenBg
 @Composable
-fun redBg(): Color = if (isSystemInDarkTheme()) Color(0xFF3A1216) else RedBg
+fun redBg(): Color = if (isSystemInDarkTheme()) Color(0xFF3F1D22) else RedBg
 @Composable
-fun amberBg(): Color = if (isSystemInDarkTheme()) Color(0xFF2E2410) else AmberBg
+fun amberBg(): Color = if (isSystemInDarkTheme()) Color(0xFF332A12) else AmberBg
 @Composable
-fun violetPale(): Color = if (isSystemInDarkTheme()) Color(0xFF2A2350) else VioletPale
+fun violetPale(): Color = if (isSystemInDarkTheme()) Color(0xFF2E2A55) else VioletPale
 
 /** Figma glow shadow: 0 2px 20px rgba(124,58,237,0.1) */
 val FigmaGlow = Color(0x1A7C3AED)
@@ -131,13 +131,13 @@ private val DarkColors = darkColorScheme(
     tertiary = Color(0xFF6EE7B7),
     onTertiary = Color(0xFF064E3B),
     background = BackgroundDark,
-    onBackground = Color(0xFFF1EDFB),
+    onBackground = Color(0xFFEFF3F8),
     surface = SurfaceDark,
-    onSurface = Color(0xFFF1EDFB),
+    onSurface = Color(0xFFEFF3F8),
     surfaceVariant = SurfaceAltDark,
-    onSurfaceVariant = Color(0xFFB6ACD6),
+    onSurfaceVariant = Color(0xFFA7B8CC),
     outline = OutlineDark,
-    outlineVariant = Color(0xFF2A2340),
+    outlineVariant = Color(0xFF26394A),
     error = Color(0xFFF87171),
     onError = Color(0xFF450A0A)
 )

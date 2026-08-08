@@ -1,6 +1,11 @@
 package com.quizforge.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -8,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -55,7 +61,11 @@ import com.quizforge.app.ui.screens.QuizAttemptScreen
 import com.quizforge.app.ui.screens.QuizBuilderScreen
 import com.quizforge.app.ui.screens.QuizListScreen
 import com.quizforge.app.ui.screens.ResultsScreen
+import com.quizforge.app.ui.screens.AboutScreen
+import com.quizforge.app.ui.screens.BackupScreen
+import com.quizforge.app.ui.screens.ChangelogScreen
 import com.quizforge.app.ui.screens.SettingsScreen
+import com.quizforge.app.ui.screens.UpdaterScreen
 import com.quizforge.app.ui.screens.SplashScreen
 import com.quizforge.app.ui.screens.StatsScreen
 import com.quizforge.app.ui.components.GlassBarItem
@@ -67,6 +77,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+        }
         setContent {
             val vm: AppViewModel = viewModel()
             val settings by vm.settings.collectAsState(initial = null)
@@ -94,6 +107,10 @@ object Routes {
     const val LEADERBOARD = "leaderboard"
     const val SETTINGS = "settings"
     const val PROFILE = "profile"
+    const val BACKUP = "backup"
+    const val UPDATER = "updater"
+    const val CHANGELOG = "changelog"
+    const val ABOUT = "about"
 
     fun attempt(quizId: String, mode: String = "normal", only: String = "") = "attempt/$quizId?mode=$mode&only=$only"
     fun results(attemptId: String) = "results/$attemptId"
@@ -117,6 +134,7 @@ fun QuizForgeRoot(vm: AppViewModel) {
     val showBottomBar = route in tabs.map { it.route } || route?.startsWith(Routes.BUILDER) == true
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             val notice = vm.syncNotice
             if (notice != null) {
@@ -221,6 +239,10 @@ fun QuizForgeRoot(vm: AppViewModel) {
             composable(Routes.LEADERBOARD) { LeaderboardScreen(vm, nav) }
             composable(Routes.SETTINGS) { SettingsScreen(vm, nav) }
             composable(Routes.PROFILE) { ProfileScreen(vm, nav) }
+            composable(Routes.BACKUP) { BackupScreen(vm, nav) }
+            composable(Routes.UPDATER) { UpdaterScreen(vm, nav) }
+            composable(Routes.CHANGELOG) { ChangelogScreen(vm, nav) }
+            composable(Routes.ABOUT) { AboutScreen(vm, nav) }
         }
     }
 }

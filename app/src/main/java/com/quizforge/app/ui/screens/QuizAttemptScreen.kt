@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -111,17 +112,26 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
     var runScore by remember { mutableStateOf(0) }
     var lastCorrect by remember { mutableStateOf(true) }
     val startTime = remember { System.currentTimeMillis() }
-    var settings by remember { mutableStateOf(AppSettings("system", true, true, "pause")) }
+    var settings by remember { mutableStateOf(AppSettings("system", true, true)) }
     LaunchedEffect(Unit) { vm.settings.collect { settings = it } }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    var autoSubmitted by remember { mutableStateOf(false) }
+    // auto-pause: when the app goes to the background mid-quiz, freeze it
+    var paused by remember { mutableStateOf(false) }
+    DisposableEffect(lifecycleOwner) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP && phase == Phase.PLAYING) paused = true
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+    }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     fun submit() {
         if (phase == Phase.SUBMITTING) return
         phase = Phase.SUBMITTING
-        val timeTaken = ((System.currentTimeMillis() - startTime) / 1000).toInt().coerceAtLeast(1)
+        val timeTaken = if (timed) (timeSeconds - timeLeft).coerceAtLeast(1)
+        else ((System.currentTimeMillis() - startTime) / 1000).toInt().coerceAtLeast(1)
         scope.launch {
             val result = vm.recordAttempt(quiz!!, questions, answers, timeTaken)
             nav.navigate(Routes.results(result.attempt.id)) {
@@ -130,20 +140,16 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
         }
     }
 
-    // countdown timer for the whole quiz (only when timed)
+    // countdown timer for the whole quiz — freezes whenever the quiz is paused
     if (phase == Phase.PLAYING && timed) {
         LaunchedEffect(current) {
             timeLeft = timeSeconds
-            while (timeLeft > 0) {
-                if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                    delay(1000)
-                    timeLeft--
-                } else {
-                    delay(500)
-                    if (settings.timerOnBackground == "submit") { autoSubmitted = true; submit(); break }
-                }
+            while (true) {
+                if (paused) { delay(250); continue }
+                if (timeLeft <= 0) { submit(); break }
+                delay(1000)
+                timeLeft--
             }
-            if (!autoSubmitted && timeLeft <= 0) submit()
         }
     }
 
@@ -192,7 +198,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
 
         Phase.PLAYING -> {
             val q = questions[current]
-            Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+            Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 // top bar — Figma: surface + bottom border, back tile, centered title, timer chip
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -356,6 +362,36 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                             }
                         }
                         item { Spacer(Modifier.height(8.dp)) }
+                    }
+                }
+            }
+
+            if (paused) {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.62f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 10.dp) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 34.dp, vertical = 26.dp)) {
+                            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = com.quizforge.app.ui.theme.Violet, modifier = Modifier.size(34.dp))
+                            Text("Quiz paused", fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 8.dp))
+                            Text(
+                                "You left the app — tap Resume to continue where you left off",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                            com.quizforge.app.ui.components.PressGlowButton(
+                                onClick = { paused = false },
+                                modifier = Modifier.padding(top = 18.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            ) {
+                                Text("  Resume", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                            }
+                        }
                     }
                 }
             }
