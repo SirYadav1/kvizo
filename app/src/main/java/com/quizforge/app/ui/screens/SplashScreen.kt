@@ -39,6 +39,7 @@ fun SplashScreen(vm: AppViewModel, nav: NavHostController) {
     LaunchedEffect(Unit) {
         scale.animateTo(1f, animationSpec = tween(650))
         delay(500)
+        vm.checkForUpdatesAtLaunch()
         if (vm.profile == null) nav.navigate(Routes.SETUP) { popUpTo(Routes.SPLASH) { inclusive = true } }
         else nav.navigate(Routes.HOME) { popUpTo(Routes.SPLASH) { inclusive = true } }
     }
