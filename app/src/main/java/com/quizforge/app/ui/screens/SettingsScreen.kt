@@ -90,7 +90,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                             val selected = settings.themeMode == mode
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (selected) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent,
+                                color = if (selected) MaterialTheme.colorScheme.secondary else androidx.compose.ui.graphics.Color.Transparent,
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable(onClick = { scope.launch { vm.setThemeMode(mode) } }, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
@@ -100,7 +100,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                                         label,
                                         fontSize = 12.sp,
                                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
