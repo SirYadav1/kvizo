@@ -1,5 +1,7 @@
 package com.quizforge.app.ui
 
+import com.quizforge.app.BuildConfig
+
 import android.app.Application
 import android.content.Context
 import android.media.AudioAttributes

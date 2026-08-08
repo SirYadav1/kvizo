@@ -50,7 +50,7 @@ import com.quizforge.app.data.AppSettings
 import com.quizforge.app.data.Profile
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.components.SectionTitle
-import com.quizforge.app.ui.components.violetGradient
+import com.quizforge.app.ui.theme.violetGradient
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Orange

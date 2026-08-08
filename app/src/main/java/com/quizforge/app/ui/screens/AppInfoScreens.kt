@@ -49,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -469,7 +470,7 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
                 Text("QuizForge", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
                 Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                 Text(
-                    "App: Universal APK\nSupported CPUs: ${Build.SUPPORTED_ABIS.joinToString()}\nAndroid ${BuildConfig.MIN_SDK_VERSION}+",
+                    "App: Universal APK\nSupported CPUs: ${Build.SUPPORTED_ABIS.joinToString()}\nAndroid ${26 /* Android 8.0+ */}+",
                     fontSize = 11.5.sp,
                     lineHeight = 17.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -527,6 +528,7 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
 
 @Composable
 private fun SocialButton(label: String, handle: String, url: String, modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -534,7 +536,7 @@ private fun SocialButton(label: String, handle: String, url: String, modifier: M
             .clickable(
                 onClick = {
                     val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
-                    androidx.core.content.ContextCompat.startActivity(androidx.compose.ui.platform.LocalContext.current, intent, null)
+                    androidx.core.content.ContextCompat.startActivity(context, intent, null)
                 },
                 indication = null,
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
@@ -558,9 +560,6 @@ private fun ContributorRow(emoji: String, name: String, role: String) {
         }
     }
 }
-
-@Composable
-private fun Modifier.rotate(deg: Float): Modifier = this.then(androidx.compose.ui.draw.rotate(deg))
 
 private fun formatBytes(b: Long): String = when {
     b < 1024 -> "$b B"
