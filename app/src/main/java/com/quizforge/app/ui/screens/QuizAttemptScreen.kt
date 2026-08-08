@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
@@ -433,7 +434,6 @@ private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
 
 @Composable
 /** Figma timer chip — red pill with clock icon. */
-@Composable
 private fun TimerChip(text: String, color: Color) {
     Surface(
         color = com.quizforge.app.ui.theme.RedBg,
