@@ -65,6 +65,7 @@ import com.quizforge.app.ui.theme.Red
 import com.quizforge.app.ui.theme.SpaceGrotesk
 import com.quizforge.app.ui.theme.Violet
 import com.quizforge.app.ui.theme.VioletLight
+import com.quizforge.app.ui.theme.VioletPale
 import com.quizforge.app.ui.theme.amberBg
 import com.quizforge.app.ui.theme.greenBg
 import com.quizforge.app.ui.theme.redBg
