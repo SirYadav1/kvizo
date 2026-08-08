@@ -9,8 +9,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -117,13 +119,14 @@ fun QuizForgeRoot(vm: AppViewModel) {
         topBar = {
             val notice = vm.syncNotice
             if (notice != null) {
-                Surface(color = Indigo, modifier = Modifier.fillMaxWidth()) {
+                Surface(color = Indigo, modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Icon(Icons.Filled.Celebration, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(16.dp))
                         Text(
-                            "🎉  $notice",
+                            "  $notice",
                             color = androidx.compose.ui.graphics.Color.White,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp,

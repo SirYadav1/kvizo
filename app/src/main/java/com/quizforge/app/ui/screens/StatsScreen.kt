@@ -1,6 +1,7 @@
 package com.quizforge.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -43,6 +45,7 @@ import androidx.navigation.NavHostController
 import com.quizforge.app.data.Attempt
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.components.DonutChart
+import com.quizforge.app.ui.components.ForgeCard
 import com.quizforge.app.ui.components.HeatmapCalendar
 import com.quizforge.app.ui.components.HBarChart
 import com.quizforge.app.ui.components.LineChart
@@ -124,18 +127,9 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
         map.map { (k, v) -> k to (v.first.toFloat() / v.second.coerceAtLeast(1)) }.sortedByDescending { it.second }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Statistics", fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp, modifier = Modifier.weight(1f))
-            var rangeMenu by remember { mutableStateOf(false) }
-            OutlinedButton(onClick = { rangeMenu = true }, shape = RoundedCornerShape(10.dp)) {
-                Text(range, fontSize = 12.sp)
-            }
-            DropdownMenu(expanded = rangeMenu, onDismissRequest = { rangeMenu = false }) {
-                listOf("All Time", "This Week", "This Month").forEach { r ->
-                    DropdownMenuItem(text = { Text(r) }, onClick = { range = r; rangeMenu = false })
-                }
-            }
+            Text("Statistics", fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.weight(1f))
             IconButton(onClick = { exportMenu = true }) {
                 Icon(Icons.Filled.Download, contentDescription = "Export")
             }
@@ -153,6 +147,39 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
+        // range segmented control — All Time / This Week / This Month
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+        ) {
+            Row(modifier = Modifier.padding(4.dp)) {
+                listOf("All Time", "This Week", "This Month").forEach { r ->
+                    val selected = range == r
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(
+                                if (selected) com.quizforge.app.ui.theme.violetGradient()
+                                else androidx.compose.ui.graphics.SolidColor(androidx.compose.ui.graphics.Color.Transparent),
+                                RoundedCornerShape(10.dp)
+                            )
+                            .clickable(onClick = { range = r }, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
+                            .padding(vertical = 7.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            r,
+                            fontSize = 11.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (selected) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -164,7 +191,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
             // heatmap
             item {
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         SectionTitle("Activity Heatmap")
                         HeatmapCalendar(heatmap, modifier = Modifier.padding(top = 8.dp))
@@ -175,7 +202,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
             // accuracy donut
             item {
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         DonutChart(accuracy, size = 110.dp)
                         Column(modifier = Modifier.padding(start = 20.dp)) {
@@ -189,7 +216,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
             // trend
             item {
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         SectionTitle("Accuracy Trend (last ${trend.size} attempts)")
                         LineChart(trend, modifier = Modifier.fillMaxWidth().height(120.dp).padding(top = 8.dp))
@@ -199,7 +226,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
             // category bars
             item {
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         SectionTitle("Accuracy by Category")
                         if (categoryStats.isEmpty()) {
@@ -213,17 +240,26 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
             // weak areas
             item {
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         SectionTitle("Weak Areas")
                         val weak = categoryStats.filter { it.second < 0.6f }
                         if (weak.isEmpty()) {
-                            Text("Nothing to improve — great job! 🎯", fontSize = 12.sp, color = Green)
+                            Text("Nothing to improve — great job!", fontSize = 12.sp, color = Green)
                         } else {
                             weak.forEach { (cat, acc) ->
-                                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text(cat, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                                    Text("${(acc * 100).toInt()}%", fontSize = 13.sp, color = Red)
+                                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        Text(cat, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                        Text("${(acc * 100).toInt()}%", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
+                                    }
+                                    androidx.compose.material3.LinearProgressIndicator(
+                                        progress = { acc },
+                                        modifier = Modifier.fillMaxWidth().padding(top = 5.dp).height(6.dp),
+                                        color = Red,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                                    )
                                 }
                             }
                         }
@@ -232,7 +268,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
             }
 
             item {
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.ShowChart, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
                         Text("  Best score: ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -243,7 +279,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
             // history by date
             item {
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         SectionTitle("History by Date")
                         if (availableDates.isEmpty()) {

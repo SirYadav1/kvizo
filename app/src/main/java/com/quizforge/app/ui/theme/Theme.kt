@@ -71,7 +71,23 @@ val IndigoSoft = VioletPale
 /* Gradient — Figma linear-gradient(135deg, #7C3AED, #A78BFA) */
 val VioletGradient: Brush = Brush.linearGradient(listOf(Violet, VioletGrad))
 
-/* Figma glow shadow: 0 2px 20px rgba(124,58,237,0.1) */
+/** Dark-aware violet gradient (brighter in dark mode for contrast). */
+@Composable
+fun violetGradient(): Brush =
+    if (isSystemInDarkTheme()) Brush.linearGradient(listOf(Color(0xFFB3A0FF), Color(0xFFC4B5FD)))
+    else VioletGradient
+
+/* Dark-aware semantic fills — light pastels are blinding on dark surfaces */
+@Composable
+fun greenBg(): Color = if (isSystemInDarkTheme()) Color(0xFF0D2B1F) else GreenBg
+@Composable
+fun redBg(): Color = if (isSystemInDarkTheme()) Color(0xFF3A1216) else RedBg
+@Composable
+fun amberBg(): Color = if (isSystemInDarkTheme()) Color(0xFF2E2410) else AmberBg
+@Composable
+fun violetPale(): Color = if (isSystemInDarkTheme()) Color(0xFF2A2350) else VioletPale
+
+/** Figma glow shadow: 0 2px 20px rgba(124,58,237,0.1) */
 val FigmaGlow = Color(0x1A7C3AED)
 
 /* Space Grotesk (variable font, wght 300–700) */
