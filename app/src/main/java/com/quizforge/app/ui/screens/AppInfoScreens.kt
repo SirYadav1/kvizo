@@ -381,20 +381,18 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
 private data class ChangelogEntry(val version: String, val date: String, val items: List<String>)
 
 private val changelog = listOf(
-    ChangelogEntry("1.5.3", "Aug 8, 2026", listOf(
-        "Speed-meter score sweep — settles exactly on your score",
-        "One-shot confetti celebration on finish",
-        "Settings redesign: segmented theme, cleaner controls",
-        "Telegram-style dark mode colors",
+    ChangelogEntry("1.4.0", "Aug 8, 2026", listOf(
+        "Telegram-style dark mode — buttons stay dark",
+        "Backup & Restore with JSON import/export",
         "Updater, changelog & about screens",
-        "Backup & Restore with JSON import",
-        "Quiz pauses automatically when you leave the app"
-    )),
-    ChangelogEntry("1.5.0", "Aug 6, 2026", listOf(
+        "Quiz pauses automatically when you leave the app",
+        "Settings redesign: segmented theme, cleaner controls",
+        "Speedometer score sweep — settles exactly on your score",
+        "One-shot confetti celebration on finish",
         "Figma violet redesign — new UI everywhere",
         "Space Grotesk display font",
         "Dark mode improvements & SVG icons",
-        "Press-glow buttons",
+        "Press-glow buttons"
     )),
     ChangelogEntry("1.3.0", "Aug 4, 2026", listOf(
         "Premium UI redesign",
