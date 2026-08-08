@@ -61,7 +61,8 @@ import com.quizforge.app.data.STATUS_DRAFT
 import com.quizforge.app.data.STATUS_PUBLISHED
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.components.DifficultyBadge
-import com.quizforge.app.ui.components.StatusChip
+import com.quizforge.app.ui.components.PillChip
+import com.quizforge.app.ui.components.StatusPill
 import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
@@ -112,28 +113,45 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Text(
             "My Quizzes",
+            fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk,
             fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
-            letterSpacing = (-0.3).sp,
+            fontSize = 22.sp,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 14.dp, bottom = 10.dp)
         )
 
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            placeholder = { Text("Search by title, category or tag") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            singleLine = true,
+        // Figma search bar: 10x14 padding, radius 14, surface + border
+        Surface(
             shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             modifier = Modifier.fillMaxWidth()
-        )
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp))
+                Box(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                    if (query.isEmpty()) {
+                        Text("Search by title, category, tag", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        singleLine = true,
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                    )
+                }
+            }
+        }
 
-        // status tabs
+        // status tabs — Figma gradient pills
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp).horizontalScroll(rememberScrollState())) {
-            FilterChip(selected = statusFilter == null, onClick = { statusFilter = null }, label = { Text("All") })
-            FilterChip(selected = statusFilter == STATUS_PUBLISHED, onClick = { statusFilter = STATUS_PUBLISHED }, label = { Text("Published") })
-            FilterChip(selected = statusFilter == STATUS_DRAFT, onClick = { statusFilter = STATUS_DRAFT }, label = { Text("Draft") })
-            FilterChip(selected = statusFilter == STATUS_ARCHIVED, onClick = { statusFilter = STATUS_ARCHIVED }, label = { Text("Archived") })
+            PillChip("All", selected = statusFilter == null, onClick = { statusFilter = null })
+            PillChip("Published", selected = statusFilter == STATUS_PUBLISHED, onClick = { statusFilter = STATUS_PUBLISHED })
+            PillChip("Draft", selected = statusFilter == STATUS_DRAFT, onClick = { statusFilter = STATUS_DRAFT })
+            PillChip("Archived", selected = statusFilter == STATUS_ARCHIVED, onClick = { statusFilter = STATUS_ARCHIVED })
         }
 
         // category filter + sort
@@ -249,10 +267,10 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
     var menuOpen by remember { mutableStateOf(false) }
 
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 0.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.attempt(quiz.id)) }
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -261,26 +279,30 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
                     Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     Spacer(Modifier.size(6.dp))
                     if (quiz.isRemote) {
-                        Surface(color = Green.copy(alpha = 0.13f), shape = RoundedCornerShape(6.dp)) {
-                            Text(
-                                "Community",
-                                color = Green,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            )
-                        }
+                        StatusPill("Community", com.quizforge.app.ui.theme.Green, com.quizforge.app.ui.theme.GreenBg)
                     } else {
-                        StatusChip(quiz.status)
+                        StatusPill(
+                            quiz.status.replaceFirstChar { it.uppercase() },
+                            when (quiz.status) {
+                                "draft" -> com.quizforge.app.ui.theme.Amber
+                                "archived" -> com.quizforge.app.ui.theme.InkSub
+                                else -> com.quizforge.app.ui.theme.Green
+                            },
+                            when (quiz.status) {
+                                "draft" -> com.quizforge.app.ui.theme.AmberBg
+                                "archived" -> com.quizforge.app.ui.theme.RedBg
+                                else -> com.quizforge.app.ui.theme.GreenBg
+                            }
+                        )
                     }
                 }
                 Text("${quiz.category} • $questionCount questions • ${quiz.attemptsCount} attempts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                 if (quiz.tags.isNotBlank()) {
-                    Text("#${quiz.tags.replace(",", " #")}", fontSize = 10.sp, color = Indigo, modifier = Modifier.padding(top = 2.dp), maxLines = 1)
+                    Text("#${quiz.tags.replace(",", " #")}", fontSize = 10.sp, color = com.quizforge.app.ui.theme.Violet, modifier = Modifier.padding(top = 2.dp), maxLines = 1)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
                     DifficultyBadge(quiz.difficulty)
-                    Text("  ${quiz.averageScore.toInt()}% avg", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (quiz.averageScore >= 60) Green else Amber)
+                    Text("  ${quiz.averageScore.toInt()}% avg", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (quiz.averageScore >= 60) com.quizforge.app.ui.theme.Green else com.quizforge.app.ui.theme.Amber)
                 }
             }
             IconButton(onClick = { menuOpen = true }) {

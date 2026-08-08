@@ -7,98 +7,138 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.quizforge.app.R
 
 /* ------------------------------------------------------------------ */
-/* Soft-Pastel palette — lavender accents, off-white bg, charcoal text  */
+/* "Forge" design system — Figma violet: #7C3AED → #A78BFA             */
+/* Light surfaces tinted #F5F3FF, Space Grotesk display type           */
 /* ------------------------------------------------------------------ */
 
-val Indigo = Color(0xFF8F7BF7)          // soft pastel lavender (primary)
-val IndigoDark = Color(0xFF6F5AE6)      // deeper lavender for gradients/filled
-val IndigoSoft = Color(0xFFEAE3FF)      // light lavender container
-val Amber = Color(0xFFF2B24C)
-val Green = Color(0xFF4CC38A)
-val Red = Color(0xFFE5586B)
-val Orange = Color(0xFFF08A5A)
-val Grey = Color(0xFF9C97AC)
-val Night = Color(0xFF14121D)
-val NightSurface = Color(0xFF1D1A29)
+/* Primary violet family */
+val Violet = Color(0xFF7C3AED)          // Figma primary
+val VioletDeep = Color(0xFF6D28D9)      // deeper violet for dark elements
+val VioletGrad = Color(0xFFA78BFA)      // Figma gradient end
+val VioletLight = Color(0xFF9B72F8)     // icon / mid tints
+val VioletPale = Color(0xFFEDE9FE)      // soft container (Figma primaryPale)
+val VioletPale2 = Color(0xFFF0EBFF)     // lighter container
+val VioletBorderStrong = Color(0xFFC4B5FD)
+val VioletBorder = Color(0xFFE4DAFF)
 
-/* Charcoal — text & primary buttons */
-val Charcoal = Color(0xFF2F2B3A)
-val CharcoalLight = Color(0xFF6E6879)
+/* Text */
+val Ink = Color(0xFF1E1333)             // Figma text (deep purple-black)
+val InkSub = Color(0xFF6B5B8A)          // secondary text
+val InkMuted = Color(0xFFA094B8)        // muted text
 
-/* Surfaces — light (off-white w/ purple tint + pure white + lavender) */
+/* Semantic colors (Figma) */
+val Green = Color(0xFF059669)
+val GreenBg = Color(0xFFECFDF5)
+val GreenBorder = Color(0xFFA7F3D0)
+val Red = Color(0xFFDC2626)
+val RedBg = Color(0xFFFEF2F2)
+val RedBorder = Color(0xFFFECACA)
+val Amber = Color(0xFFB45309)
+val AmberBg = Color(0xFFFFFBEB)
+val AmberBorder = Color(0xFFFDE68A)
+val Orange = Color(0xFFF57C2F)
+
+/* Surfaces — light (Figma: bg #F5F3FF, surface white, alt #EDE9FE) */
+val BackgroundLight = Color(0xFFF5F3FF)
 val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceVariantLight = Color(0xFFF2EEFC)   // light pastel lavender
-val BackgroundLight = Color(0xFFF8F6FD)       // off-white w/ light purple tint
-val OutlineLight = Color(0xFFEAE5F8)
+val SurfaceAltLight = Color(0xFFEDE9FE)
+val OutlineLight = Color(0xFFE4DAFF)
+val OutlineStrongLight = Color(0xFFC4B5FD)
 
-/* Surfaces — dark (soft lavender-tinted night) */
-val SurfaceDark = Color(0xFF1D1A29)
-val SurfaceVariantDark = Color(0xFF282436)
-val BackgroundDark = Color(0xFF14121D)
-val OutlineDark = Color(0xFF35304A)
+/* Surfaces — dark (deep violet-tinted night) */
+val SurfaceDark = Color(0xFF1D1828)
+val SurfaceAltDark = Color(0xFF251E36)
+val BackgroundDark = Color(0xFF14101E)
+val OutlineDark = Color(0xFF2F2747)
+val OutlineStrongDark = Color(0xFF3E3260)
+
+/* Legacy aliases — kept so existing screens keep compiling */
+val Indigo = Violet
+val IndigoDark = VioletDeep
+val IndigoSoft = VioletPale
+
+/* Gradient — Figma linear-gradient(135deg, #7C3AED, #A78BFA) */
+val VioletGradient: Brush = Brush.linearGradient(listOf(Violet, VioletGrad))
+
+/* Figma glow shadow: 0 2px 20px rgba(124,58,237,0.1) */
+val FigmaGlow = Color(0x1A7C3AED)
+
+/* Space Grotesk (variable font, wght 300–700) */
+val SpaceGrotesk = FontFamily(
+    Font(R.font.space_grotesk, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.space_grotesk, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.space_grotesk, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.space_grotesk, FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
+    Font(R.font.space_grotesk, FontWeight.Black, variationSettings = FontVariation.Settings(FontVariation.weight(700)))
+)
 
 private val LightColors = lightColorScheme(
-    primary = Indigo,
+    primary = Violet,
     onPrimary = Color.White,
-    primaryContainer = IndigoSoft,
-    onPrimaryContainer = Color(0xFF322A63),
-    secondary = Charcoal,
+    primaryContainer = VioletPale,
+    onPrimaryContainer = Color(0xFF3B1E8F),
+    secondary = VioletDeep,
     onSecondary = Color.White,
     tertiary = Green,
     onTertiary = Color.White,
     background = BackgroundLight,
-    onBackground = Charcoal,
+    onBackground = Ink,
     surface = SurfaceLight,
-    onSurface = Charcoal,
-    surfaceVariant = SurfaceVariantLight,
-    onSurfaceVariant = CharcoalLight,
+    onSurface = Ink,
+    surfaceVariant = SurfaceAltLight,
+    onSurfaceVariant = InkSub,
     outline = OutlineLight,
-    outlineVariant = Color(0xFFEFEBFA),
+    outlineVariant = Color(0xFFF0EBFF),
     error = Red,
     onError = Color.White
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFC3B6FF),
-    onPrimary = Color(0xFF322A63),
-    primaryContainer = Color(0xFF4F43A8),
-    onPrimaryContainer = Color(0xFFEAE3FF),
-    secondary = Color(0xFFE4E1EE),
-    onSecondary = Color(0xFF2F2B3A),
-    tertiary = Color(0xFF85D9AE),
-    onTertiary = Color(0xFF0B3A26),
+    primary = Color(0xFFB3A0FF),
+    onPrimary = Color(0xFF2A135F),
+    primaryContainer = Color(0xFF4C3A8F),
+    onPrimaryContainer = Color(0xFFEDE9FE),
+    secondary = Color(0xFFE9E4FA),
+    onSecondary = Color(0xFF2A135F),
+    tertiary = Color(0xFF6EE7B7),
+    onTertiary = Color(0xFF064E3B),
     background = BackgroundDark,
-    onBackground = Color(0xFFE8E5F2),
+    onBackground = Color(0xFFF1EDFB),
     surface = SurfaceDark,
-    onSurface = Color(0xFFE8E5F2),
-    surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = Color(0xFFB4AECE),
+    onSurface = Color(0xFFF1EDFB),
+    surfaceVariant = SurfaceAltDark,
+    onSurfaceVariant = Color(0xFFB6ACD6),
     outline = OutlineDark,
-    outlineVariant = Color(0xFF322E46),
-    error = Color(0xFFFF8FA0),
-    onError = Color(0xFF3F0712)
+    outlineVariant = Color(0xFF2A2340),
+    error = Color(0xFFF87171),
+    onError = Color(0xFF450A0A)
 )
 
 /* ------------------------------------------------------------------ */
-/* Typography — clean, slightly tighter leading for a premium feel     */
+/* Typography — Space Grotesk for display/headings, system for body    */
 /* ------------------------------------------------------------------ */
 
 private val Base = androidx.compose.material3.Typography()
 
 val QuizForgeTypography = androidx.compose.material3.Typography(
-    displaySmall = Base.displaySmall.copy(fontSize = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
-    headlineLarge = Base.headlineLarge.copy(fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
-    headlineMedium = Base.headlineMedium.copy(fontSize = 24.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
-    headlineSmall = Base.headlineSmall.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
-    titleLarge = Base.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-    titleMedium = Base.titleMedium.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
-    titleSmall = Base.titleSmall.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+    displaySmall = Base.displaySmall.copy(fontFamily = SpaceGrotesk, fontSize = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
+    headlineLarge = Base.headlineLarge.copy(fontFamily = SpaceGrotesk, fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
+    headlineMedium = Base.headlineMedium.copy(fontFamily = SpaceGrotesk, fontSize = 24.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
+    headlineSmall = Base.headlineSmall.copy(fontFamily = SpaceGrotesk, fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
+    titleLarge = Base.titleLarge.copy(fontFamily = SpaceGrotesk, fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
+    titleMedium = Base.titleMedium.copy(fontFamily = SpaceGrotesk, fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+    titleSmall = Base.titleSmall.copy(fontFamily = SpaceGrotesk, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
     bodyLarge = Base.bodyLarge.copy(fontSize = 15.sp, lineHeight = 22.sp),
     bodyMedium = Base.bodyMedium.copy(fontSize = 13.sp, lineHeight = 19.sp),
     bodySmall = Base.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp),
@@ -108,7 +148,7 @@ val QuizForgeTypography = androidx.compose.material3.Typography(
 )
 
 /* ------------------------------------------------------------------ */
-/* Shapes — generous, rounded, soft                                     */
+/* Shapes — Figma radii: 10, 12, 14, 16, 18, 26, 99                    */
 /* ------------------------------------------------------------------ */
 
 private val AppShapes = Shapes(
@@ -116,7 +156,7 @@ private val AppShapes = Shapes(
     small = RoundedCornerShape(14.dp),
     medium = RoundedCornerShape(18.dp),
     large = RoundedCornerShape(22.dp),
-    extraLarge = RoundedCornerShape(30.dp)
+    extraLarge = RoundedCornerShape(26.dp)
 )
 
 @Composable

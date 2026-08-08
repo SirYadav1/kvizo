@@ -37,18 +37,156 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
+import com.quizforge.app.ui.theme.Ink
 import com.quizforge.app.ui.theme.Red
+import com.quizforge.app.ui.theme.SpaceGrotesk
+import com.quizforge.app.ui.theme.Violet
+import com.quizforge.app.ui.theme.VioletGradient
 import kotlinx.coroutines.delay
 import kotlin.random.Random
+
+/* ------------------------------------------------------------------ */
+/* Figma design-system components ("Forge")                            */
+/* ------------------------------------------------------------------ */
+
+/** Figma card: white, 1px border, radius 18 (ee in the Figma prototype). */
+@Composable
+fun ForgeCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(18.dp),
+        shadowElevation = 0.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+    ) { content() }
+}
+
+/** Section label — uppercase, 10–11px, letter-spaced (Figma style). */
+@Composable
+fun ForgeSectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text.uppercase(),
+        fontSize = 10.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.08.em,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+        modifier = modifier
+    )
+}
+
+/** Gradient text (Figma .grad-text) — violet → light-violet sweep. */
+@Composable
+fun GradientText(text: String, fontSize: androidx.compose.ui.unit.TextUnit, fontWeight: FontWeight = FontWeight.Bold, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = TextStyle(
+            brush = VioletGradient,
+            fontFamily = SpaceGrotesk,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            lineHeight = fontSize * 1.1
+        ),
+        modifier = modifier
+    )
+}
+
+/** Pill chip — selected: violet gradient + white text; unselected: surface + border. */
+@Composable
+fun PillChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }),
+        shape = RoundedCornerShape(99.dp),
+        color = if (selected) Color.Transparent else MaterialTheme.colorScheme.surface,
+        border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+    ) {
+        Box(
+            modifier = Modifier
+                .background(if (selected) VioletGradient else Color.Transparent, RoundedCornerShape(99.dp))
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+        ) {
+            Text(
+                label,
+                fontSize = 12.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** Colored status pill (Figma status chips) — tinted bg + colored border. */
+@Composable
+fun StatusPill(
+    label: String,
+    color: Color,
+    bg: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        color = bg,
+        shape = RoundedCornerShape(99.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.30f))
+    ) {
+        Text(
+            label,
+            color = color,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+        )
+    }
+}
+
+/** Figma progress bar — 5–7px, rounded 99, gradient fill. */
+@Composable
+fun ForgeProgressBar(progress: Float, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 6.dp) {
+    Box(
+        modifier = modifier
+            .height(height)
+            .background(MaterialTheme.colorScheme.outline, RoundedCornerShape(99.dp))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(progress.coerceIn(0f, 1f))
+                .height(height)
+                .background(VioletGradient, RoundedCornerShape(99.dp))
+        )
+    }
+}
+
+/** Uppercase tiny label with letter-spacing (Figma "Question 5 of 12"). */
+@Composable
+fun ForgeKicker(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text.uppercase(),
+        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.08.em,
+        color = Indigo,
+        modifier = modifier
+    )
+}
 
 /** Difficulty badge with color coding. */
 @Composable
