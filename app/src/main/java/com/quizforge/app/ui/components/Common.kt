@@ -116,12 +116,15 @@ fun PillChip(
     Surface(
         modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }),
         shape = RoundedCornerShape(99.dp),
-        color = if (selected) Color.Transparent else MaterialTheme.colorScheme.surface,
+        color = if (selected) Violet else MaterialTheme.colorScheme.surface,
         border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Box(
             modifier = Modifier
-                .background(if (selected) VioletGradient else Color.Transparent, RoundedCornerShape(99.dp))
+                .background(
+                    if (selected) VioletGradient else Brush.SolidColor(androidx.compose.ui.graphics.Color.Transparent),
+                    RoundedCornerShape(99.dp)
+                )
                 .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
             Text(
