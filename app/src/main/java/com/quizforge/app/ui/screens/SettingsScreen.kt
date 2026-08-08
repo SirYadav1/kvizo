@@ -1,10 +1,7 @@
 package com.quizforge.app.ui.screens
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -19,27 +17,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Hearing
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Restore
-import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,26 +45,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.quizforge.app.BuildConfig
 import com.quizforge.app.Routes
 import com.quizforge.app.data.AppSettings
 import com.quizforge.app.data.Profile
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.components.SectionTitle
+import com.quizforge.app.ui.components.violetGradient
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
-import com.quizforge.app.ui.theme.Red
-import com.quizforge.app.util.BackupManager
+import com.quizforge.app.ui.theme.Orange
+import com.quizforge.app.ui.theme.SpaceGrotesk
 import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
-    var settings by remember { mutableStateOf(AppSettings("system", true, true, "pause")) }
+    var settings by remember { mutableStateOf(AppSettings("system", true, true)) }
     var profiles by remember { mutableStateOf(listOf<Profile>()) }
-    var confirmReset by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf<String?>(null) }
-    var updateState by remember { mutableStateOf("idle") } // idle | checking | current | available | none
-    var updateUrl by remember { mutableStateOf("") }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -79,65 +68,51 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
         profiles = vm.repo.getAllProfiles()
     }
 
-    val backupSaver = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            try {
-                val json = BackupManager.export(vm.repo)
-                vm.getApplication<android.app.Application>().contentResolver.openOutputStream(uri)?.use { os -> os.write(json.toByteArray()) }
-                message = "Backup saved"
-            } catch (e: Exception) {
-                message = "Backup failed: ${e.message}"
-            }
-        }
-    }
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+        Text("Settings", fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
 
-    val restorePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            try {
-                val text = vm.getApplication<android.app.Application>().contentResolver.openInputStream(uri)?.bufferedReader()?.use { br -> br.readText() } ?: ""
-                BackupManager.restore(text, vm.repo)
-                message = "Restore complete"
-            } catch (e: Exception) {
-                message = "Restore failed: ${e.message}"
-            }
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-        Text("Settings", fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
-
-        message?.let {
-            Surface(color = Green.copy(alpha = 0.12f), shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                Text(it, fontSize = 13.sp, modifier = Modifier.padding(12.dp))
-            }
-        }
-
-        // Appearance
+        // ---------- Appearance ----------
         SectionTitle("Appearance")
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.DarkMode, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                Text("  Theme", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                var themeMenu by remember { mutableStateOf(false) }
-                OutlinedButton(onClick = { themeMenu = true }, shape = RoundedCornerShape(8.dp)) {
-                    Text(settings.themeMode, fontSize = 12.sp)
+        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.DarkMode, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                    Text("  Theme", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
                 }
-                DropdownMenu(expanded = themeMenu, onDismissRequest = { themeMenu = false }) {
-                    listOf("system", "light", "dark").forEach { t ->
-                        DropdownMenuItem(text = { Text(t) }, onClick = {
-                            themeMenu = false
-                            scope.launch { vm.setThemeMode(t) }
-                        })
+                // segmented control — System / Light / Dark
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                ) {
+                    Row(modifier = Modifier.padding(3.dp)) {
+                        listOf("system" to "System", "light" to "Light", "dark" to "Dark").forEach { (mode, label) ->
+                            val selected = settings.themeMode == mode
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (selected) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable(onClick = { scope.launch { vm.setThemeMode(mode) } }, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
+                                    Text(
+                                        label,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Sound & haptics
+        // ---------- Sound & Feedback ----------
         SectionTitle("Sound & Feedback")
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
             Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Hearing, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
@@ -152,26 +127,19 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // Timer behavior
-        SectionTitle("Quiz Timer")
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Smartphone, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                Text("  When app goes to background", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                var timerMenu by remember { mutableStateOf(false) }
-                OutlinedButton(onClick = { timerMenu = true }, shape = RoundedCornerShape(8.dp)) {
-                    Text(settings.timerOnBackground, fontSize = 12.sp)
-                }
-                DropdownMenu(expanded = timerMenu, onDismissRequest = { timerMenu = false }) {
-                    DropdownMenuItem(text = { Text("pause") }, onClick = { timerMenu = false; scope.launch { vm.setTimerBehavior("pause") } })
-                    DropdownMenuItem(text = { Text("submit") }, onClick = { timerMenu = false; scope.launch { vm.setTimerBehavior("submit") } })
-                }
-            }
-        }
+        // ---------- Backup & Restore (top of the info stack) ----------
+        SectionTitle("Data")
+        SettingsRow(Icons.Filled.Storage, "Backup & Restore", "Save or import your JSON backup", Indigo) { nav.navigate(Routes.BACKUP) }
 
-        // Profiles
+        // ---------- App info ----------
+        SectionTitle("App")
+        SettingsRow(Icons.Filled.SystemUpdate, "Updater", "Check for updates & notifications", com.quizforge.app.ui.theme.Violet) { nav.navigate(Routes.UPDATER) }
+        SettingsRow(Icons.Filled.History, "Changelog", "What's new in every build", Orange) { nav.navigate(Routes.CHANGELOG) }
+        SettingsRow(Icons.Filled.Info, "About", "Version, developer & contributors", com.quizforge.app.ui.theme.Green) { nav.navigate(Routes.ABOUT) }
+
+        // ---------- Profiles ----------
         SectionTitle("Profiles")
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Text("${profiles.size} profile(s) — tap one to switch", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 profiles.forEach { p ->
@@ -201,139 +169,6 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // Backup
-        SectionTitle("Data")
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Backup, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                    Text("  Backup all data (JSON)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { backupSaver.launch("quizforge-backup.json") }) { Text("Save", color = Indigo) }
-                }
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Restore, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                    Text("  Restore from backup", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { restorePicker.launch(arrayOf("application/json", "text/*", "*/*")) }) { Text("Open", color = Indigo) }
-                }
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Storage, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                    Text("  Storage used", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    Text(formatBytes(vm.repo.storageBytes()), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.DeleteForever, contentDescription = null, tint = Red, modifier = Modifier.size(20.dp))
-                    Text("  Reset all data", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Red, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { confirmReset = true }) { Text("Reset", color = Red) }
-                }
-            }
-        }
-
-        // About & Updates
-        SectionTitle("About & Updates")
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.size(38.dp).background(Indigo.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.Info, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                    }
-                    Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
-                        Text("QuizForge", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Text("Version ${BuildConfig.VERSION_NAME}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Text("Made by SirYadav1", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Text(
-                    "Quiz app with XP levels, badges, stats and community quizzes. Built with Kotlin + Compose.",
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 10.dp)
-                )
-                androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.SystemUpdate, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                    Text("  Check for updates", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    TextButton(onClick = {
-                        scope.launch {
-                            updateState = "checking"
-                            val release = vm.latestRelease()
-                            if (release == null) {
-                                updateState = "none"
-                            } else if (release.first == BuildConfig.VERSION_NAME) {
-                                updateState = "current"
-                            } else {
-                                updateState = "available"
-                                updateUrl = release.second
-                            }
-                        }
-                    }, shape = RoundedCornerShape(8.dp)) {
-                        Text(
-                            when (updateState) {
-                                "checking" -> "Checking…"
-                                "current" -> "Up to date ✓"
-                                "available" -> "Update available"
-                                "none" -> "Check again"
-                                else -> "Check"
-                            },
-                            fontSize = 12.sp,
-                            color = if (updateState == "available") Green else if (updateState == "current") Green else Indigo
-                        )
-                    }
-                }
-                when (updateState) {
-                    "available" -> Text(
-                        "New version available — tap to open the download page",
-                        fontSize = 12.sp,
-                        color = Green,
-                        modifier = Modifier.padding(top = 2.dp).clickable {
-                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(updateUrl))
-                            androidx.core.content.ContextCompat.startActivity(
-                                vm.getApplication<android.app.Application>(), intent, null
-                            )
-                        }
-                    )
-                    "current" -> Text(
-                        "You are on the latest version (${BuildConfig.VERSION_NAME})",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                    "none" -> Text(
-                        "Could not check — check your internet connection",
-                        fontSize = 12.sp,
-                        color = Red,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                    else -> {}
-                }
-            }
-        }
-
         Spacer(Modifier.height(24.dp))
     }
-
-    if (confirmReset) {
-        AlertDialog(
-            onDismissRequest = { confirmReset = false },
-            title = { Text("Reset all data?") },
-            text = { Text("This permanently deletes ALL profiles, quizzes, attempts and badges. A backup is recommended first.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmReset = false
-                    vm.resetAll()
-                    nav.navigate(Routes.SETUP) { popUpTo(Routes.SETUP) { inclusive = true } }
-                }) { Text("Delete everything", color = Red) }
-            },
-            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } }
-        )
-    }
-}
-
-private fun formatBytes(b: Long): String = when {
-    b < 1024 -> "$b B"
-    b < 1024 * 1024 -> "${b / 1024} KB"
-    else -> "${b / (1024 * 1024)} MB"
 }

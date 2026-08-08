@@ -16,8 +16,9 @@ data class AppSettings(
     val themeMode: String,   // "system" | "light" | "dark"
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val timerOnBackground: String, // "pause" | "submit"
-    val leaderboardOnline: Boolean = false // flips to true once the online login system is live
+    val leaderboardOnline: Boolean = false, // flips to true once the online login system is live
+    val autoUpdateCheck: Boolean = true,    // check GitHub for new releases on app start
+    val updateNotifications: Boolean = true // show a notification when a new version is found
 )
 
 class SettingsRepo(private val context: Context) {
@@ -25,16 +26,18 @@ class SettingsRepo(private val context: Context) {
     private val themeKey = stringPreferencesKey("theme_mode")
     private val soundKey = booleanPreferencesKey("sound_enabled")
     private val hapticsKey = booleanPreferencesKey("haptics_enabled")
-    private val timerBgKey = stringPreferencesKey("timer_background")
     private val leaderboardOnlineKey = booleanPreferencesKey("leaderboard_online")
+    private val autoUpdateKey = booleanPreferencesKey("auto_update_check")
+    private val updateNotifKey = booleanPreferencesKey("update_notifications")
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
         AppSettings(
             themeMode = p[themeKey] ?: "system",
             soundEnabled = p[soundKey] ?: true,
             hapticsEnabled = p[hapticsKey] ?: true,
-            timerOnBackground = p[timerBgKey] ?: "pause",
-            leaderboardOnline = p[leaderboardOnlineKey] ?: false
+            leaderboardOnline = p[leaderboardOnlineKey] ?: false,
+            autoUpdateCheck = p[autoUpdateKey] ?: true,
+            updateNotifications = p[updateNotifKey] ?: true
         )
     }
 
@@ -44,7 +47,9 @@ class SettingsRepo(private val context: Context) {
 
     suspend fun setHapticsEnabled(v: Boolean) = context.dataStore.edit { it[hapticsKey] = v }
 
-    suspend fun setTimerOnBackground(v: String) = context.dataStore.edit { it[timerBgKey] = v }
+    suspend fun setAutoUpdateCheck(v: Boolean) = context.dataStore.edit { it[autoUpdateKey] = v }
+
+    suspend fun setUpdateNotifications(v: Boolean) = context.dataStore.edit { it[updateNotifKey] = v }
 
     /** Flip this to true only when the online login system is enabled — leaderboard then reads from the server. */
     suspend fun setLeaderboardOnline(v: Boolean) = context.dataStore.edit { it[leaderboardOnlineKey] = v }

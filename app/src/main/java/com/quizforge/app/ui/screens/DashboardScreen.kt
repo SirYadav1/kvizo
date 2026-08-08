@@ -180,13 +180,13 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // secondary mini stats — today / created / taken
+        // secondary mini stats — every card explains its own data
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MiniChip("$todayCount", "today", Modifier.weight(1f))
-                MiniChip("${quizzes.size}", "created", Modifier.weight(1f))
-                MiniChip("$totalAttempts", "taken", Modifier.weight(1f))
-                MiniChip(formatTime(totalTime), "time", Modifier.weight(1f))
+                MiniChip("$todayCount", "quizzes\ntoday", Modifier.weight(1f))
+                MiniChip("${quizzes.size}", "quizzes\ncreated", Modifier.weight(1f))
+                MiniChip("$totalAttempts", "attempts\ntaken", Modifier.weight(1f))
+                MiniChip(formatTime(totalTime), "time\nplayed", Modifier.weight(1f))
             }
         }
 
@@ -213,13 +213,13 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // quick actions — Figma 3-tile grid
+        // quick actions — Figma 3-tile grid, bigger icons in tinted tiles
         item {
             ForgeSectionLabel("Quick actions")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                FigmaQuickAction(Icons.Filled.Edit, "Create", violetPale(), Color(0xFFC4B5FD), Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
-                FigmaQuickAction(Icons.Filled.PlayArrow, "Play", greenBg(), Color(0xFFA7F3D0), Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
-                FigmaQuickAction(Icons.Filled.TrendingUp, "Stats", amberBg(), Color(0xFFFDE68A), Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
+                FigmaQuickAction(Icons.Filled.Edit, "Create", violetPale(), Violet, Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
+                FigmaQuickAction(Icons.Filled.PlayArrow, "Play", greenBg(), Green, Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
+                FigmaQuickAction(Icons.Filled.TrendingUp, "Stats", amberBg(), Amber, Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
             }
         }
 
@@ -239,7 +239,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             }
         } else {
-            items(popular.take(6), key = { it.id }) { quiz ->
+            items(popular.take(5), key = { it.id }) { quiz ->
                 PopularQuizRow(quiz, questionCounts[quiz.id] ?: 0) { nav.navigate(Routes.attempt(quiz.id)) }
             }
         }
@@ -323,23 +323,45 @@ private fun FigmaStatCard(icon: ImageVector, label: String, value: String, sub: 
 private fun MiniChip(value: String, label: String, modifier: Modifier = Modifier) {
     ForgeCard(modifier = modifier) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 10.dp)) {
-            Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Text(label, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.2.sp)
+            Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(
+                label,
+                fontSize = 8.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 0.15.sp,
+                lineHeight = 11.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun FigmaQuickAction(icon: ImageVector, label: String, bg: Color, border: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun FigmaQuickAction(
+    icon: ImageVector,
+    label: String,
+    bg: Color,
+    tint: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         color = bg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, border),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 16.dp, bottom = 14.dp)) {
-            Icon(icon, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
-            Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .background(tint.copy(alpha = 0.18f), RoundedCornerShape(16.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
+            }
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }

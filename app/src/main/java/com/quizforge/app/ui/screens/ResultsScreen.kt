@@ -3,7 +3,6 @@ package com.quizforge.app.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -147,7 +147,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
     Box(modifier = Modifier.fillMaxSize()) {
         ConfettiOverlay(show = celebrate, modifier = Modifier.fillMaxSize())
         Column(
-            modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp),
+            modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Figma header: "QUIZ COMPLETE" kicker + title
@@ -328,12 +328,11 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
 private fun ScoreRing(score: Int, modifier: Modifier = Modifier, onSettled: () -> Unit = {}) {
     val pct = (score / 100f).coerceIn(0f, 1f)
     val trackColor = MaterialTheme.colorScheme.outline
-    // speed-meter sweep: fast accelerating run, slight overshoot, then a spring settle
+    // speed-meter sweep: fast accelerating run that lands EXACTLY on the real score
     val animated = remember { Animatable(0f) }
     LaunchedEffect(score) {
         animated.snapTo(0f)
-        animated.animateTo((pct + 0.10f).coerceAtMost(1f), animationSpec = tween(durationMillis = 850, easing = FastOutSlowInEasing))
-        animated.animateTo(pct, animationSpec = spring(dampingRatio = 0.65f, stiffness = 350f))
+        animated.animateTo(pct, animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing))
         onSettled()
     }
     val shownScore = (score * animated.value).roundToInt().coerceIn(0, 100)
