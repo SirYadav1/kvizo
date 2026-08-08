@@ -60,6 +60,7 @@ import com.quizforge.app.ui.components.ForgeSectionLabel
 import com.quizforge.app.ui.components.GradientText
 import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
+import com.quizforge.app.ui.theme.InkSub
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
 import com.quizforge.app.ui.theme.SpaceGrotesk
