@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -122,7 +123,7 @@ fun PillChip(
         Box(
             modifier = Modifier
                 .background(
-                    if (selected) VioletGradient else Brush.SolidColor(androidx.compose.ui.graphics.Color.Transparent),
+                    if (selected) VioletGradient else androidx.compose.ui.graphics.SolidColor(androidx.compose.ui.graphics.Color.Transparent),
                     RoundedCornerShape(99.dp)
                 )
                 .padding(horizontal = 16.dp, vertical = 6.dp)

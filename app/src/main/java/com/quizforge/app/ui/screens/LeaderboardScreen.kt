@@ -95,7 +95,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
                         modifier = Modifier
                             .weight(1f)
                             .background(
-                                if (selected) VioletGradient else Brush.SolidColor(Color.Transparent),
+                                if (selected) VioletGradient else androidx.compose.ui.graphics.SolidColor(Color.Transparent),
                                 RoundedCornerShape(10.dp)
                             )
                             .clickable(onClick = { metric = m }, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
