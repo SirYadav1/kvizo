@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -93,7 +94,10 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .background(if (selected) VioletGradient else Color.Transparent, RoundedCornerShape(10.dp))
+                            .background(
+                                if (selected) VioletGradient else Brush.SolidColor(Color.Transparent),
+                                RoundedCornerShape(10.dp)
+                            )
                             .clickable(onClick = { metric = m }, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
                             .padding(vertical = 7.dp),
                         contentAlignment = Alignment.Center
