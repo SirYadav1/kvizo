@@ -25,7 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
@@ -190,58 +190,100 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
         Phase.PLAYING -> {
             val q = questions[current]
             Column(modifier = Modifier.fillMaxSize()) {
-                // top bar
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
-                    IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                // top bar — Figma: surface + bottom border, back tile, centered title, timer chip
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            IconButton(onClick = { nav.popBackStack() }, modifier = Modifier.size(34.dp)) {
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp))
+                            }
+                        }
                     }
-                    Text(quiz?.title ?: "", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, modifier = Modifier.weight(1f))
+                    Text(
+                        quiz?.title ?: "",
+                        fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                    )
                     if (timed) {
-                        TimerChip("$timeLeft", if (timeLeft <= 30) Red else Green)
+                        TimerChip("$timeLeft", Red)
+                    } else {
+                        Spacer(Modifier.width(34.dp))
                     }
-                    IconButton(onClick = {
+                }
+                // Figma progress: 5px rounded gradient
+                com.quizforge.app.ui.components.ForgeProgressBar(
+                    progress = (current + 1f) / questions.size,
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 5.dp
+                )
+
+                // live score bar — green up on correct, red down on wrong
+                PointsBar(runScore, questions.size * 10, lastCorrect)
+
+                // utility row — flag, navigator, submit (kept functional, compact)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp)
+                ) {
+                    TextButton(onClick = {
                         val id = q.id
                         flagged = if (id in flagged) flagged - id else flagged + id
                     }) {
                         Icon(
                             if (q.id in flagged) Icons.Filled.Flag else Icons.Filled.BookmarkBorder,
                             contentDescription = "Flag",
-                            tint = if (q.id in flagged) Red else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (q.id in flagged) Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
                         )
+                        Text(if (q.id in flagged) "  Flagged" else "  Flag", fontSize = 12.sp, color = if (q.id in flagged) Red else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    IconButton(onClick = { showNavigator = true }) {
-                        Icon(Icons.Filled.Apps, contentDescription = "Navigator")
+                    TextButton(onClick = { showNavigator = true }) {
+                        Icon(Icons.Filled.Apps, contentDescription = "Navigator", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                        Text("  Navigator", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    Spacer(Modifier.weight(1f))
                     TextButton(onClick = { submit() }) {
-                        Text("Submit", color = Indigo, fontWeight = FontWeight.Bold)
+                        Text("Submit", color = com.quizforge.app.ui.theme.Violet, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
 
-                // progress
-                LinearProgressIndicator(
-                    progress = { (current + 1f) / questions.size },
-                    modifier = Modifier.fillMaxWidth().height(4.dp),
-                    color = Indigo,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
-
-                // live score bar — green up on correct, red down on wrong
-                PointsBar(runScore, questions.size * 10, lastCorrect)
-
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         item {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Question ${current + 1} of ${questions.size}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Indigo, modifier = Modifier.weight(1f))
-                                if (q.id in flagged) Text("Flagged", fontSize = 11.sp, color = Red)
+                                com.quizforge.app.ui.components.ForgeKicker(
+                                    "Question ${current + 1} of ${questions.size}",
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
                         }
                         item {
-                            Text(q.questionText, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 24.sp)
+                            Text(
+                                q.questionText,
+                                fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 17.sp,
+                                lineHeight = 25.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                         }
                         items(q.options()) { (letter, text) ->
                             val isSelected = selected == letter
@@ -390,9 +432,26 @@ private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
 }
 
 @Composable
+/** Figma timer chip — red pill with clock icon. */
+@Composable
 private fun TimerChip(text: String, color: Color) {
-    Surface(color = color.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)) {
-        Text(text, color = color, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+    Surface(
+        color = com.quizforge.app.ui.theme.RedBg,
+        shape = RoundedCornerShape(99.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, com.quizforge.app.ui.theme.RedBorder)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+        ) {
+            Icon(
+                Icons.Filled.Timer,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(" $text", color = color, fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+        }
     }
 }
 

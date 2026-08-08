@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -92,56 +93,93 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             IconButton(onClick = { nav.popBackStack() }) {
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
             }
-            Text("My Profile", fontWeight = FontWeight.Bold, fontSize = 22.sp, letterSpacing = (-0.3).sp)
+            Text("Profile", fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp)
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { showEdit = true }) {
-                Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = Indigo)
+                Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = com.quizforge.app.ui.theme.Violet)
             }
         }
 
-        // profile header
-        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                Box(modifier = Modifier.size(80.dp).background(Indigo.copy(alpha = 0.15f), CircleShape), contentAlignment = Alignment.Center) {
-                    Text(vm.avatarEmoji(profile.avatarId), fontSize = 38.sp)
-                }
-                Text(profile.username, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
-                if (profile.status.isNotBlank()) Text(profile.status, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (profile.bio.isNotBlank()) {
-                    Text(profile.bio, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp), textAlign = TextAlign.Center)
-                }
-                Surface(color = Amber.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp), modifier = Modifier.padding(top = 12.dp)) {
-                    Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("LVL ${profile.level}", fontWeight = FontWeight.Bold, color = Amber, fontSize = 14.sp)
-                        Text("  ${profile.xp} XP", color = Amber, fontSize = 12.sp)
+        // profile header — Figma: glowing avatar + LVL gradient pill + name + member since
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+            Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .size(78.dp + 16.dp)
+                        .background(
+                            androidx.compose.ui.graphics.Brush.radialGradient(
+                                listOf(com.quizforge.app.ui.theme.VioletLight.copy(alpha = 0.25f), androidx.compose.ui.graphics.Color.Transparent)
+                            ),
+                            CircleShape
+                        )
+                )
+                Surface(
+                    shape = RoundedCornerShape(26.dp),
+                    color = com.quizforge.app.ui.theme.VioletPale,
+                    border = androidx.compose.foundation.BorderStroke(2.dp, com.quizforge.app.ui.theme.VioletBorderStrong),
+                    modifier = Modifier.size(78.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(vm.avatarEmoji(profile.avatarId), fontSize = 36.sp)
                     }
                 }
-                LinearProgressIndicator(
-                    progress = { XpEngine.levelProgress(profile.xp) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(8.dp),
-                    color = Indigo,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
-                Text(
-                    XpEngine.levelTitle(profile.level) + if (profile.level < 6) "  •  ${(XpEngine.levelProgress(profile.xp) * 100).toInt()}% to Level ${profile.level + 1}" else "  •  Max level",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 6.dp)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 8.dp, y = 8.dp)
+                        .background(com.quizforge.app.ui.theme.VioletGradient, RoundedCornerShape(99.dp))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        "LVL ${profile.level}",
+                        fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        color = androidx.compose.ui.graphics.Color.White
+                    )
+                }
+            }
+            Text(profile.username, fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
+            val memberDate = try {
+                java.text.SimpleDateFormat("MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(profile.createdAt))
+            } catch (e: Exception) { "2024" }
+            Text(
+                listOfNotNull(if (profile.status.isNotBlank()) profile.status else null, "Member since $memberDate").joinToString(" · "),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+
+        // Level progress card — Figma: label + gradient XP + gradient bar
+        androidx.compose.material3.Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text("Level ${profile.level} progress", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                    Spacer(Modifier.weight(1f))
+                    com.quizforge.app.ui.components.GradientText(
+                        "${profile.xp} / ${XpEngine.xpForLevel(profile.level + 1).coerceAtLeast(1)} XP",
+                        fontSize = 12.sp
+                    )
+                }
+                com.quizforge.app.ui.components.ForgeProgressBar(
+                    progress = XpEngine.levelProgress(profile.xp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    height = 7.dp
                 )
             }
         }
 
-        // stats row
+        // stats grid — Figma: Quizzes / Accuracy / Best streak
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-            MiniStat("${attempts.size}", "Attempts", Modifier.weight(1f), Indigo)
-            MiniStat("${quizzesCreated.size}", "Created", Modifier.weight(1f), Green)
-            MiniStat("$avg%", "Accuracy", Modifier.weight(1f), Amber)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-            MiniStat("$streak-day", "Streak", Modifier.weight(1f), Red)
-            MiniStat(formatTime(totalTime), "Time", Modifier.weight(1f), Indigo)
-            MiniStat("${badges.size}", "Badges", Modifier.weight(1f), Amber)
+            MiniStat("${quizzesCreated.size}", "Quizzes", Modifier.weight(1f), com.quizforge.app.ui.theme.Violet)
+            MiniStat("$avg%", "Accuracy", Modifier.weight(1f), com.quizforge.app.ui.theme.Green)
+            MiniStat("$streak-day", "Best streak", Modifier.weight(1f), com.quizforge.app.ui.theme.Amber)
         }
 
         // difficulty performance
