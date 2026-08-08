@@ -1,6 +1,10 @@
 package com.quizforge.app.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -71,6 +75,7 @@ import com.quizforge.app.ui.theme.VioletGradient
 import com.quizforge.app.ui.theme.VioletLight
 import com.quizforge.app.ui.theme.amberBg
 import com.quizforge.app.ui.theme.violetGradient
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 @Composable
@@ -83,6 +88,16 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
     var perfect by remember { mutableStateOf(false) }
     var reviewQuestions by remember { mutableStateOf(listOf<Question>()) }
     var answerMap by remember { mutableStateOf(mapOf<String, AttemptAnswer>()) }
+    // confetti fires exactly once — after the score ring finishes its speed-meter sweep
+    var celebrate by remember(attemptId) { mutableStateOf(false) }
+
+    // hide the confetti layer again once the burst has finished falling
+    LaunchedEffect(celebrate) {
+        if (celebrate) {
+            delay(3400)
+            celebrate = false
+        }
+    }
 
     LaunchedEffect(attemptId) {
         attempt = vm.repo.getAttemptById(attemptId)
@@ -130,7 +145,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
     val q = quiz
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ConfettiOverlay(show = a.score >= 60, modifier = Modifier.fillMaxSize())
+        ConfettiOverlay(show = celebrate, modifier = Modifier.fillMaxSize())
         Column(
             modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -153,7 +168,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                 )
             }
 
-            ScoreRing(score = a.score, modifier = Modifier.padding(top = 20.dp))
+            ScoreRing(score = a.score, modifier = Modifier.padding(top = 20.dp), onSettled = { celebrate = true })
 
             Text(
                 "${a.correctAnswers}/${a.totalQuestions} correct · ${a.timeTakenSeconds}s avg",
@@ -310,9 +325,18 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
 
 /** Figma score ring — glow halo, gradient stroke, white center with gradient number. */
 @Composable
-private fun ScoreRing(score: Int, modifier: Modifier = Modifier) {
+private fun ScoreRing(score: Int, modifier: Modifier = Modifier, onSettled: () -> Unit = {}) {
     val pct = (score / 100f).coerceIn(0f, 1f)
     val trackColor = MaterialTheme.colorScheme.outline
+    // speed-meter sweep: fast accelerating run, slight overshoot, then a spring settle
+    val animated = remember { Animatable(0f) }
+    LaunchedEffect(score) {
+        animated.snapTo(0f)
+        animated.animateTo((pct + 0.10f).coerceAtMost(1f), animationSpec = tween(durationMillis = 850, easing = FastOutSlowInEasing))
+        animated.animateTo(pct, animationSpec = spring(dampingRatio = 0.65f, stiffness = 350f))
+        onSettled()
+    }
+    val shownScore = (score * animated.value).roundToInt().coerceIn(0, 100)
     Box(modifier = modifier.size(158.dp), contentAlignment = Alignment.Center) {
         // halo glow (Figma: conic-gradient blurred at 30% opacity)
         Box(
@@ -339,11 +363,11 @@ private fun ScoreRing(score: Int, modifier: Modifier = Modifier) {
                 size = arcSize,
                 style = Stroke(width = stroke, cap = StrokeCap.Round)
             )
-            // gradient progress
+            // gradient progress — sweeps like a speedometer needle
             drawArc(
                 brush = Brush.sweepGradient(listOf(com.quizforge.app.ui.theme.Violet, com.quizforge.app.ui.theme.VioletGrad, com.quizforge.app.ui.theme.Violet)),
                 startAngle = -90f,
-                sweepAngle = 360f * pct,
+                sweepAngle = 360f * animated.value,
                 useCenter = false,
                 topLeft = Offset(inset, inset),
                 size = arcSize,
@@ -359,7 +383,7 @@ private fun ScoreRing(score: Int, modifier: Modifier = Modifier) {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Text(
-                    "$score",
+                    "$shownScore",
                     style = TextStyle(brush = VioletGradient, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 40.sp)
                 )
                 Text("out of 100", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))

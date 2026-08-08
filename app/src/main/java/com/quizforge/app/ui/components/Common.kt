@@ -354,55 +354,64 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier, tint: 
     }
 }
 
-/** Celebration confetti — multi-burst sprinkle with falling, rotating pieces. */
+/** Celebration confetti — colorful paper pieces falling from the top, once per burst. */
 @Composable
 fun ConfettiOverlay(show: Boolean, modifier: Modifier = Modifier) {
     AnimatedVisibility(visible = show, enter = fadeIn(), exit = fadeOut()) {
         val pieces = remember {
             List(120) { i ->
-                ConfettiPiece(
-                    angle = Random.nextInt(360),
-                    speed = 0.5f + Random.nextFloat() * 0.9f,
+                FallingConfetti(
+                    startX = 0.02f + Random.nextFloat() * 0.96f,   // horizontal spawn (fraction of width)
+                    delay = Random.nextFloat() * 0.4f,             // stagger the fall start
+                    duration = 1.5f + Random.nextFloat() * 1.4f,   // fall duration in seconds
+                    sway = 18f + Random.nextFloat() * 44f,         // horizontal sway amplitude (px)
+                    size = 3f + Random.nextFloat() * 4f,           // piece size (px)
                     strip = i % 3 != 0,
-                    colorIndex = i % 6
+                    colorIndex = i % 8
                 )
             }
         }
         val progress = remember { Animatable(0f) }
         LaunchedEffect(show) {
             progress.snapTo(0f)
-            progress.animateTo(1f, animationSpec = tween(durationMillis = 2600, easing = LinearEasing))
+            progress.animateTo(1f, animationSpec = tween(durationMillis = 3000, easing = LinearEasing))
         }
         Canvas(modifier = modifier.fillMaxSize()) {
-            val colors = listOf(Indigo, Amber, Green, Red, Color(0xFFFF6EC7), Color(0xFF00BCD4))
+            val colors = listOf(
+                Color(0xFF7C3AED), Color(0xFFA78BFA), Color(0xFFF59E0B), Color(0xFF10B981),
+                Color(0xFFEC4899), Color(0xFF22D3EE), Color(0xFF3B82F6), Color(0xFFEF4444)
+            )
             pieces.forEach { p ->
-                val t = progress.value
-                // three staggered bursts: showers rain from all edges
-                val burstStart = listOf(0f, 0.3f, 0.6f)[p.colorIndex % 3]
-                val local = ((t - burstStart) / (1f - burstStart)).coerceIn(0f, 1f)
-                val rad = Math.toRadians(p.angle.toDouble())
-                val dist = local * size.width * (0.4f + 0.6f * p.speed)
-                val x = size.width / 2f + (Math.cos(rad) * dist).toFloat()
-                // gravity: y accelerates as pieces fall; start from every row so "You" is covered
-                val y = size.height * 0.08f + (Math.sin(rad).toFloat() * dist).coerceAtLeast(0f) + local * local * size.height * 0.85f
+                val t = ((progress.value - p.delay) / (1f - p.delay)).coerceIn(0f, 1f)
+                if (t <= 0f) return@forEach
+                // gravity: y accelerates (t^2) from above the top edge
+                val y = -60f + t * t * (size.height + 120f)
+                // swaying drift as it falls
+                val x = p.startX * size.width + kotlin.math.sin(t * 6.28f + p.delay * 9f) * p.sway
                 val color = colors[p.colorIndex]
-                val alpha = (1f - local).coerceIn(0.15f, 1f)
+                val alpha = ((1f - t) * 1.2f).coerceIn(0f, 1f)
                 if (p.strip) {
-                    val s = 2.5f + (p.colorIndex % 3) * 0.9f
-                    rotate(p.angle + t * 540f) {
-                        drawRect(color.copy(alpha = alpha), topLeft = Offset(x, y), size = Size(s * 2.4f, s))
+                    rotate(p.colorIndex * 45f + t * 720f) {
+                        drawRect(
+                            color.copy(alpha = alpha),
+                            topLeft = Offset(x, y),
+                            size = Size(p.size * 1.9f, p.size)
+                        )
                     }
                 } else {
-                    drawCircle(color.copy(alpha = alpha), radius = 2.8f + (p.colorIndex % 3), center = Offset(x, y))
+                    drawCircle(color.copy(alpha = alpha), radius = p.size * 0.5f, center = Offset(x, y))
                 }
             }
         }
     }
 }
 
-private data class ConfettiPiece(
-    val angle: Int,
-    val speed: Float,
+private data class FallingConfetti(
+    val startX: Float,
+    val delay: Float,
+    val duration: Float,
+    val sway: Float,
+    val size: Float,
     val strip: Boolean,
     val colorIndex: Int
 )
