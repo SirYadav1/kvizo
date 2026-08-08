@@ -132,12 +132,11 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
         ) {
             // Figma header: "QUIZ COMPLETE" kicker + title
             Text(
-                "Quiz Complete",
+                "QUIZ COMPLETE",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.08.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textTransform = androidx.compose.ui.text.style.TextTransform.Uppercase
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (q != null) {
                 Text(
@@ -309,6 +308,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
 @Composable
 private fun ScoreRing(score: Int, modifier: Modifier = Modifier) {
     val pct = (score / 100f).coerceIn(0f, 1f)
+    val trackColor = MaterialTheme.colorScheme.outline
     Box(modifier = modifier.size(158.dp), contentAlignment = Alignment.Center) {
         // halo glow (Figma: conic-gradient blurred at 30% opacity)
         Box(
@@ -328,7 +328,7 @@ private fun ScoreRing(score: Int, modifier: Modifier = Modifier) {
             val arcSize = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke)
             // track
             drawArc(
-                color = MaterialTheme.colorScheme.outline,
+                color = trackColor,
                 startAngle = 0f, sweepAngle = 360f,
                 useCenter = false,
                 topLeft = Offset(inset, inset),

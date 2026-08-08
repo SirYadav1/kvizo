@@ -75,6 +75,7 @@ val VioletGradient: Brush = Brush.linearGradient(listOf(Violet, VioletGrad))
 val FigmaGlow = Color(0x1A7C3AED)
 
 /* Space Grotesk (variable font, wght 300–700) */
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
 val SpaceGrotesk = FontFamily(
     Font(R.font.space_grotesk, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
     Font(R.font.space_grotesk, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
