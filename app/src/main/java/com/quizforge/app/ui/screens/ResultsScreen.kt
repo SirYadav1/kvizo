@@ -66,6 +66,7 @@ import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
 import com.quizforge.app.ui.theme.SpaceGrotesk
 import com.quizforge.app.ui.theme.VioletGrad
+import com.quizforge.app.ui.theme.VioletGradient
 import com.quizforge.app.ui.theme.VioletLight
 import com.quizforge.app.ui.theme.amberBg
 import com.quizforge.app.ui.theme.violetGradient
@@ -172,7 +173,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                             modifier = Modifier.background(violetGradient(), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Filled.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Filled.OfflineBolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
                     Column(modifier = Modifier.padding(start = 14.dp)) {
