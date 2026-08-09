@@ -132,7 +132,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Statistics", fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.weight(1f))
             IconButton(onClick = { exportMenu = true }) {
-                Icon(Icons.Filled.Download, contentDescription = "Export")
+                Icon(Icons.Filled.Download, contentDescription = "Export", modifier = Modifier.size(26.dp))
             }
             DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {
                 DropdownMenuItem(text = { Text("Export CSV") }, onClick = {
@@ -271,7 +271,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
             item {
                 ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.ShowChart, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Filled.ShowChart, contentDescription = null, tint = Indigo, modifier = Modifier.size(23.dp))
                         Text("  Best score: ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("${filtered.maxOfOrNull { it.score } ?: 0}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
                     }
@@ -316,7 +316,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
                                     val (bestPct, totalSecs, sortedAttempts) = info
                                     val title = quizTitles[qid] ?: "Unknown quiz"
                                     Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Box(modifier = Modifier.size(34.dp).background(Indigo.copy(alpha = 0.12f), RoundedCornerShape(9.dp)), contentAlignment = Alignment.Center) {
+                                        Box(modifier = Modifier.size(38.dp).background(Indigo.copy(alpha = 0.12f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
                                             Text("$count", fontWeight = FontWeight.Bold, color = Indigo, fontSize = 13.sp)
                                         }
                                         Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {

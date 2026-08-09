@@ -76,7 +76,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
         Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.DarkMode, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.DarkMode, contentDescription = null, tint = Indigo, modifier = Modifier.size(24.dp))
                     Text("  Theme", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
                 }
                 // segmented control — System / Light / Dark
@@ -115,12 +115,12 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
         Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
             Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Hearing, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.Hearing, contentDescription = null, tint = Indigo, modifier = Modifier.size(24.dp))
                     Text("  Sound effects", fontSize = 14.sp, modifier = Modifier.weight(1f))
                     Switch(checked = settings.soundEnabled, onCheckedChange = { scope.launch { vm.setSoundEnabled(it) } })
                 }
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Vibration, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.Vibration, contentDescription = null, tint = Indigo, modifier = Modifier.size(24.dp))
                     Text("  Haptic feedback", fontSize = 14.sp, modifier = Modifier.weight(1f))
                     Switch(checked = settings.hapticsEnabled, onCheckedChange = { scope.launch { vm.setHapticsEnabled(it) } })
                 }
