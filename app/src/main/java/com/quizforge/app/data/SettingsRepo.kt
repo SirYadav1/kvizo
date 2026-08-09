@@ -3,6 +3,7 @@ package com.quizforge.app.data
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +19,8 @@ data class AppSettings(
     val hapticsEnabled: Boolean,
     val leaderboardOnline: Boolean = false, // flips to true once the online login system is live
     val autoUpdateCheck: Boolean = true,    // check GitHub for new releases on app start
-    val updateNotifications: Boolean = true // show a notification when a new version is found
+    val updateNotifications: Boolean = true, // show a notification when a new version is found
+    val announcementsEnabled: Boolean = true // community announcements via the QuizForge server
 )
 
 class SettingsRepo(private val context: Context) {
@@ -29,6 +31,7 @@ class SettingsRepo(private val context: Context) {
     private val leaderboardOnlineKey = booleanPreferencesKey("leaderboard_online")
     private val autoUpdateKey = booleanPreferencesKey("auto_update_check")
     private val updateNotifKey = booleanPreferencesKey("update_notifications")
+    private val announcementsKey = booleanPreferencesKey("announcements_enabled")
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
         AppSettings(
@@ -37,7 +40,8 @@ class SettingsRepo(private val context: Context) {
             hapticsEnabled = p[hapticsKey] ?: true,
             leaderboardOnline = p[leaderboardOnlineKey] ?: false,
             autoUpdateCheck = p[autoUpdateKey] ?: true,
-            updateNotifications = p[updateNotifKey] ?: true
+            updateNotifications = p[updateNotifKey] ?: true,
+            announcementsEnabled = p[announcementsKey] ?: true
         )
     }
 
@@ -50,6 +54,16 @@ class SettingsRepo(private val context: Context) {
     suspend fun setAutoUpdateCheck(v: Boolean) = context.dataStore.edit { it[autoUpdateKey] = v }
 
     suspend fun setUpdateNotifications(v: Boolean) = context.dataStore.edit { it[updateNotifKey] = v }
+
+    suspend fun setAnnouncementsEnabled(v: Boolean) = context.dataStore.edit { it[announcementsKey] = v }
+
+    /** Latest announcement timestamp this install has already seen/shown. */
+    suspend fun lastAnnouncementSeen(): Long {
+        context.dataStore.data.first().let { p -> p[lastSeenKey]?.let { return it } }
+        return 0L
+    }
+
+    suspend fun setLastAnnouncementSeen(ts: Long) = context.dataStore.edit { it[lastSeenKey] = ts }
 
     /** Flip this to true only when the online login system is enabled — leaderboard then reads from the server. */
     suspend fun setLeaderboardOnline(v: Boolean) = context.dataStore.edit { it[leaderboardOnlineKey] = v }
@@ -65,4 +79,5 @@ class SettingsRepo(private val context: Context) {
     }
 
     private val deviceIdKey = stringPreferencesKey("device_id")
+    private val lastSeenKey = longPreferencesKey("last_announcement_seen")
 }

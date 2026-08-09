@@ -72,20 +72,35 @@ val IndigoSoft = VioletPale
 val VioletGradient: Brush = Brush.linearGradient(listOf(Violet, VioletGrad))
 
 /** Dark-aware violet gradient (brighter in dark mode for contrast). */
+/**
+ * Effective dark-mode flag for this app (respects the in-app theme setting,
+ * not just the system theme). Provided by QuizForgeTheme; helpers below use it
+ * so manual Dark mode also switches the tinted backgrounds/borders.
+ */
+val LocalThemeDark = androidx.compose.runtime.staticCompositionLocalOf { false }
+
 @Composable
 fun violetGradient(): Brush =
-    if (isSystemInDarkTheme()) Brush.linearGradient(listOf(Color(0xFFB3A0FF), Color(0xFFC4B5FD)))
+    if (LocalThemeDark.current) Brush.linearGradient(listOf(Color(0xFFB3A0FF), Color(0xFFC4B5FD)))
     else VioletGradient
 
 /* Dark-aware semantic fills — Telegram-style deep tints for dark surfaces */
 @Composable
-fun greenBg(): Color = if (isSystemInDarkTheme()) Color(0xFF0E3A2C) else GreenBg
+fun greenBg(): Color = if (LocalThemeDark.current) Color(0xFF0E3A2C) else GreenBg
 @Composable
-fun redBg(): Color = if (isSystemInDarkTheme()) Color(0xFF3F1D22) else RedBg
+fun redBg(): Color = if (LocalThemeDark.current) Color(0xFF3F1D22) else RedBg
 @Composable
-fun amberBg(): Color = if (isSystemInDarkTheme()) Color(0xFF332A12) else AmberBg
+fun amberBg(): Color = if (LocalThemeDark.current) Color(0xFF332A12) else AmberBg
 @Composable
-fun violetPale(): Color = if (isSystemInDarkTheme()) Color(0xFF2E2A55) else VioletPale
+fun violetPale(): Color = if (LocalThemeDark.current) Color(0xFF2E2A55) else VioletPale
+
+/* Dark-aware borders matching the fills above */
+@Composable
+fun greenBorder(): Color = if (LocalThemeDark.current) Color(0xFF1F6B4E) else GreenBorder
+@Composable
+fun amberBorder(): Color = if (LocalThemeDark.current) Color(0xFF6B5313) else AmberBorder
+@Composable
+fun violetBorder(): Color = if (LocalThemeDark.current) Color(0xFF4C3A8F) else VioletBorderStrong
 
 /** Figma glow shadow: 0 2px 20px rgba(124,58,237,0.1) */
 val FigmaGlow = Color(0x1A7C3AED)
@@ -181,10 +196,12 @@ fun QuizForgeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = QuizForgeTypography,
-        shapes = AppShapes,
-        content = content
-    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalThemeDark provides darkTheme) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DarkColors else LightColors,
+            typography = QuizForgeTypography,
+            shapes = AppShapes,
+            content = content
+        )
+    }
 }

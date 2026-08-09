@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -28,6 +30,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,8 +71,11 @@ import com.quizforge.app.ui.theme.Violet
 import com.quizforge.app.ui.theme.VioletLight
 import com.quizforge.app.ui.theme.VioletPale
 import com.quizforge.app.ui.theme.amberBg
+import com.quizforge.app.ui.theme.amberBorder
 import com.quizforge.app.ui.theme.greenBg
+import com.quizforge.app.ui.theme.greenBorder
 import com.quizforge.app.ui.theme.redBg
+import com.quizforge.app.ui.theme.violetBorder
 import com.quizforge.app.ui.theme.violetPale
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -129,6 +135,30 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
+        // community announcement banners (from the admin panel)
+        if (vm.unreadAnnouncements.isNotEmpty()) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    vm.unreadAnnouncements.forEach { n ->
+                        ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                            Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.Top) {
+                                Box(modifier = Modifier.size(36.dp).background(violetPale(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Filled.Campaign, contentDescription = null, tint = Violet, modifier = Modifier.size(19.dp))
+                                }
+                                Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                                    Text(n.title, fontWeight = FontWeight.Bold, fontSize = 13.sp, fontFamily = SpaceGrotesk)
+                                    Text(n.body, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 17.sp, modifier = Modifier.padding(top = 2.dp))
+                                }
+                                IconButton(onClick = { vm.dismissAnnouncement(n.id) }, modifier = Modifier.size(28.dp)) {
+                                    Icon(Icons.Filled.Close, contentDescription = "Dismiss", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // profile card — Figma: avatar tile + name + LVL gradient text + XP
         item {
             ForgeCard(modifier = Modifier.fillMaxWidth()) {
@@ -137,8 +167,8 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                         Surface(
                             modifier = Modifier.size(48.dp),
                             shape = RoundedCornerShape(14.dp),
-                            color = VioletPale,
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, androidx.compose.ui.graphics.Color(0xFFC4B5FD))
+                            color = violetPale(),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, violetBorder())
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(vm.avatarEmoji(profile.avatarId), fontSize = 22.sp)
@@ -265,7 +295,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                     modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.attempt(quiz.id)) }
                 ) {
                     Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(36.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.size(36.dp).background(violetPale(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
                             Text("Q", color = Violet, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
@@ -286,12 +316,12 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
 @Composable
 private fun IconButtonBox(icon: ImageVector, onClick: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier
             .padding(start = 8.dp)
-            .size(34.dp)
+            .size(44.dp)
             .clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -299,7 +329,7 @@ private fun IconButtonBox(icon: ImageVector, onClick: () -> Unit) {
                 icon,
                 contentDescription = null,
                 tint = VioletLight,
-                modifier = Modifier.size(15.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
     }
@@ -372,7 +402,7 @@ private fun PopularQuizRow(quiz: Quiz, questionCount: Int, onClick: () -> Unit) 
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
     ) {
         Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(40.dp).background(violetPale(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
                 Text(formatCount(quiz.attemptsCount), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Violet)
             }
             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
@@ -383,7 +413,7 @@ private fun PopularQuizRow(quiz: Quiz, questionCount: Int, onClick: () -> Unit) 
             Surface(
                 color = if (score >= 60) greenBg() else amberBg(),
                 shape = RoundedCornerShape(99.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (score >= 60) Color(0xFFA7F3D0) else Color(0xFFFDE68A))
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (score >= 60) greenBorder() else amberBorder())
             ) {
                 Text("$score%", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = if (score >= 60) Green else Amber, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
             }

@@ -80,6 +80,8 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
         }
+        // community announcements: background check every 15 min + immediate fetch on launch
+        com.quizforge.app.util.AnnouncementNotifier.schedule(this)
         setContent {
             val vm: AppViewModel = viewModel()
             val settings by vm.settings.collectAsState(initial = null)

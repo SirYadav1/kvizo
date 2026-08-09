@@ -365,7 +365,7 @@ fun ConfettiOverlay(show: Boolean, modifier: Modifier = Modifier) {
                     delay = Random.nextFloat() * 0.4f,             // stagger the fall start
                     duration = 1.5f + Random.nextFloat() * 1.4f,   // fall duration in seconds
                     sway = 18f + Random.nextFloat() * 44f,         // horizontal sway amplitude (px)
-                    size = 3f + Random.nextFloat() * 4f,           // piece size (px)
+                    size = 7f + Random.nextFloat() * 9f,           // piece size (px) — big enough to see
                     strip = i % 3 != 0,
                     colorIndex = i % 8
                 )
@@ -395,11 +395,11 @@ fun ConfettiOverlay(show: Boolean, modifier: Modifier = Modifier) {
                         drawRect(
                             color.copy(alpha = alpha),
                             topLeft = Offset(x, y),
-                            size = Size(p.size * 1.9f, p.size)
+                            size = Size(p.size * 2.1f, p.size)
                         )
                     }
                 } else {
-                    drawCircle(color.copy(alpha = alpha), radius = p.size * 0.5f, center = Offset(x, y))
+                    drawCircle(color.copy(alpha = alpha), radius = p.size * 0.55f, center = Offset(x, y))
                 }
             }
         }

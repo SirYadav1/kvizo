@@ -73,6 +73,31 @@ class RemoteApi(private val baseUrl: String = DEFAULT_BASE_URL) {
         }
     }
 
+    /** Fetches community announcements. Never throws (empty list on failure). */
+    suspend fun fetchNotifications(): List<RemoteNotification> = withContext(Dispatchers.IO) {
+        try {
+            val conn = open("GET", "$baseUrl/api/notifications")
+            checkResponse(conn)
+            val root = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+            val arr = root.optJSONArray("notifications") ?: return@withContext emptyList()
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val j = arr.getJSONObject(i)
+                    add(
+                        RemoteNotification(
+                            id = j.optString("id", ""),
+                            title = j.optString("title", ""),
+                            body = j.optString("body", ""),
+                            createdAt = j.optLong("createdAt", 0L)
+                        )
+                    )
+                }
+            }.sortedByDescending { it.createdAt }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     private fun open(method: String, url: String): HttpURLConnection {
         val conn = URL(url).openConnection() as HttpURLConnection
         conn.requestMethod = method

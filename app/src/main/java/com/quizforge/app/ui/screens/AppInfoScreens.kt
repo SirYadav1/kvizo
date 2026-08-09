@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
@@ -48,9 +49,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.Image
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,9 +71,10 @@ import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
 import com.quizforge.app.ui.theme.SpaceGrotesk
 import com.quizforge.app.ui.theme.Violet
-import com.quizforge.app.ui.theme.VioletPale
+import com.quizforge.app.ui.theme.violetPale
 import com.quizforge.app.util.BackupManager
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Shared "row" used by Settings: tinted icon tile + title (+subtitle) + chevron. */
 @Composable
@@ -283,7 +288,7 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
         SectionTitle("Current version")
         ForgeCard(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(46.dp).background(VioletPale, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.size(46.dp).background(violetPale(), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Filled.Info, contentDescription = null, tint = Violet, modifier = Modifier.size(22.dp))
                 }
                 Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
@@ -315,6 +320,14 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
                         Text("notify me when a new version is out", fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = settings.updateNotifications, onCheckedChange = { scope.launch { vm.setUpdateNotifications(it) } })
+                }
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Campaign, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                    Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                        Text("Announcement notifications", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                        Text("news from the QuizForge community", fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = settings.announcementsEnabled, onCheckedChange = { scope.launch { vm.setAnnouncementsEnabled(it) } })
                 }
             }
         }
@@ -462,7 +475,7 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
         // App card
         ForgeCard(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
             Column(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(modifier = Modifier.size(64.dp).background(VioletPale, RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.size(64.dp).background(violetPale(), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
                     Text("Q", color = Violet, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 28.sp)
                 }
                 Text("QuizForge", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
@@ -483,10 +496,8 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
         ForgeCard(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(44.dp).background(VioletPale, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
-                        Text("🙂", fontSize = 22.sp)
-                    }
-                    Column(modifier = Modifier.padding(start = 12.dp)) {
+                    GitHubAvatar("https://github.com/SirYadav1.png", 44, Modifier.padding(end = 12.dp))
+                    Column {
                         Text("SirYadav1", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         Text("Creator & developer", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -521,6 +532,41 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** Developer avatar loaded from GitHub (network) with a fallback until it arrives. */
+@Composable
+private fun GitHubAvatar(url: String, size: Int, modifier: Modifier = Modifier) {
+    var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(url) {
+        bitmap = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout = 8000
+                conn.readTimeout = 8000
+                conn.setRequestProperty("User-Agent", "QuizForge")
+                val ok = conn.responseCode in 200..299
+                val bmp = if (ok) android.graphics.BitmapFactory.decodeStream(conn.inputStream) else null
+                conn.disconnect()
+                bmp
+            } catch (_: Exception) { null }
+        }
+    }
+    val bmp = bitmap
+    Box(
+        modifier = modifier.size(size.dp).background(violetPale(), RoundedCornerShape(size.dp / 3)),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bmp != null) {
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = "Developer photo",
+                modifier = Modifier.size(size.dp).clip(RoundedCornerShape(size.dp / 3))
+            )
+        } else {
+            Text("🙂", fontSize = (size * 0.5f).sp)
+        }
     }
 }
 

@@ -124,6 +124,14 @@ data class RemoteQuestion(
     val correctOption: String
 )
 
+/** A community announcement pushed from the QuizForge admin panel. */
+data class RemoteNotification(
+    val id: String,
+    val title: String,
+    val body: String,
+    val createdAt: Long
+)
+
 /** Result of recording a quiz attempt: XP + newly unlocked badges. */
 data class AttemptResult(
     val attempt: Attempt,
