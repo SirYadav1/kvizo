@@ -24,6 +24,7 @@ import com.quizforge.app.data.Quiz
 import com.quizforge.app.data.Question
 import com.quizforge.app.data.QuizRepository
 import com.quizforge.app.data.RemoteApi
+import com.quizforge.app.data.RemoteNotification
 import com.quizforge.app.data.SettingsRepo
 import com.quizforge.app.data.STATUS_DRAFT
 import com.quizforge.app.data.STATUS_PUBLISHED
@@ -109,6 +110,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var syncNotice by mutableStateOf<String?>(null)
         private set
 
+    /** All community announcements fetched from the server (newest first). */
+    var announcements by mutableStateOf<List<RemoteNotification>>(emptyList())
+        private set
+
+    /** Announcements the user has not seen yet (shown as a banner + system notification). */
+    var unreadAnnouncements by mutableStateOf<List<RemoteNotification>>(emptyList())
+        private set
+
     init {
         refreshProfile()
         viewModelScope.launch {
@@ -131,11 +140,42 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val now = System.currentTimeMillis()
             if (now - lastSync > 5 * 60_000L) {
                 syncRemoteQuizzesNow()
+                checkAnnouncementsNow()
                 lastSync = now
             }
             kotlinx.coroutines.delay(25_000)
         }
     }
+
+    /**
+     * Fetches community announcements and surfaces the fresh ones:
+     * in-app banner + Android system notification (bell sound). Never throws.
+     */
+    suspend fun checkAnnouncementsNow() {
+        try {
+            val list = remoteApi.fetchNotifications()
+            if (list.isEmpty()) return
+            announcements = list
+            val lastSeen = settingsRepo.lastAnnouncementSeen()
+            val fresh = list.filter { it.id.isNotBlank() && it.createdAt > lastSeen }
+            if (fresh.isEmpty()) return
+            unreadAnnouncements = fresh
+            settingsRepo.setLastAnnouncementSeen(fresh.maxOf { it.createdAt })
+            val s = settingsRepo.settings.first()
+            if (s.announcementsEnabled) {
+                fresh.forEach { AnnouncementNotifier.post(getApplication(), it) }
+            }
+        } catch (_: Exception) {
+            // offline — try again on the next sync tick
+        }
+    }
+
+    /** User dismissed an announcement banner. */
+    fun dismissAnnouncement(id: String) {
+        unreadAnnouncements = unreadAnnouncements.filter { it.id != id }
+    }
+
+    fun setAnnouncementsEnabled(v: Boolean) = viewModelScope.launch { settingsRepo.setAnnouncementsEnabled(v) }
 
     /** Fetch community quizzes from the server (used on app start / manual refresh). */
     fun syncRemoteQuizzes() {
