@@ -677,6 +677,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 .setContentTitle("QuizForge update available")
                 .setContentText("A new version is out — tap to open the release page")
                 .setContentIntent(openReleases)
+                .setSound(android.net.Uri.parse("android.resource://" + app.packageName + "/" + R.raw.sound_bell))
                 .setAutoCancel(true)
                 .build()
             if (androidx.core.content.ContextCompat.checkSelfPermission(
