@@ -55,6 +55,7 @@ import com.quizforge.app.ui.theme.SpaceGrotesk
 import com.quizforge.app.ui.theme.Violet
 import com.quizforge.app.ui.theme.violetGradient
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
