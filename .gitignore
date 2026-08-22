@@ -1,0 +1,5 @@
+sdk.dir=/opt/android-sdk
+local.properties
+build/
+.gradle/
+app/build/

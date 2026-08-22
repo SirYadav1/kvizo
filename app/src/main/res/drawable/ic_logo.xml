@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- QuizForge logo: bolt inside rounded diamond -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- rounded square background -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,16 a38,38 0 1,0 0.001,0 z" />
+    <!-- bolt -->
+    <path
+        android:fillColor="#6C4DF6"
+        android:pathData="M59,26 L38,58 L51,58 L47,82 L70,46 L57,46 Z" />
+    <!-- spark dots -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M30,30 L32,36 L38,38 L32,40 L30,46 L28,40 L22,38 L28,36 Z" />
+    <path
+        android:fillColor="#FF6EC7"
+        android:pathData="M78,68 L79.5,72 L83.5,73.5 L79.5,75 L78,79 L76.5,75 L72.5,73.5 L76.5,72 Z" />
+</vector>
