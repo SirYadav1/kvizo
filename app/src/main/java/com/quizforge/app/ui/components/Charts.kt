@@ -173,11 +173,11 @@ fun HeatmapCalendar(dailyCounts: Map<String, Int>, modifier: Modifier = Modifier
 }
 
 private fun heatColor(count: Int): Color = when {
-    count == 0 -> Color(0xFFECECF6)
-    count < 2 -> Color(0xFFC9C2F7)
-    count < 4 -> Color(0xFF9A8CEB)
-    count < 7 -> Color(0xFF6A55D6)
-    else -> Color(0xFF4736B8)
+    count == 0 -> Color(0xFFE8E6F0)
+    count < 2 -> Color(0xFFB4A4FF)
+    count < 4 -> Color(0xFF8B74FF)
+    count < 7 -> Indigo
+    else -> Color(0xFF3A2B9E)
 }
 
 /** Stacked bar chart for difficulty breakdown. */

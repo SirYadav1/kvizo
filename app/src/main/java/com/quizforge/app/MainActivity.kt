@@ -1,46 +1,30 @@
 package com.quizforge.app
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -61,15 +45,10 @@ import com.quizforge.app.ui.screens.QuizAttemptScreen
 import com.quizforge.app.ui.screens.QuizBuilderScreen
 import com.quizforge.app.ui.screens.QuizListScreen
 import com.quizforge.app.ui.screens.ResultsScreen
-import com.quizforge.app.ui.screens.AboutScreen
-import com.quizforge.app.ui.screens.BackupScreen
-import com.quizforge.app.ui.screens.ChangelogScreen
 import com.quizforge.app.ui.screens.SettingsScreen
-import com.quizforge.app.ui.screens.UpdaterScreen
 import com.quizforge.app.ui.screens.SplashScreen
 import com.quizforge.app.ui.screens.StatsScreen
-import com.quizforge.app.ui.components.GlassBarItem
-import com.quizforge.app.ui.components.GlassBottomBar
+import com.quizforge.app.ui.screens.CommunityQuizScreen
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.QuizForgeTheme
 
@@ -77,11 +56,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
-        }
-        // community announcements: background check every 15 min + immediate fetch on launch
-        com.quizforge.app.util.AnnouncementNotifier.schedule(this)
         setContent {
             val vm: AppViewModel = viewModel()
             val settings by vm.settings.collectAsState(initial = null)
@@ -109,10 +83,7 @@ object Routes {
     const val LEADERBOARD = "leaderboard"
     const val SETTINGS = "settings"
     const val PROFILE = "profile"
-    const val BACKUP = "backup"
-    const val UPDATER = "updater"
-    const val CHANGELOG = "changelog"
-    const val ABOUT = "about"
+    const val COMMUNITY = "community"
 
     fun attempt(quizId: String, mode: String = "normal", only: String = "") = "attempt/$quizId?mode=$mode&only=$only"
     fun results(attemptId: String) = "results/$attemptId"
@@ -131,70 +102,33 @@ fun QuizForgeRoot(vm: AppViewModel) {
         Tab(Routes.QUIZZES, "Quizzes", Icons.Filled.List),
         Tab(Routes.BUILDER, "Create", Icons.Filled.AddCircle),
         Tab(Routes.LEADERBOARD, "Leaderboard", Icons.Filled.EmojiEvents),
-        Tab(Routes.PROFILE, "Profile", Icons.Filled.Person),
+        Tab(Routes.STATS, "Stats", Icons.Filled.BarChart),
     )
     val showBottomBar = route in tabs.map { it.route } || route?.startsWith(Routes.BUILDER) == true
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            val notice = vm.syncNotice
-            if (notice != null) {
-                Surface(color = Indigo, modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Filled.Celebration, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(16.dp))
-                        Text(
-                            "  $notice",
-                            color = androidx.compose.ui.graphics.Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp)
-                        )
-                        IconButton(onClick = { vm.dismissSyncNotice() }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Dismiss", tint = androidx.compose.ui.graphics.Color.White)
-                        }
-                    }
-                }
-            }
-        },
+        topBar = {},
         bottomBar = {
             if (showBottomBar) {
-                GlassBottomBar(
-                    items = mapOf(
-                        Routes.HOME to "Home",
-                        Routes.QUIZZES to "Quizzes",
-                        Routes.BUILDER to "Create",
-                        Routes.LEADERBOARD to "Leaderboard",
-                        Routes.PROFILE to "Profile"
-                    ).map { (r, l) ->
-                        GlassBarItem(
-                            route = r,
-                            label = l,
-                            icon = when (r) {
-                                Routes.HOME -> Icons.Filled.Home
-                                Routes.QUIZZES -> Icons.Filled.List
-                                Routes.BUILDER -> Icons.Filled.AddCircle
-                                Routes.LEADERBOARD -> Icons.Filled.EmojiEvents
-                                else -> Icons.Filled.Person
-                            }
+                NavigationBar {
+                    tabs.forEach { tab ->
+                        val selected = route == tab.route
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                if (!selected) {
+                                    nav.navigate(tab.route) {
+                                        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label, fontSize = 11.sp) }
                         )
-                    },
-                    selectedRoute = route?.let { r ->
-                        tabs.map { it.route }.firstOrNull { r == it || r.startsWith(it) } ?: route
-                    } ?: "",
-                    onSelect = { r ->
-                        if (route != r) {
-                            nav.navigate(r) {
-                                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
                     }
-                )
+                }
             }
         }
     ) { padding ->
@@ -241,10 +175,7 @@ fun QuizForgeRoot(vm: AppViewModel) {
             composable(Routes.LEADERBOARD) { LeaderboardScreen(vm, nav) }
             composable(Routes.SETTINGS) { SettingsScreen(vm, nav) }
             composable(Routes.PROFILE) { ProfileScreen(vm, nav) }
-            composable(Routes.BACKUP) { BackupScreen(vm, nav) }
-            composable(Routes.UPDATER) { UpdaterScreen(vm, nav) }
-            composable(Routes.CHANGELOG) { ChangelogScreen(vm, nav) }
-            composable(Routes.ABOUT) { AboutScreen(vm, nav) }
+            composable(Routes.COMMUNITY) { CommunityQuizScreen(vm, nav) }
         }
     }
 }

@@ -9,11 +9,17 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.quizforge.app"
+        applicationId = "com.kvizo.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 12
-        versionName = "1.4.0"
+        versionCode = 4
+        versionName = "1.5.0"
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            // Uses the default debug keystore
+        }
     }
 
     buildTypes {
@@ -50,5 +56,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.core:core-ktx:1.13.1")
+    implementation("io.coil-kt:coil-compose:2.6.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
