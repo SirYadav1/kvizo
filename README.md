@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="banner.svg" width="100%" alt="QuizForge banner" />
+  <img src="banner.svg" width="100%" alt="Kvizo banner" />
 </p>
 
-<h1 align="center">QuizForge</h1>
+<h1 align="center">Kvizo</h1>
 <p align="center"><strong>A quiz app that looks good and works the way you'd expect.</strong></p>
 <p align="center">
   <img src="https://img.shields.io/badge/Version-1.5.0-purple?style=flat-square" />
@@ -15,7 +15,7 @@
 
 ## **What is This?**
 
-QuizForge is an Android quiz app built with Kotlin and Jetpack Compose. You write your own quizzes, take them in normal or timed mode, and watch your XP, streaks, and accuracy build up. Quizzes live on your device, so everything works offline. A signed community feed lets you pull in quizzes other people made without opening the door to tampered content.
+Kvizo is an Android quiz app built with Kotlin and Jetpack Compose. You write your own quizzes, take them in normal or timed mode, and watch your XP, streaks, and accuracy build up. Quizzes live on your device, so everything works offline. A signed community feed lets you pull in quizzes other people made without opening the door to tampered content.
 
 It is not a backend-heavy SaaS. The app is the product. The `server/` folder is an optional companion: a tiny Node service that drives the admin panel, hosts community quizzes, and tracks which devices are currently online. You can ignore it and the app still does everything locally.
 
@@ -111,7 +111,7 @@ The private key stays offline. The public key is hardcoded in `CommunityKeys.kt`
 ```bash
 # example signing step (run offline, with the private key on your machine)
 python3 -c "
-import sys, ed25519
+import ed25519
 # sign community.json -> community.sig using your offline private key
 "
 ```

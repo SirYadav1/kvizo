@@ -6,7 +6,7 @@
     </linearGradient>
   </defs>
   <rect width="1200" height="320" fill="url(#g)"/>
-  <text x="60" y="150" font-family="Segoe UI, system-ui, sans-serif" font-size="72" font-weight="800" fill="#ffffff">QuizForge</text>
+  <text x="60" y="150" font-family="Segoe UI, system-ui, sans-serif" font-size="72" font-weight="800" fill="#ffffff">Kvizo</text>
   <text x="62" y="210" font-family="Segoe UI, system-ui, sans-serif" font-size="27" fill="#d9ccff">Build quizzes. Keep your streak. Play offline or from the community feed.</text>
   <circle cx="1080" cy="160" r="90" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="6"/>
   <text x="1080" y="182" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="70" font-weight="700" fill="#ffffff" fill-opacity="0.85">?</text>
