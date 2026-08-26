@@ -15,11 +15,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -28,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -50,7 +46,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -113,26 +108,17 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
     var runScore by remember { mutableStateOf(0) }
     var lastCorrect by remember { mutableStateOf(true) }
     val startTime = remember { System.currentTimeMillis() }
-    var settings by remember { mutableStateOf(AppSettings("system", true, true)) }
+    var settings by remember { mutableStateOf(AppSettings("system", true, true, "pause")) }
     LaunchedEffect(Unit) { vm.settings.collect { settings = it } }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    // auto-pause: when the app goes to the background mid-quiz, freeze it
-    var paused by remember { mutableStateOf(false) }
-    DisposableEffect(lifecycleOwner) {
-        val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP && phase == Phase.PLAYING) paused = true
-        }
-        lifecycleOwner.lifecycle.addObserver(obs)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
-    }
+    var autoSubmitted by remember { mutableStateOf(false) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     fun submit() {
         if (phase == Phase.SUBMITTING) return
         phase = Phase.SUBMITTING
-        val timeTaken = if (timed) (timeSeconds - timeLeft).coerceAtLeast(1)
-        else ((System.currentTimeMillis() - startTime) / 1000).toInt().coerceAtLeast(1)
+        val timeTaken = ((System.currentTimeMillis() - startTime) / 1000).toInt().coerceAtLeast(1)
         scope.launch {
             val result = vm.recordAttempt(quiz!!, questions, answers, timeTaken)
             nav.navigate(Routes.results(result.attempt.id)) {
@@ -141,16 +127,20 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
         }
     }
 
-    // countdown timer for the whole quiz — freezes whenever the quiz is paused
+    // countdown timer for the whole quiz (only when timed)
     if (phase == Phase.PLAYING && timed) {
         LaunchedEffect(current) {
             timeLeft = timeSeconds
-            while (true) {
-                if (paused) { delay(250); continue }
-                if (timeLeft <= 0) { submit(); break }
-                delay(1000)
-                timeLeft--
+            while (timeLeft > 0) {
+                if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                    delay(1000)
+                    timeLeft--
+                } else {
+                    delay(500)
+                    if (settings.timerOnBackground == "submit") { autoSubmitted = true; submit(); break }
+                }
             }
+            if (!autoSubmitted && timeLeft <= 0) submit()
         }
     }
 
@@ -199,101 +189,58 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
 
         Phase.PLAYING -> {
             val q = questions[current]
-            Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-                // top bar — Figma: surface + bottom border, back tile, centered title, timer chip
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            IconButton(onClick = { nav.popBackStack() }, modifier = Modifier.size(34.dp)) {
-                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp))
-                            }
-                        }
+            Column(modifier = Modifier.fillMaxSize()) {
+                // top bar
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
+                    IconButton(onClick = { nav.popBackStack() }) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
-                    Text(
-                        quiz?.title ?: "",
-                        fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
-                    )
+                    Text(quiz?.title ?: "", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, modifier = Modifier.weight(1f))
                     if (timed) {
-                        TimerChip("$timeLeft", Red)
-                    } else {
-                        Spacer(Modifier.width(34.dp))
+                        TimerChip("$timeLeft", if (timeLeft <= 30) Red else Green)
                     }
-                }
-                // Figma progress: 5px rounded gradient
-                com.quizforge.app.ui.components.ForgeProgressBar(
-                    progress = (current + 1f) / questions.size,
-                    modifier = Modifier.fillMaxWidth(),
-                    height = 5.dp
-                )
-
-                // live score bar — green up on correct, red down on wrong
-                PointsBar(runScore, questions.size * 10, lastCorrect)
-
-                // utility row — flag, navigator, submit (kept functional, compact)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp)
-                ) {
-                    TextButton(onClick = {
+                    IconButton(onClick = {
                         val id = q.id
                         flagged = if (id in flagged) flagged - id else flagged + id
                     }) {
                         Icon(
                             if (q.id in flagged) Icons.Filled.Flag else Icons.Filled.BookmarkBorder,
                             contentDescription = "Flag",
-                            tint = if (q.id in flagged) Red else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp)
+                            tint = if (q.id in flagged) Red else MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Text(if (q.id in flagged) "  Flagged" else "  Flag", fontSize = 12.sp, color = if (q.id in flagged) Red else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    TextButton(onClick = { showNavigator = true }) {
-                        Icon(Icons.Filled.Apps, contentDescription = "Navigator", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                        Text("  Navigator", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    IconButton(onClick = { showNavigator = true }) {
+                        Icon(Icons.Filled.Apps, contentDescription = "Navigator")
                     }
-                    Spacer(Modifier.weight(1f))
                     TextButton(onClick = { submit() }) {
-                        Text("Submit", color = com.quizforge.app.ui.theme.Violet, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text("Submit", color = Indigo, fontWeight = FontWeight.Bold)
                     }
                 }
 
+                // progress
+                LinearProgressIndicator(
+                    progress = { (current + 1f) / questions.size },
+                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                    color = Indigo,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+
+                // live score bar — green up on correct, red down on wrong
+                PointsBar(runScore, questions.size * 10, lastCorrect)
+
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         item {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                com.quizforge.app.ui.components.ForgeKicker(
-                                    "Question ${current + 1} of ${questions.size}",
-                                    modifier = Modifier.weight(1f)
-                                )
+                                Text("Question ${current + 1} of ${questions.size}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Indigo, modifier = Modifier.weight(1f))
+                                if (q.id in flagged) Text("Flagged", fontSize = 11.sp, color = Red)
                             }
                         }
                         item {
-                            Text(
-                                q.questionText,
-                                fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 17.sp,
-                                lineHeight = 25.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Text(q.questionText, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 24.sp)
                         }
                         items(q.options()) { (letter, text) ->
                             val isSelected = selected == letter
@@ -351,48 +298,16 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                         }
                         if (revealed) {
                             item {
-                                com.quizforge.app.ui.components.PressGlowButton(
+                                Button(
                                     onClick = { next() },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp),
-                                    containerColor = MaterialTheme.colorScheme.secondary,
-                                    contentColor = MaterialTheme.colorScheme.onSecondary
+                                    shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Text(if (current < questions.size - 1) "Next" else "Finish", modifier = Modifier.padding(vertical = 4.dp))
                                 }
                             }
                         }
                         item { Spacer(Modifier.height(8.dp)) }
-                    }
-                }
-            }
-
-            if (paused) {
-                Box(
-                    modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.62f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 10.dp) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 34.dp, vertical = 26.dp)) {
-                            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = com.quizforge.app.ui.theme.Violet, modifier = Modifier.size(34.dp))
-                            Text("Quiz paused", fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 8.dp))
-                            Text(
-                                "You left the app — tap Resume to continue where you left off",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                            com.quizforge.app.ui.components.PressGlowButton(
-                                onClick = { paused = false },
-                                modifier = Modifier.padding(top = 18.dp),
-                                shape = RoundedCornerShape(14.dp),
-                                containerColor = MaterialTheme.colorScheme.secondary,
-                                contentColor = MaterialTheme.colorScheme.onSecondary
-                            ) {
-                                Text("  Resume", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                            }
-                        }
                     }
                 }
             }
@@ -462,8 +377,7 @@ private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
                 progress = { progress },
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp).height(8.dp),
                 color = barColor,
-                trackColor = MaterialTheme.colorScheme.surface,
-                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                trackColor = MaterialTheme.colorScheme.surface
             )
             Text("$runScore", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = barColor)
         }
@@ -471,25 +385,9 @@ private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
 }
 
 @Composable
-/** Figma timer chip — red pill with clock icon. */
 private fun TimerChip(text: String, color: Color) {
-    Surface(
-        color = com.quizforge.app.ui.theme.redBg(),
-        shape = RoundedCornerShape(99.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, com.quizforge.app.ui.theme.RedBorder)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-        ) {
-            Icon(
-                Icons.Filled.Timer,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(12.dp)
-            )
-            Text(" $text", color = color, fontFamily = com.quizforge.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-        }
+    Surface(color = color.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)) {
+        Text(text, color = color, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
     }
 }
 
@@ -582,13 +480,7 @@ private fun InfoPhase(
             }
         }
 
-        com.quizforge.app.ui.components.PressGlowButton(
-            onClick = onStart,
-            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
-            shape = RoundedCornerShape(14.dp),
-            containerColor = MaterialTheme.colorScheme.secondary,
-            contentColor = MaterialTheme.colorScheme.onSecondary
-        ) {
+        Button(onClick = onStart, modifier = Modifier.fillMaxWidth().padding(top = 24.dp), shape = RoundedCornerShape(12.dp)) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Text("  Start Quiz", modifier = Modifier.padding(vertical = 6.dp))
         }

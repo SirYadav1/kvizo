@@ -12,25 +12,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -57,28 +53,16 @@ import com.quizforge.app.data.Quiz
 import com.quizforge.app.logic.XpEngine
 import com.quizforge.app.ui.AppViewModel
 import com.quizforge.app.ui.components.DifficultyBadge
-import com.quizforge.app.ui.components.ForgeCard
-import com.quizforge.app.ui.components.ForgeProgressBar
-import com.quizforge.app.ui.components.ForgeSectionLabel
-import com.quizforge.app.ui.components.GradientText
+import com.quizforge.app.ui.components.SectionTitle
+import com.quizforge.app.ui.components.StatCard
 import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
-import com.quizforge.app.ui.theme.InkSub
 import com.quizforge.app.ui.theme.Indigo
-import com.quizforge.app.ui.theme.Red
-import com.quizforge.app.ui.theme.SpaceGrotesk
-import com.quizforge.app.ui.theme.Violet
-import com.quizforge.app.ui.theme.VioletLight
-import com.quizforge.app.ui.theme.VioletPale
-import com.quizforge.app.ui.theme.amberBg
-import com.quizforge.app.ui.theme.amberBorder
-import com.quizforge.app.ui.theme.greenBg
-import com.quizforge.app.ui.theme.greenBorder
-import com.quizforge.app.ui.theme.redBg
-import com.quizforge.app.ui.theme.violetBorder
-import com.quizforge.app.ui.theme.violetPale
+import androidx.compose.foundation.Image
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     val profile = vm.profile ?: run {
@@ -96,171 +80,200 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     var questionCounts by remember { mutableStateOf(mapOf<String, Int>()) }
 
     LaunchedEffect(profile.id) {
-        vm.ensureHomeLoaded()
-        androidx.compose.runtime.snapshotFlow { vm.homeData }.collect { d ->
-            if (d != null) {
-                todayCount = d.todayCount
-                totalAttempts = d.totalAttempts
-                quizzes = d.quizzes
-                questionCounts = d.questionCounts
-                totalTime = d.totalTime
-                streak = d.streak
-                recentBadges = d.recentBadges
-                weeklyAccuracy = d.weeklyAccuracy
-                weakAreas = d.weakAreas
-            }
-        }
+        val attempts = vm.repo.getAttempts(profile.id)
+        todayCount = vm.repo.getAttemptCountToday(profile.id)
+        totalAttempts = attempts.size
+        quizzes = vm.repo.getQuizzes(profile.id, "published") + vm.repo.getQuizzes(profile.id, "draft")
+        quizzes = quizzes.sortedByDescending { it.updatedAt }
+        questionCounts = quizzes.associate { it.id to vm.repo.getQuestions(it.id).size }
+        totalTime = vm.repo.totalTimeSpent(profile.id)
+        val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
+        streak = XpEngine.currentStreak(daySet)
+        recentBadges = vm.repo.getBadges(profile.id).takeLast(3).map { it.badgeName }
+        // weekly accuracy: last 7 days
+        val weekAgo = System.currentTimeMillis() - 7L * 86400000
+        val weekAttempts = attempts.filter { it.attemptedAt >= weekAgo }
+        weeklyAccuracy = if (weekAttempts.isEmpty()) 0f
+        else weekAttempts.sumOf { it.correctAnswers }.toFloat() / weekAttempts.sumOf { it.totalQuestions }.coerceAtLeast(1)
+        // weak areas: categories below 60%
+        weakAreas = vm.repo.categoryAccuracy(profile.id)
+            .filter { (c, p) -> p.second >= 3 && p.first * 100 / p.second < 60 }
+            .map { it.key }
+            .take(3)
     }
 
-    val nextLevelXp = if (profile.level < 6) XpEngine.xpForLevel(profile.level + 1) else 0
-    val pctToNext = (XpEngine.levelProgress(profile.xp) * 100).toInt()
-
     LazyColumn(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // header — "Forge" + two icon buttons (Figma)
+        // header: title, profile avatar circle, settings
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text(
-                    "Forge",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButtonBox(Icons.Filled.BarChart) { nav.navigate(Routes.STATS) }
-                IconButtonBox(Icons.Filled.Settings) { nav.navigate(Routes.SETTINGS) }
-            }
-        }
-
-        // community announcement banners (from the admin panel)
-        if (vm.unreadAnnouncements.isNotEmpty()) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    vm.unreadAnnouncements.forEach { n ->
-                        ForgeCard(modifier = Modifier.fillMaxWidth()) {
-                            Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.Top) {
-                                Box(modifier = Modifier.size(36.dp).background(violetPale(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Filled.Campaign, contentDescription = null, tint = Violet, modifier = Modifier.size(19.dp))
-                                }
-                                Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                                    Text(n.title, fontWeight = FontWeight.Bold, fontSize = 13.sp, fontFamily = SpaceGrotesk)
-                                    Text(n.body, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 17.sp, modifier = Modifier.padding(top = 2.dp))
-                                }
-                                IconButton(onClick = { vm.dismissAnnouncement(n.id) }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Close, contentDescription = "Dismiss", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                                }
-                            }
-                        }
-                    }
+                Text("QuizForge", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Indigo.copy(alpha = 0.15f), CircleShape)
+                        .clickable { nav.navigate(Routes.PROFILE) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = vm.avatarUrl(profile.avatarId),
+                        contentDescription = "Avatar",
+                        modifier = Modifier.size(40.dp).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                Spacer(Modifier.width(6.dp))
+                IconButton(onClick = { nav.navigate(Routes.SETTINGS) }) {
+                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
                 }
             }
         }
 
-        // profile card — Figma: avatar tile + name + LVL gradient text + XP
+        // profile card
         item {
-            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            modifier = Modifier.size(48.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            color = violetPale(),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, violetBorder())
+                        Box(
+                            modifier = Modifier.size(52.dp).background(Indigo.copy(alpha = 0.15f), CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(vm.avatarEmoji(profile.avatarId), fontSize = 22.sp)
-                            }
-                        }
-                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text(profile.username, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(if (profile.status.isNotBlank()) profile.status else XpEngine.levelTitle(profile.level), fontSize = 12.sp, color = InkSub, modifier = Modifier.padding(top = 1.dp))
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            GradientText("LVL ${profile.level}", fontSize = 13.sp)
-                            Text("${profile.xp} XP", fontSize = 12.sp, color = Violet, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 1.dp))
-                        }
-                    }
-                    // XP bar — Figma: 6px rounded, gradient, "64% to Level 5" / "2,000 XP"
-                    ForgeProgressBar(
-                        progress = XpEngine.levelProgress(profile.xp),
-                        modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
-                        height = 6.dp
-                    )
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                        Text(
-                            if (profile.level < 6) "$pctToNext% to Level ${profile.level + 1}" else "Max level reached",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.weight(1f))
-                        if (profile.level < 6) Text("$nextLevelXp XP", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
-        }
-
-        // stats — Figma 2-col grid: 🔥 Streak / 📊 This week
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FigmaStatCard(Icons.Filled.LocalFireDepartment, "Streak", "$streak", "days in a row", Violet, Modifier.weight(1f))
-                FigmaStatCard(Icons.Filled.BarChart, "This week", "${(weeklyAccuracy * 100).toInt()}%", "accuracy", Green, Modifier.weight(1f))
-            }
-        }
-
-        // secondary mini stats — every card explains its own data
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MiniChip("$todayCount", "quizzes\ntoday", Modifier.weight(1f))
-                MiniChip("${quizzes.size}", "quizzes\ncreated", Modifier.weight(1f))
-                MiniChip("$totalAttempts", "attempts\ntaken", Modifier.weight(1f))
-                MiniChip(formatTime(totalTime), "time\nplayed", Modifier.weight(1f))
-            }
-        }
-
-        // weak areas — Figma "Focus area" warning card
-        if (weakAreas.isNotEmpty()) {
-            item {
-                ForgeCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
-                        Box(modifier = Modifier.size(36.dp).background(redBg(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Warning, contentDescription = null, tint = Red, modifier = Modifier.size(18.dp))
-                        }
-                        Column(modifier = Modifier.padding(start = 12.dp)) {
-                            Text("Focus area", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Red, letterSpacing = 0.08.sp)
-                            Text(
-                                "${weakAreas.joinToString()} is below 60% — keep practicing",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 18.sp,
-                                modifier = Modifier.padding(top = 2.dp)
+                            AsyncImage(
+                                model = vm.avatarUrl(profile.avatarId),
+                                contentDescription = "Avatar",
+                                modifier = Modifier.size(52.dp).clip(CircleShape),
+                                contentScale = ContentScale.Crop
                             )
                         }
+                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                            Text(profile.username, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            if (profile.status.isNotBlank()) Text(profile.status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Surface(color = Amber.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp)) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                                Text("LVL ${profile.level}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Amber)
+                                Text("${profile.xp} XP", fontSize = 10.sp, color = Amber)
+                            }
+                        }
+                    }
+                    LinearProgressIndicator(
+                        progress = { XpEngine.levelProgress(profile.xp) },
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(8.dp),
+                        color = Indigo,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    Text(
+                        XpEngine.levelTitle(profile.level) + if (profile.level < 6) "  •  ${(XpEngine.levelProgress(profile.xp) * 100).toInt()}% to Level ${profile.level + 1}" else "  •  Max level",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+            }
+        }
+
+        // stat cards
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard("$todayCount", "Today", modifier = Modifier.weight(1f), tint = Indigo)
+                StatCard("${quizzes.size}", "Created", modifier = Modifier.weight(1f), tint = Green)
+                StatCard("$totalAttempts", "Taken", modifier = Modifier.weight(1f), tint = Amber)
+            }
+        }
+
+        // weekly performance
+        item {
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SectionTitle("Weekly Performance")
+                    LinearProgressIndicator(
+                        progress = { weeklyAccuracy },
+                        modifier = Modifier.fillMaxWidth().height(10.dp),
+                        color = Green,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    Text("${(weeklyAccuracy * 100).toInt()}% accuracy (7 days)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                }
+            }
+        }
+
+        // streak + time
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.weight(1f)) {
+                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = Amber, modifier = Modifier.size(22.dp))
+                        Column(modifier = Modifier.padding(start = 8.dp)) {
+                            Text("$streak-day", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("Streak", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.weight(1f)) {
+                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.BarChart, contentDescription = null, tint = Indigo, modifier = Modifier.size(22.dp))
+                        Column(modifier = Modifier.padding(start = 8.dp)) {
+                            Text(formatTime(totalTime), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("Total time", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
         }
 
-        // quick actions — Figma 3-tile grid, bigger icons in tinted tiles
-        item {
-            ForgeSectionLabel("Quick actions")
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                FigmaQuickAction(Icons.Filled.Edit, "Create", violetPale(), Violet, Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
-                FigmaQuickAction(Icons.Filled.PlayArrow, "Play", greenBg(), Green, Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
-                FigmaQuickAction(Icons.Filled.TrendingUp, "Stats", amberBg(), Amber, Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
+        // recent badges
+        if (recentBadges.isNotEmpty()) {
+            item {
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        SectionTitle("Recent Badges")
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            recentBadges.forEach { name ->
+                                Surface(color = Amber.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp)) {
+                                    Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(14.dp))
+                                        Text(" $name", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Amber)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        // popular quizzes
-        item {
-            ForgeSectionLabel("Popular quizzes")
+        // weak areas hint
+        if (weakAreas.isNotEmpty()) {
+            item {
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f), modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Study insight: focus on ${weakAreas.joinToString()} (below 60% accuracy)",
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(14.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
         }
+
+        // quick actions
+        item {
+            SectionTitle("Quick Actions")
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                QuickAction(Icons.Filled.Add, "Create Quiz", Indigo, Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
+                QuickAction(Icons.Filled.PlayArrow, "Take Quiz", Green, Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
+                QuickAction(Icons.Filled.BarChart, "Statistics", Amber, Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
+            }
+        }
+
+        // recent quizzes
+        item { SectionTitle("Popular Quizzes") }
         val popular = quizzes.sortedByDescending { it.attemptsCount }
         if (popular.isEmpty()) {
             item {
-                ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(72.dp))
                         Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
@@ -269,16 +282,35 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 }
             }
         } else {
-            items(popular.take(5), key = { it.id }) { quiz ->
-                PopularQuizRow(quiz, questionCounts[quiz.id] ?: 0) { nav.navigate(Routes.attempt(quiz.id)) }
+            items(popular.take(8), key = { it.id }) { quiz ->
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 1.dp,
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        nav.navigate(Routes.attempt(quiz.id))
+                    }
+                ) {
+                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(38.dp).background(Green.copy(alpha = 0.14f), CircleShape), contentAlignment = Alignment.Center) {
+                            Text("${quiz.attemptsCount}", color = Green, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        }
+                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                            Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("${questionCounts[quiz.id] ?: 0} questions | ${quiz.attemptsCount} attempts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        DifficultyBadge(quiz.difficulty)
+                        Text("  ${quiz.averageScore.toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (quiz.averageScore >= 60) Green else Amber)
+                    }
+                }
             }
         }
 
         // recent quizzes
-        item { ForgeSectionLabel("Recent quizzes") }
+        item { SectionTitle("Recent Quizzes") }
         if (quizzes.isEmpty()) {
             item {
-                ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(72.dp))
                         Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
@@ -291,18 +323,21 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.attempt(quiz.id)) }
+                    shadowElevation = 1.dp,
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        nav.navigate(Routes.attempt(quiz.id))
+                    }
                 ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(36.dp).background(violetPale(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                            Text("Q", color = Violet, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(38.dp).background(Indigo.copy(alpha = 0.12f), CircleShape), contentAlignment = Alignment.Center) {
+                            Text("Q", color = Indigo, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("${questionCounts[quiz.id] ?: 0} questions | ${quiz.attemptsCount} attempts", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 1.dp))
+                            Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("${questionCounts[quiz.id] ?: 0} questions | ${quiz.attemptsCount} attempts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Text("  ${quiz.averageScore.toInt()}%", fontSize = 11.sp, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, color = if (quiz.averageScore >= 60) Green else Amber)
+                        DifficultyBadge(quiz.difficulty)
+                        Text("  ${quiz.averageScore.toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (quiz.averageScore >= 60) Green else Amber)
                     }
                 }
             }
@@ -311,119 +346,18 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     }
 }
 
-/* ---- Figma sub-components ---- */
-
 @Composable
-private fun IconButtonBox(icon: ImageVector, onClick: () -> Unit) {
+private fun QuickAction(icon: ImageVector, label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier
-            .padding(start = 8.dp)
-            .size(44.dp)
-            .clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
+        shape = RoundedCornerShape(14.dp),
+        color = color.copy(alpha = 0.12f),
+        modifier = modifier.clickable(onClick = onClick)
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = VioletLight,
-                modifier = Modifier.size(22.dp)
-            )
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 14.dp)) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = color, modifier = Modifier.padding(top = 4.dp), maxLines = 1)
         }
     }
-}
-
-@Composable
-private fun FigmaStatCard(icon: ImageVector, label: String, value: String, sub: String, valueColor: Color, modifier: Modifier = Modifier) {
-    ForgeCard(modifier = modifier) {
-        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = valueColor, modifier = Modifier.size(15.dp))
-                Text("  $label", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
-            }
-            Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = valueColor, modifier = Modifier.padding(top = 6.dp))
-            Text(sub, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 1.dp))
-        }
-    }
-}
-
-@Composable
-private fun MiniChip(value: String, label: String, modifier: Modifier = Modifier) {
-    ForgeCard(modifier = modifier) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 10.dp)) {
-            Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(
-                label,
-                fontSize = 8.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                letterSpacing = 0.15.sp,
-                lineHeight = 11.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun FigmaQuickAction(
-    icon: ImageVector,
-    label: String,
-    bg: Color,
-    tint: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = bg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 16.dp, bottom = 14.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .background(tint.copy(alpha = 0.18f), RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
-            }
-            Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 8.dp))
-        }
-    }
-}
-
-@Composable
-private fun PopularQuizRow(quiz: Quiz, questionCount: Int, onClick: () -> Unit) {
-    ForgeCard(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
-    ) {
-        Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(40.dp).background(violetPale(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                Text(formatCount(quiz.attemptsCount), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Violet)
-            }
-            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                Text(quiz.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${quiz.category} · $questionCount questions", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 1.dp))
-            }
-            val score = quiz.averageScore.toInt()
-            Surface(
-                color = if (score >= 60) greenBg() else amberBg(),
-                shape = RoundedCornerShape(99.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (score >= 60) greenBorder() else amberBorder())
-            ) {
-                Text("$score%", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = if (score >= 60) Green else Amber, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
-            }
-        }
-    }
-}
-
-private fun formatCount(n: Int): String = when {
-    n >= 1000 -> "%.1fk".format(n / 1000f)
-    else -> "$n"
 }
 
 private fun formatTime(totalSeconds: Long): String {

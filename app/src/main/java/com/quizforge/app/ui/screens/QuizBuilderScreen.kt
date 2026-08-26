@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -89,6 +89,8 @@ import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
 
+private val Cream = Color(0xFFFBF7EF)
+
 private class EQ(
     var text: String = "",
     var opts: MutableList<String> = mutableListOf("", "", "", ""),
@@ -124,6 +126,7 @@ private class EQ(
 @Composable
 fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?) {
     val isEdit = quizId != null
+    val dark = isSystemInDarkTheme()
     var title by remember { mutableStateOf("") }
     var category by remember { mutableStateOf(PRESET_CATEGORIES[0]) }
     var difficulty by remember { mutableStateOf(DIFF_EASY) }
@@ -183,7 +186,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
         newTag = ""
     }
 
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().background(MaterialTheme.colorScheme.background)) {
+    Column(modifier = Modifier.fillMaxSize().background(if (dark) MaterialTheme.colorScheme.background else Cream)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -250,8 +253,8 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                         onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags.joinToString(", "), description, timeLimitSec, questions, STATUS_DRAFT) { error = it } },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
-                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Indigo),
+                        border = BorderStroke(1.5.dp, Indigo)
                     ) {
                         Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(17.dp))
                         Text("  Save Draft", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -260,7 +263,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                         onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags.joinToString(", "), description, timeLimitSec, questions, STATUS_PUBLISHED) { error = it } },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary)
+                        colors = ButtonDefaults.buttonColors(containerColor = Indigo)
                     ) {
                         Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.size(17.dp))
                         Text("  Publish Quiz", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -333,10 +336,10 @@ private fun CardFrame(modifier: Modifier = Modifier, content: @Composable Column
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
-        shadowElevation = 0.dp
+        border = BorderStroke(1.dp, Color(0xFFEDE8F5)),
+        shadowElevation = 1.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp), content = content)
+        Column(modifier = Modifier.padding(14.dp), content = content)
     }
 }
 
@@ -420,8 +423,8 @@ private fun DifficultyCard(current: String, onSelect: (String) -> Unit) {
                 val selected = current == d
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (selected) c.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, if (selected) c.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+                    color = if (selected) c.copy(alpha = 0.13f) else Color(0xFFFAF8F3),
+                    border = BorderStroke(1.dp, if (selected) c else Color(0xFFEDE8F5)),
                     modifier = Modifier.weight(1f).clickable { onSelect(d) }
                 ) {
                     Row(
@@ -516,7 +519,7 @@ private fun EmptyStateCard(onAdd: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+        border = BorderStroke(1.dp, Color(0xFFEDE8F5))
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
@@ -540,7 +543,7 @@ private fun EmptyStateCard(onAdd: () -> Unit) {
             Button(
                 onClick = onAdd,
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary)
+                colors = ButtonDefaults.buttonColors(containerColor = Indigo)
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(17.dp))
                 Text("  Add First Question", fontWeight = FontWeight.SemiBold)
@@ -663,7 +666,7 @@ private fun QuestionEditor(index: Int, eq: EQ, onDelete: () -> Unit, onMoveUp: (
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+        border = BorderStroke(1.dp, Color(0xFFEDE8F5)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(12.dp)) {

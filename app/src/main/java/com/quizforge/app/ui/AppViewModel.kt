@@ -1,87 +1,35 @@
 package com.quizforge.app.ui
 
-import com.quizforge.app.BuildConfig
-
 import android.app.Application
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.SoundPool
+import android.media.ToneGenerator
 import android.os.VibrationEffect
 import android.os.Vibrator
-import com.quizforge.app.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.quizforge.app.R
 import com.quizforge.app.data.AppSettings
-import com.quizforge.app.data.Attempt
 import com.quizforge.app.data.AttemptResult
-import com.quizforge.app.data.Badge
 import com.quizforge.app.data.LeaderboardEntry
 import com.quizforge.app.data.Profile
 import com.quizforge.app.data.Quiz
 import com.quizforge.app.data.Question
 import com.quizforge.app.data.QuizRepository
-import com.quizforge.app.data.RemoteApi
-import com.quizforge.app.data.RemoteNotification
 import com.quizforge.app.data.SettingsRepo
-import com.quizforge.app.data.STATUS_DRAFT
 import com.quizforge.app.data.STATUS_PUBLISHED
 import com.quizforge.app.logic.XpEngine
-import com.quizforge.app.util.AnnouncementNotifier
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.net.URL
 import java.util.UUID
-
-/** Cached snapshot of everything the Home tab renders. */
-class HomeData(
-    val todayCount: Int,
-    val totalAttempts: Int,
-    val quizzes: List<Quiz>,
-    val questionCounts: Map<String, Int>,
-    val totalTime: Long,
-    val streak: Int,
-    val recentBadges: List<String>,
-    val weeklyAccuracy: Float,
-    val weakAreas: List<String>
-)
-
-/** Cached snapshot of everything the Profile tab renders. */
-class ProfileData(
-    val attempts: List<Attempt>,
-    val quizzes: List<Quiz>,
-    val totalTime: Long,
-    val diffStats: Map<String, Pair<Int, Int>>,
-    val badges: List<Badge>
-)
-
-/** Cached snapshot of everything the Stats tab renders. */
-class StatsData(
-    val attempts: List<Attempt>,
-    val categories: Map<String, String>,
-    val quizTitles: Map<String, String>
-)
-
-/** Cached snapshot of everything the Quizzes tab renders. */
-class QuizListData(
-    val quizzes: List<Quiz>,
-    val questionCounts: Map<String, Int>
-)
-
-/** Runs a DB read off the main thread and returns its result. */
-private suspend fun<T> ioLoad(block: () -> T): T = withContext(Dispatchers.IO) { block() }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     val repo = QuizRepository(app)
     private val settingsRepo = SettingsRepo(app)
-    private val remoteApi = RemoteApi()
-
+    private val communityQuizManager = com.quizforge.app.data.CommunityQuizManager(app)
     val settings: Flow<AppSettings> = settingsRepo.settings
 
     var profile by mutableStateOf<Profile?>(null)
@@ -89,34 +37,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // For dashboard recomposition we re-read these on each navigation refresh.
     var quizzes by mutableStateOf<List<Quiz>>(emptyList())
-        private set
-
-    /** Cached tab data — loaded off the main thread so tab switches stay instant. */
-    var homeData by mutableStateOf<HomeData?>(null)
-        private set
-    var profileData by mutableStateOf<ProfileData?>(null)
-        private set
-    var statsData by mutableStateOf<StatsData?>(null)
-        private set
-    var quizListData by mutableStateOf<QuizListData?>(null)
-        private set
-
-    /** Flags so repeated calls don't spawn duplicate loads for the same profile. */
-    private var loadedHomeFor = -1L
-    private var loadedProfileFor = -1L
-    private var loadedStatsFor = -1L
-    private var loadedQuizzesFor = -1L
-
-    /** In-app notification banner shown when new community quizzes are available. */
-    var syncNotice by mutableStateOf<String?>(null)
-        private set
-
-    /** All community announcements fetched from the server (newest first). */
-    var announcements by mutableStateOf<List<RemoteNotification>>(emptyList())
-        private set
-
-    /** Announcements the user has not seen yet (shown as a banner + system notification). */
-    var unreadAnnouncements by mutableStateOf<List<RemoteNotification>>(emptyList())
         private set
 
     init {
@@ -130,78 +50,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 hapticsOn = s.hapticsEnabled
             }
         }
-        viewModelScope.launch { startSyncLoop() }
-    }
-
-    private suspend fun startSyncLoop() {
-        val deviceId = settingsRepo.getDeviceId()
-        var lastSync = 0L
-        while (true) {
-            remoteApi.sendHeartbeat(deviceId)
-            val now = System.currentTimeMillis()
-            if (now - lastSync > 5 * 60_000L) {
-                syncRemoteQuizzesNow()
-                checkAnnouncementsNow()
-                lastSync = now
-            }
-            kotlinx.coroutines.delay(25_000)
-        }
-    }
-
-    /**
-     * Fetches community announcements and surfaces the fresh ones:
-     * in-app banner + Android system notification (bell sound). Never throws.
-     */
-    suspend fun checkAnnouncementsNow() {
-        try {
-            val list = remoteApi.fetchNotifications()
-            if (list.isEmpty()) return
-            announcements = list
-            val lastSeen = settingsRepo.lastAnnouncementSeen()
-            val fresh = list.filter { it.id.isNotBlank() && it.createdAt > lastSeen }
-            if (fresh.isEmpty()) return
-            unreadAnnouncements = fresh
-            settingsRepo.setLastAnnouncementSeen(fresh.maxOf { it.createdAt })
-            val s = settingsRepo.settings.first()
-            if (s.announcementsEnabled) {
-                fresh.forEach { AnnouncementNotifier.post(getApplication(), it) }
-            }
-        } catch (_: Exception) {
-            // offline — try again on the next sync tick
-        }
-    }
-
-    /** User dismissed an announcement banner. */
-    fun dismissAnnouncement(id: String) {
-        unreadAnnouncements = unreadAnnouncements.filter { it.id != id }
-    }
-
-    fun setAnnouncementsEnabled(v: Boolean) = viewModelScope.launch { settingsRepo.setAnnouncementsEnabled(v) }
-
-    /** Fetch community quizzes from the server (used on app start / manual refresh). */
-    fun syncRemoteQuizzes() {
-        viewModelScope.launch { syncRemoteQuizzesNow() }
-    }
-
-    private suspend fun syncRemoteQuizzesNow() {
-        val pid = profile?.id ?: return
-        try {
-            val remote = remoteApi.fetchQuizzes()
-            if (remote.isEmpty()) return
-            val added = repo.syncRemoteQuizzes(pid, remote)
-            if (added.isNotEmpty()) {
-                syncNotice = if (added.size == 1) "New community quiz added!"
-                else "${added.size} new community quizzes added!"
-            }
-            refreshQuizzes()
-            invalidateData()
-        } catch (_: Exception) {
-            // offline — keep existing data
-        }
-    }
-
-    fun dismissSyncNotice() {
-        syncNotice = null
     }
 
     fun refreshProfile() {
@@ -212,124 +60,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         profile?.let { quizzes = repo.getQuizzes(it.id) }
     }
 
-    // ---------- async tab data (off main thread) ----------
-
-    private fun loadHome(pid: Long) = viewModelScope.launch {
-        val data = ioLoad {
-            val attempts = repo.getAttempts(pid)
-            val q = (repo.getQuizzes(pid, STATUS_PUBLISHED) + repo.getQuizzes(pid, STATUS_DRAFT))
-                .sortedByDescending { it.updatedAt }
-            val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
-            val weekAgo = System.currentTimeMillis() - 7L * 86400000
-            val weekAttempts = attempts.filter { it.attemptedAt >= weekAgo }
-            HomeData(
-                todayCount = repo.getAttemptCountToday(pid),
-                totalAttempts = attempts.size,
-                quizzes = q,
-                questionCounts = q.associate { it.id to repo.getQuestions(it.id).size },
-                totalTime = repo.totalTimeSpent(pid),
-                streak = XpEngine.currentStreak(daySet),
-                recentBadges = repo.getBadges(pid).takeLast(3).map { it.badgeName },
-                weeklyAccuracy = if (weekAttempts.isEmpty()) 0f
-                else weekAttempts.sumOf { it.correctAnswers }.toFloat() / weekAttempts.sumOf { it.totalQuestions }.coerceAtLeast(1),
-                weakAreas = repo.categoryAccuracy(pid)
-                    .filter { (c, p) -> p.second >= 3 && p.first * 100 / p.second < 60 }
-                    .map { it.key }
-                    .take(3)
-            )
-        }
-        homeData = data
-    }
-
-    private fun loadProfile(pid: Long) = viewModelScope.launch {
-        val data = ioLoad {
-            ProfileData(
-                attempts = repo.getAttempts(pid),
-                quizzes = repo.getQuizzes(pid),
-                totalTime = repo.totalTimeSpent(pid),
-                diffStats = repo.difficultyStats(pid),
-                badges = repo.getBadges(pid)
-            )
-        }
-        profileData = data
-    }
-
-    private fun loadStats(pid: Long) = viewModelScope.launch {
-        val data = ioLoad {
-            StatsData(
-                attempts = repo.getAttempts(pid),
-                categories = repo.getQuizCategoriesById(),
-                quizTitles = repo.getQuizTitlesById()
-            )
-        }
-        statsData = data
-    }
-
-    private fun loadQuizList(pid: Long) = viewModelScope.launch {
-        val data = ioLoad {
-            val q = repo.getQuizzes(pid)
-            QuizListData(
-                quizzes = q,
-                questionCounts = q.associate { it.id to repo.getQuestions(it.id).size }
-            )
-        }
-        quizListData = data
-    }
-
-    /** Ensure Home cache is loaded (fast on repeat visits). */
-    fun ensureHomeLoaded() {
-        profile?.let { p ->
-            if (homeData == null || loadedHomeFor != p.id) {
-                loadedHomeFor = p.id
-                loadHome(p.id)
-            }
-        }
-    }
-
-    /** Ensure Profile cache is loaded. */
-    fun ensureProfileLoaded() {
-        profile?.let { p ->
-            if (profileData == null || loadedProfileFor != p.id) {
-                loadedProfileFor = p.id
-                loadProfile(p.id)
-            }
-        }
-    }
-
-    /** Ensure Stats cache is loaded. */
-    fun ensureStatsLoaded() {
-        profile?.let { p ->
-            if (statsData == null || loadedStatsFor != p.id) {
-                loadedStatsFor = p.id
-                loadStats(p.id)
-            }
-        }
-    }
-
-    fun ensureQuizListLoaded() {
-        profile?.let { p ->
-            if (quizListData == null || loadedQuizzesFor != p.id) {
-                loadedQuizzesFor = p.id
-                loadQuizList(p.id)
-            }
-        }
-    }
-
-    /** Invalidate caches so the next tab visit reloads fresh data. */
-    fun invalidateData() {
-        homeData = null
-        profileData = null
-        statsData = null
-        quizListData = null
-    }
-
     // ---------- settings ----------
 
     fun setThemeMode(mode: String) = viewModelScope.launch { settingsRepo.setThemeMode(mode) }
     fun setSoundEnabled(v: Boolean) = viewModelScope.launch { settingsRepo.setSoundEnabled(v) }
     fun setHapticsEnabled(v: Boolean) = viewModelScope.launch { settingsRepo.setHapticsEnabled(v) }
-    fun setAutoUpdateCheck(v: Boolean) = viewModelScope.launch { settingsRepo.setAutoUpdateCheck(v) }
-    fun setUpdateNotifications(v: Boolean) = viewModelScope.launch { settingsRepo.setUpdateNotifications(v) }
+    fun setTimerOnBackground(v: String) = viewModelScope.launch { settingsRepo.setTimerOnBackground(v) }
+    fun setTimerBehavior(v: String) = setTimerOnBackground(v)
 
     // ---------- profile ----------
 
@@ -337,7 +74,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val p = repo.createProfile(username, avatarId, status, bio)
         profile = p
         refreshQuizzes()
-        invalidateData()
         return p
     }
 
@@ -346,7 +82,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val np = p.copy(bio = bio, status = status)
             repo.updateProfile(np)
             profile = np
-            invalidateData()
         }
     }
 
@@ -355,7 +90,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val np = p.copy(username = name)
             repo.updateProfile(np)
             profile = np
-            invalidateData()
         }
     }
 
@@ -363,7 +97,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.switchProfile(id)
         refreshProfile()
         refreshQuizzes()
-        invalidateData()
     }
 
     fun deleteProfile(id: Long) {
@@ -379,11 +112,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val np = p.copy(username = username, status = status, bio = bio, avatarId = avatarId)
             repo.updateProfile(np)
             profile = np
-            invalidateData()
         }
     }
 
-    fun avatarCount(): Int = AVATARS.size
+    fun avatarCount(): Int = AVATAR_COUNT
 
     fun toggleBookmark(questionId: String) = repo.toggleBookmark(questionId)
 
@@ -391,7 +123,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.resetAll()
         profile = null
         quizzes = emptyList()
-        invalidateData()
     }
 
     // ---------- quiz CRUD ----------
@@ -431,7 +162,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.firstQuizBonus(pid)
         refreshProfile()
         refreshQuizzes()
-        invalidateData()
         return quiz
     }
 
@@ -441,7 +171,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             q.copy(id = if (q.id.isEmpty()) UUID.randomUUID().toString() else q.id, quizId = quiz.id, position = i)
         })
         refreshQuizzes()
-        invalidateData()
     }
 
     fun deleteQuiz(id: String): Boolean {
@@ -467,7 +196,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         repo.insertQuestions(qs)
         refreshQuizzes()
-        invalidateData()
     }
 
     fun importSharedQuiz(shared: com.quizforge.app.util.ShareCodec.SharedQuiz): Quiz {
@@ -495,7 +223,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.firstQuizBonus(pid)
         refreshProfile()
         refreshQuizzes()
-        invalidateData()
         return quiz
     }
 
@@ -515,7 +242,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         } else result
         profile = repo.getProfileById(p.id)
         refreshQuizzes()
-        invalidateData()
         return finalResult
     }
 
@@ -523,59 +249,52 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private var soundOn = true
     private var hapticsOn = true
-    private val appContext: Context = getApplication()
-    private var soundPool: SoundPool? = null
-    private var soundCorrectId = 0
-    private var soundWrongId = 0
-    private var soundWin = 0
-    private var soundBell = 0
+    private var toneGen: ToneGenerator? = null
 
-    private fun ensureSoundPool(): SoundPool? {
-        soundPool?.let { return it }
-        return try {
-            val attrs = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-            val sp = SoundPool.Builder().setMaxStreams(4).setAudioAttributes(attrs).build()
-            soundCorrectId = sp.load(appContext, R.raw.sound_correct, 1)
-            soundWrongId = sp.load(appContext, R.raw.sound_wrong, 1)
-            soundWin = sp.load(appContext, R.raw.sound_win, 1)
-            soundBell = sp.load(appContext, R.raw.sound_bell, 1)
-            soundPool = sp
-            sp
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    /** Real sound effect for correct/wrong answers (crisp chime vs buzzer). */
+    /** Instant correct/wrong feedback — two-tone: ascending on correct, descending on wrong. */
     fun playSound(correct: Boolean) {
         if (!soundOn) return
-        val sp = ensureSoundPool() ?: return
-        try {
-            sp.play(if (correct) soundCorrectId else soundWrongId, 1f, 1f, 1, 0, 1f)
-        } catch (_: Exception) {
+        viewModelScope.launch {
+            try {
+                val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80).also { toneGen = it }
+                if (correct) {
+                    t.startTone(ToneGenerator.TONE_DTMF_5, 80)
+                    kotlinx.coroutines.delay(95)
+                    t.startTone(ToneGenerator.TONE_DTMF_9, 120)
+                    kotlinx.coroutines.delay(130)
+                    t.startTone(ToneGenerator.TONE_PROP_ACK, 220)
+                } else {
+                    t.startTone(ToneGenerator.TONE_DTMF_9, 80)
+                    kotlinx.coroutines.delay(95)
+                    t.startTone(ToneGenerator.TONE_DTMF_5, 120)
+                    kotlinx.coroutines.delay(130)
+                    t.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+                }
+            } catch (_: Exception) {
+            }
         }
     }
 
-    /** Upbeat victory fanfare used when a quiz is completed with a good score. */
+    /** Ascending celebratory jingle for quiz completion. */
     fun playSuccessJingle() {
         if (!soundOn) return
-        val sp = ensureSoundPool() ?: return
-        try {
-            sp.play(soundWin, 1f, 1f, 1, 0, 1f)
-        } catch (_: Exception) {
-        }
-    }
-
-    /** Gentle bell tone — e.g. UX accent / notification ding. */
-    fun playBell() {
-        if (!soundOn) return
-        val sp = ensureSoundPool() ?: return
-        try {
-            sp.play(soundBell, 1f, 1f, 1, 0, 1f)
-        } catch (_: Exception) {
+        viewModelScope.launch {
+            try {
+                val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 85).also { toneGen = it }
+                val notes = intArrayOf(
+                    ToneGenerator.TONE_DTMF_3, ToneGenerator.TONE_DTMF_5,
+                    ToneGenerator.TONE_DTMF_7, ToneGenerator.TONE_DTMF_9,
+                    ToneGenerator.TONE_DTMF_9, ToneGenerator.TONE_DTMF_9
+                )
+                for (n in notes) {
+                    t.startTone(n, 120)
+                    kotlinx.coroutines.delay(140)
+                }
+                t.startTone(ToneGenerator.TONE_PROP_ACK, 380)
+                kotlinx.coroutines.delay(400)
+                t.startTone(ToneGenerator.TONE_PROP_ACK, 380)
+            } catch (_: Exception) {
+            }
         }
     }
 
@@ -611,30 +330,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
-        try { soundPool?.release() } catch (_: Exception) {
+        try { toneGen?.release() } catch (_: Exception) {
         }
         super.onCleared()
     }
 
     // ---------- misc ----------
 
-    fun avatarEmoji(id: Int): String = AVATARS[id % AVATARS.size]
+    fun avatarRes(id: Int): Int = AVATAR_RESOURCES[id % AVATAR_COUNT]
 
     // ---------- leaderboard ----------
 
-    /**
-     * Ranks device profiles by XP (or accuracy). When the online login system is
-     * turned on (settingsRepo.setLeaderboardOnline(true)), this switches to the
-     * global server leaderboard.
-     */
     suspend fun leaderboardEntries(metric: String): List<LeaderboardEntry> {
-        val online = settingsRepo.settings.first().leaderboardOnline
-        if (!online) {
-            return localLeaderboard(metric)
-        }
-        // TODO(login): fetch the global leaderboard from the server once the online
-        // login system ships. Until then the screen shows an empty "coming soon" state.
-        return emptyList()
+        return localLeaderboard(metric)
     }
 
     private fun localLeaderboard(metric: String): List<LeaderboardEntry> {
@@ -657,99 +365,95 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return if (self != null && self.rank > 20) top + self else top
     }
 
-    // ---------- updates ----------
 
-    /** Checks GitHub for the newest release. Returns (tag, html url) or null on failure. */
-    suspend fun latestRelease(): Pair<String, String>? = withContext(Dispatchers.IO) {
-        try {
-            val conn = URL("https://api.github.com/repos/SirYadav1/quizforge/releases/latest").openConnection() as java.net.HttpURLConnection
-            conn.setRequestProperty("Accept", "application/vnd.github+json")
-            conn.setRequestProperty("User-Agent", "QuizForge")
-            conn.connectTimeout = 8000
-            conn.readTimeout = 8000
-            if (conn.responseCode !in 200..299) return@withContext null
-            val body = conn.inputStream.bufferedReader().use { it.readText() }
-            val json = org.json.JSONObject(body)
-            val tag = json.optString("tag_name", "").trim().removePrefix("v")
-            val url = json.optString("html_url", "")
-            if (tag.isEmpty()) null else tag to url
-        } catch (_: Exception) {
-            null
-        }
+    // ---------- community quizzes ----------
+
+    var communityLoading by mutableStateOf(false)
+        private set
+    var communityError by mutableStateOf<String?>(null)
+        private set
+    var communityImportResult by mutableStateOf<String?>(null)
+        private set
+
+    suspend fun fetchCommunityQuizzes(): Result<List<com.quizforge.app.data.CommunityQuiz>> {
+        communityLoading = true
+        communityError = null
+        val result = communityQuizManager.fetchAndImport()
+        communityLoading = false
+        result.onFailure { communityError = it.message }
+        return result
     }
 
-    /** Result of an update check. */
-    data class UpdateInfo(val available: Boolean, val remoteVersion: String = "", val url: String = "")
-
-    /** Compares GitHub's latest release with the installed version. */
-    suspend fun checkForUpdates(): UpdateInfo = withContext(Dispatchers.IO) {
-        val release = latestRelease() ?: return@withContext UpdateInfo(false)
-        val (tag, url) = release
-        val current = BuildConfig.VERSION_NAME
-        UpdateInfo(isNewerThan(current, tag), tag, url)
-    }
-
-    private fun isNewerThan(current: String, remote: String): Boolean {
-        val a = current.split('.').map { it.toIntOrNull() ?: 0 }
-        val b = remote.split('.').map { it.toIntOrNull() ?: 0 }
-        for (i in 0 until maxOf(a.size, b.size)) {
-            val x = a.getOrElse(i) { 0 }
-            val y = b.getOrElse(i) { 0 }
-            if (y != x) return y > x
-        }
-        return false
-    }
-
-    /** Posts a system notification that a new version is available on the releases page. */
-    fun notifyUpdateAvailable() {
-        try {
-            val app = getApplication<Application>()
-            val nm = app.getSystemService(android.app.NotificationManager::class.java)
-            nm.createNotificationChannel(
-                android.app.NotificationChannel("updates", "Update notifications", android.app.NotificationManager.IMPORTANCE_DEFAULT)
-            )
-            val openReleases = android.app.PendingIntent.getActivity(
-                app, 0,
-                android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/SirYadav1/quizforge/releases")),
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            )
-            val notif = androidx.core.app.NotificationCompat.Builder(app, "updates")
-                .setSmallIcon(R.drawable.ic_logo)
-                .setContentTitle("QuizForge update available")
-                .setContentText("A new version is out — tap to open the release page")
-                .setContentIntent(openReleases)
-                .setSound(android.net.Uri.parse("android.resource://" + app.packageName + "/" + R.raw.sound_bell))
-                .setAutoCancel(true)
-                .build()
-            if (androidx.core.content.ContextCompat.checkSelfPermission(
-                    app, android.Manifest.permission.POST_NOTIFICATIONS
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                androidx.core.app.NotificationManagerCompat.from(app).notify(42, notif)
-            }
-        } catch (_: Exception) {
-        }
-    }
-
-    /** Silent launch-time check: if a newer GitHub version exists and notifications are on, notify. */
-    fun checkForUpdatesAtLaunch() {
+    fun importCommunityQuiz(quiz: com.quizforge.app.data.CommunityQuiz) {
+        val pid = profile?.id ?: return
         viewModelScope.launch {
-            val s = settingsRepo.settings.first()
-            if (!s.autoUpdateCheck || !s.updateNotifications) return@launch
-            val info = checkForUpdates()
-            if (info.available) notifyUpdateAvailable()
+            val count = communityQuizManager.importToDatabase(listOf(quiz), repo, pid)
+            communityImportResult = if (count > 0) "Imported: ${quiz.title}" else "Already imported"
         }
     }
 
     companion object {
-        val AVATARS = listOf(
-            "🦊", "🐼", "🦁", "🐸", "🐙", "🦄", "🐯", "🐨",
-            "🐧", "🦉", "🐺", "🐳", "🦋", "🐝", "🐢", "🦅",
-            "🐰", "🦕", "🐬", "🦚", "🐲", "🦩", "🐹", "🦥",
-            "🐆", "🦜", "🐋", "🦎", "🐿️", "🦔", "🐊", "🦍",
-            "🐘", "🦛", "🐫", "🦓", "🦌", "🐃", "🐄", "🐖",
-            "🐏", "🐑", "🐐", "🦙", "🦘", "🦡", "🐁", "🐀",
-            "🦢", "🦤", "🦃", "🐓", "🦆", "🦇"
+        // Internet anime avatars (fetched from free APIs)
+        val ANIME_AVATARS = listOf(
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Felix",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Luna",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Max",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Bella",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Charlie",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Daisy",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Eddie",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Fiona",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=George",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Hannah",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Ivan",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Julia",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Kevin",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Lily",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Mike",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Nina",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Oscar",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Penny",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Quinn",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Rachel",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Steve",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Tina",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Uma",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Victor"
+        )
+
+        // Memes/GIFs PFP options
+        val MEME_AVATARS = listOf(
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Happy",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Cool",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Party",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Love",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Star",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Fire",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Rocket",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Crown",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Rainbow",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Moon",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Sun",
+            "https://api.dicebear.com/7.x/fun-emoji/svg?seed=Lightning"
+        )
+
+        // All avatars combined (for backward compatibility)
+        val AVATARS = ANIME_AVATARS + MEME_AVATARS
+        val AVATAR_COUNT = AVATARS.size
+
+        val AVATAR_RESOURCES = listOf(
+            R.drawable.avatar_01, R.drawable.avatar_02, R.drawable.avatar_03,
+            R.drawable.avatar_04, R.drawable.avatar_05, R.drawable.avatar_06,
+            R.drawable.avatar_07, R.drawable.avatar_08, R.drawable.avatar_09,
+            R.drawable.avatar_10, R.drawable.avatar_11, R.drawable.avatar_12,
+            R.drawable.avatar_13, R.drawable.avatar_14, R.drawable.avatar_15,
+            R.drawable.avatar_16, R.drawable.avatar_17, R.drawable.avatar_18,
+            R.drawable.avatar_19, R.drawable.avatar_20, R.drawable.avatar_21,
+            R.drawable.avatar_22, R.drawable.avatar_23, R.drawable.avatar_24
         )
     }
+
+    fun avatarUrl(id: Int): String = ANIME_AVATARS[id % ANIME_AVATARS.size]
+
+
 }

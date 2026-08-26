@@ -8,15 +8,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,238 +34,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
-import com.quizforge.app.ui.theme.Ink
 import com.quizforge.app.ui.theme.Red
-import com.quizforge.app.ui.theme.SpaceGrotesk
-import com.quizforge.app.ui.theme.Violet
-import com.quizforge.app.ui.theme.VioletGradient
-import com.quizforge.app.ui.theme.amberBg
-import com.quizforge.app.ui.theme.greenBg
-import com.quizforge.app.ui.theme.redBg
-import com.quizforge.app.ui.theme.violetGradient
-import com.quizforge.app.ui.theme.violetPale
 import kotlinx.coroutines.delay
 import kotlin.random.Random
-
-/* ------------------------------------------------------------------ */
-/* Figma design-system components ("Forge")                            */
-/* ------------------------------------------------------------------ */
-
-/** Figma card: white, 1px border, radius 18 (ee in the Figma prototype). */
-@Composable
-fun ForgeCard(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(18.dp),
-        shadowElevation = 0.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-    ) { content() }
-}
-
-/** Section label — uppercase, 10–11px, letter-spaced (Figma style). */
-@Composable
-fun ForgeSectionLabel(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text.uppercase(),
-        fontSize = 10.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.08.em,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
-        modifier = modifier
-    )
-}
-
-/** Gradient text (Figma .grad-text) — violet → light-violet sweep (dark-aware). */
-@Composable
-fun GradientText(text: String, fontSize: androidx.compose.ui.unit.TextUnit, fontWeight: FontWeight = FontWeight.Bold, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        style = TextStyle(
-            brush = violetGradient(),
-            fontFamily = SpaceGrotesk,
-            fontSize = fontSize,
-            fontWeight = fontWeight,
-            lineHeight = fontSize * 1.1
-        ),
-        modifier = modifier
-    )
-}
-
-/** Pill chip — selected: violet gradient + white text; unselected: surface + border. */
-@Composable
-fun PillChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }),
-        shape = RoundedCornerShape(99.dp),
-        color = if (selected) Violet else MaterialTheme.colorScheme.surface,
-        border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-    ) {
-        Box(
-            modifier = Modifier
-                .background(
-                    if (selected) violetGradient() else androidx.compose.ui.graphics.SolidColor(androidx.compose.ui.graphics.Color.Transparent),
-                    RoundedCornerShape(99.dp)
-                )
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-        ) {
-            Text(
-                label,
-                fontSize = 12.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-/** Colored status pill (Figma status chips) — tinted bg + colored border. */
-@Composable
-fun StatusPill(
-    label: String,
-    color: Color,
-    bg: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        color = bg,
-        shape = RoundedCornerShape(99.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.30f))
-    ) {
-        Text(
-            label,
-            color = color,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
-        )
-    }
-}
-
-/** Figma progress bar — 5–7px, rounded 99, gradient fill (dark-aware). */
-@Composable
-fun ForgeProgressBar(progress: Float, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 6.dp) {
-    Box(
-        modifier = modifier
-            .height(height)
-            .background(MaterialTheme.colorScheme.outline, RoundedCornerShape(99.dp))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .height(height)
-                .background(violetGradient(), RoundedCornerShape(99.dp))
-        )
-    }
-}
-
-/** Uppercase tiny label with letter-spacing (Figma "Question 5 of 12"). */
-@Composable
-fun ForgeKicker(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text.uppercase(),
-        fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.08.em,
-        color = Indigo,
-        modifier = modifier
-    )
-}
-
-/**
- * Primary action button with a purple press-glow: on touch the whole area
- * around the button blooms with a soft violet radial halo + subtle scale-down.
- */
-@Composable
-fun PressGlowButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(14.dp),
-    containerColor: Color = MaterialTheme.colorScheme.secondary,
-    contentColor: Color = MaterialTheme.colorScheme.onSecondary,
-    glowColor: Color = Violet,
-    enabled: Boolean = true,
-    content: @Composable () -> Unit
-) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val glow by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (pressed) 1f else 0f,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 450f),
-        label = "pressGlow"
-    )
-    val scale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (pressed) 0.97f else 1f,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.75f, stiffness = 700f),
-        label = "pressScale"
-    )
-    Box(
-        modifier = modifier
-            .drawBehind {
-                if (glow > 0f) {
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            listOf(
-                                glowColor.copy(alpha = 0.42f * glow),
-                                glowColor.copy(alpha = 0.14f * glow),
-                                Color.Transparent
-                            ),
-                            center = center,
-                            radius = size.minDimension * 0.95f
-                        )
-                    )
-                }
-            }
-            .clickable(
-                enabled = enabled,
-                interactionSource = interaction,
-                indication = null,
-                onClick = onClick
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Surface(
-            shape = shape,
-            color = containerColor,
-            contentColor = contentColor,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
-                .scale(scale)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp)
-            ) { content() }
-        }
-    }
-}
 
 /** Difficulty badge with color coding. */
 @Composable
@@ -281,7 +59,7 @@ fun DifficultyBadge(difficulty: String, modifier: Modifier = Modifier) {
     }
     Surface(
         modifier = modifier,
-        color = color.copy(alpha = 0.12f),
+        color = color.copy(alpha = 0.15f),
         shape = RoundedCornerShape(6.dp)
     ) {
         Text(
@@ -289,7 +67,6 @@ fun DifficultyBadge(difficulty: String, modifier: Modifier = Modifier) {
             color = color,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.3.sp,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         )
     }
@@ -302,116 +79,90 @@ fun StatusChip(status: String, modifier: Modifier = Modifier) {
         "draft" -> Amber
         else -> Color.Gray
     }
-    Surface(modifier = modifier, color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(6.dp)) {
+    Surface(modifier = modifier, color = color.copy(alpha = 0.15f), shape = RoundedCornerShape(6.dp)) {
         Text(
             status.replaceFirstChar { it.uppercase() },
             color = color,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.3.sp,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         )
     }
 }
 
-/** Stat card used on the dashboard — pastel tinted tile with soft border. */
+/** Stat card used on the dashboard. */
 @Composable
 fun StatCard(value: String, label: String, modifier: Modifier = Modifier, tint: Color = Indigo) {
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp),
-        shadowElevation = 1.dp,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)
-        )
+        shape = RoundedCornerShape(16.dp),
+        shadowElevation = 1.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .background(tint.copy(alpha = 0.16f), CircleShape),
+                    .size(28.dp)
+                    .background(tint.copy(alpha = 0.15f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("•", color = tint, fontWeight = FontWeight.Black, fontSize = 15.sp)
+                Text("•", color = tint, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
-            Text(
-                value,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 24.sp,
-                letterSpacing = (-0.3).sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 10.dp)
-            )
-            Text(
-                label,
-                fontSize = 11.sp,
-                letterSpacing = 0.3.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 1.dp)
-            )
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.padding(top = 8.dp))
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
-/** Celebration confetti — colorful paper pieces falling from the top, once per burst. */
+/** Celebration confetti — multi-burst sprinkle with falling, rotating pieces. */
 @Composable
 fun ConfettiOverlay(show: Boolean, modifier: Modifier = Modifier) {
     AnimatedVisibility(visible = show, enter = fadeIn(), exit = fadeOut()) {
         val pieces = remember {
-            List(120) { i ->
-                FallingConfetti(
-                    startX = 0.02f + Random.nextFloat() * 0.96f,   // horizontal spawn (fraction of width)
-                    delay = Random.nextFloat() * 0.4f,             // stagger the fall start
-                    duration = 1.5f + Random.nextFloat() * 1.4f,   // fall duration in seconds
-                    sway = 18f + Random.nextFloat() * 44f,         // horizontal sway amplitude (px)
-                    size = 7f + Random.nextFloat() * 9f,           // piece size (px) — big enough to see
+            List(80) { i ->
+                ConfettiPiece(
+                    angle = Random.nextInt(360),
+                    speed = 0.5f + Random.nextFloat() * 0.8f,
                     strip = i % 3 != 0,
-                    colorIndex = i % 8
+                    colorIndex = i % 6
                 )
             }
         }
         val progress = remember { Animatable(0f) }
         LaunchedEffect(show) {
             progress.snapTo(0f)
-            progress.animateTo(1f, animationSpec = tween(durationMillis = 3000, easing = LinearEasing))
+            progress.animateTo(1f, animationSpec = tween(durationMillis = 2400, easing = LinearEasing))
         }
-        Canvas(modifier = modifier.fillMaxSize()) {
-            val colors = listOf(
-                Color(0xFF7C3AED), Color(0xFFA78BFA), Color(0xFFF59E0B), Color(0xFF10B981),
-                Color(0xFFEC4899), Color(0xFF22D3EE), Color(0xFF3B82F6), Color(0xFFEF4444)
-            )
+        Canvas(modifier = modifier.fillMaxWidth().height(420.dp)) {
+            val colors = listOf(Indigo, Amber, Green, Red, Color(0xFFFF6EC7), Color(0xFF00BCD4))
             pieces.forEach { p ->
-                val t = ((progress.value - p.delay) / (1f - p.delay)).coerceIn(0f, 1f)
-                if (t <= 0f) return@forEach
-                // gravity: y accelerates (t^2) from above the top edge
-                val y = -60f + t * t * (size.height + 120f)
-                // swaying drift as it falls
-                val x = p.startX * size.width + kotlin.math.sin(t * 6.28f + p.delay * 9f) * p.sway
+                val t = progress.value
+                // two staggered bursts: even pieces at t=0, odd pieces at t=0.42
+                val burstStart = if (p.colorIndex % 2 == 0) 0f else 0.42f
+                val local = ((t - burstStart) / (1f - burstStart)).coerceIn(0f, 1f)
+                val rad = Math.toRadians(p.angle.toDouble())
+                val dist = local * size.width * (0.35f + 0.55f * p.speed)
+                val x = size.width / 2f + (Math.cos(rad) * dist).toFloat()
+                // gravity: y accelerates as pieces fall
+                val y = 60f + (Math.sin(rad).toFloat() * dist).coerceAtLeast(0f) + local * local * 90f
                 val color = colors[p.colorIndex]
-                val alpha = ((1f - t) * 1.2f).coerceIn(0f, 1f)
+                val alpha = (1f - local).coerceIn(0.15f, 1f)
                 if (p.strip) {
-                    rotate(p.colorIndex * 45f + t * 720f) {
-                        drawRect(
-                            color.copy(alpha = alpha),
-                            topLeft = Offset(x, y),
-                            size = Size(p.size * 2.1f, p.size)
-                        )
+                    val s = 2.5f + (p.colorIndex % 3) * 0.8f
+                    rotate(p.angle + t * 540f) {
+                        drawRect(color.copy(alpha = alpha), topLeft = Offset(x, y), size = Size(s * 2.2f, s))
                     }
                 } else {
-                    drawCircle(color.copy(alpha = alpha), radius = p.size * 0.55f, center = Offset(x, y))
+                    drawCircle(color.copy(alpha = alpha), radius = 2.5f + (p.colorIndex % 3), center = Offset(x, y))
                 }
             }
         }
     }
 }
 
-private data class FallingConfetti(
-    val startX: Float,
-    val delay: Float,
-    val duration: Float,
-    val sway: Float,
-    val size: Float,
+private data class ConfettiPiece(
+    val angle: Int,
+    val speed: Float,
     val strip: Boolean,
     val colorIndex: Int
 )
@@ -447,9 +198,8 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         text,
         fontWeight = FontWeight.Bold,
         fontSize = 15.sp,
-        letterSpacing = 0.2.sp,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.padding(top = 8.dp, bottom = 6.dp)
+        modifier = modifier.padding(vertical = 6.dp)
     )
 }
 

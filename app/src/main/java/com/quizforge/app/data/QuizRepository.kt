@@ -140,28 +140,6 @@ class QuizRepository(context: Context) {
         return out
     }
 
-    /** Maps quiz id -> category so stats can group attempts by category in one pass. */
-    fun getQuizCategoriesById(): Map<String, String> {
-        val out = linkedMapOf<String, String>()
-        db.query("quizzes", arrayOf("id", "category"), null, null, null, null, null).use { c ->
-            while (c.moveToNext()) {
-                out[c.getString(0)] = c.getString(1) ?: "Other"
-            }
-        }
-        return out
-    }
-
-    /** Maps quiz id -> title so history/attempt lists can show quiz names in one pass. */
-    fun getQuizTitlesById(): Map<String, String> {
-        val out = linkedMapOf<String, String>()
-        db.query("quizzes", arrayOf("id", "title"), null, null, null, null, null).use { c ->
-            while (c.moveToNext()) {
-                out[c.getString(0)] = c.getString(1) ?: "Unknown quiz"
-            }
-        }
-        return out
-    }
-
     fun updateQuizMeta(quiz: Quiz) {
         val values = ContentValues().apply {
             put("title", quiz.title)
@@ -176,81 +154,11 @@ class QuizRepository(context: Context) {
         db.update("quizzes", values, "id = ?", arrayOf(quiz.id))
     }
 
-    /** Deletes a quiz. Remote (server-managed) quizzes can never be deleted from the app. */
     fun deleteQuiz(id: String): Boolean {
         val quiz = getQuizById(id) ?: return true
-        if (quiz.isRemote) return false
         db.delete("questions", "quiz_id = ?", arrayOf(id))
         db.delete("quizzes", "id = ?", arrayOf(id))
         return true
-    }
-
-    /**
-     * Upserts server quizzes for the given profile. Remote quizzes are never
-     * deletable from the app; stale ones (removed from the server) are removed.
-     * Local attempt stats are preserved across re-syncs.
-     * Returns the list of quiz ids that are brand new (for the in-app banner).
-     */
-    fun syncRemoteQuizzes(profileId: Long, remote: List<RemoteQuiz>): List<String> {
-        if (remote.isEmpty()) return emptyList()
-        val existingRemoteIds = mutableSetOf<String>()
-        db.query(
-            "quizzes", arrayOf("id"), "profile_id = ? AND is_remote = 1",
-            arrayOf(profileId.toString()), null, null, null
-        ).use { c ->
-            while (c.moveToNext()) existingRemoteIds.add(c.getString(0))
-        }
-        val serverIds = remote.map { it.id }.toSet()
-        val added = remote.map { it.id }.filter { it !in existingRemoteIds }
-
-        db.beginTransaction()
-        try {
-            for (r in remote) {
-                val existing = getQuizById(r.id)
-                val now = System.currentTimeMillis()
-                val quiz = Quiz(
-                    id = r.id,
-                    profileId = profileId,
-                    title = r.title,
-                    category = r.category,
-                    difficulty = r.difficulty,
-                    tags = r.tags,
-                    timeLimitSeconds = r.timeLimitSeconds,
-                    status = STATUS_PUBLISHED,
-                    createdAt = existing?.createdAt ?: r.createdAt,
-                    updatedAt = now,
-                    attemptsCount = existing?.attemptsCount ?: 0,
-                    averageScore = existing?.averageScore ?: 0.0,
-                    description = r.description,
-                    isRemote = true
-                )
-                insertQuiz(quiz)
-                replaceQuestions(r.id, r.questions.mapIndexed { i, q ->
-                    Question(
-                        id = "${r.id}:q$i",
-                        quizId = r.id,
-                        questionText = q.questionText,
-                        optionA = q.optionA,
-                        optionB = q.optionB,
-                        optionC = q.optionC,
-                        optionD = q.optionD,
-                        correctOption = q.correctOption,
-                        position = i,
-                        isBookmarked = false
-                    )
-                })
-            }
-            // remove stale remote quizzes no longer on the server
-            for (id in existingRemoteIds) {
-                if (id in serverIds) continue
-                db.delete("questions", "quiz_id = ?", arrayOf(id))
-                db.delete("quizzes", "id = ?", arrayOf(id))
-            }
-            db.setTransactionSuccessful()
-        } finally {
-            db.endTransaction()
-        }
-        return added
     }
 
     // ---------------- QUESTIONS ----------------
@@ -486,14 +394,14 @@ class QuizRepository(context: Context) {
 
         val attempts = getAttempts(profileId)
         // own quizzes only (remote community quizzes don't count as "created")
-        val ownQuizCount = getQuizzes(profileId).count { !it.isRemote }
+        val ownQuizCount = getQuizzes(profileId).size
         val totalCorrect = attempts.sumOf { it.correctAnswers }
         val totalAnswered = attempts.sumOf { it.totalQuestions }
         val perfectCount = attempts.count { it.totalQuestions > 0 && it.score == 100 }
         val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
         val streak = XpEngine.currentStreak(daySet)
         val longestStreakDays = XpEngine.longestStreak(daySet)
-        val remoteAttempts = attempts.count { getQuizById(it.quizId)?.isRemote == true }
+
         val profile = getProfileById(profileId)
         val level = profile?.level ?: 1
 
@@ -543,7 +451,7 @@ class QuizRepository(context: Context) {
         }
         if (ownQuizCount >= 5) grant("creator", "Creator")
         if (ownQuizCount >= 20) grant("quiz_producer", "Quiz Producer")
-        if (remoteAttempts >= 3) grant("community_pioneer", "Community Pioneer")
+
         if (XpEngine.isNight(now)) grant("night_owl", "Night Owl")
         if (XpEngine.isEarlyMorning(now)) grant("early_bird", "Early Bird")
         if (level >= 6) grant("legend", "Legendary")
