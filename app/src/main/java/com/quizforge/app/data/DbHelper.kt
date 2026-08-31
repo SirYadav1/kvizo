@@ -4,7 +4,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class DbHelper(context: Context) : SQLiteOpenHelper(context, "quizforge.db", null, 3) {
+class DbHelper(context: Context) : SQLiteOpenHelper(context, "kvizo.db", null, 3) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(

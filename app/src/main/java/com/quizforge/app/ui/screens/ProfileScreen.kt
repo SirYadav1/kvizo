@@ -50,7 +50,6 @@ import com.quizforge.app.ui.components.SectionTitle
 import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
-import androidx.compose.foundation.Image
 import coil.compose.AsyncImage
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
@@ -176,8 +175,8 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                                     .clickable { selectedAvatar = i },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Image(
-                                    painter = painterResource(id = vm.avatarRes(i)),
+                                AsyncImage(
+                                    model = vm.avatarUrl(i),
                                     contentDescription = "Avatar $i",
                                     modifier = Modifier.size(38.dp).clip(CircleShape),
                                     contentScale = ContentScale.Crop

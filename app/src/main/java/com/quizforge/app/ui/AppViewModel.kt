@@ -2,6 +2,8 @@ package com.quizforge.app.ui
 
 import android.app.Application
 import android.content.Context
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.media.ToneGenerator
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -250,52 +252,57 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var soundOn = true
     private var hapticsOn = true
     private var toneGen: ToneGenerator? = null
+    private var soundPool: SoundPool? = null
+    private var soundCorrect = 0
+    private var soundWrong = 0
+    private var soundWin = 0
+    private var soundBell = 0
+    private var soundsLoaded = false
 
-    /** Instant correct/wrong feedback — two-tone: ascending on correct, descending on wrong. */
-    fun playSound(correct: Boolean) {
-        if (!soundOn) return
-        viewModelScope.launch {
-            try {
-                val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80).also { toneGen = it }
-                if (correct) {
-                    t.startTone(ToneGenerator.TONE_DTMF_5, 80)
-                    kotlinx.coroutines.delay(95)
-                    t.startTone(ToneGenerator.TONE_DTMF_9, 120)
-                    kotlinx.coroutines.delay(130)
-                    t.startTone(ToneGenerator.TONE_PROP_ACK, 220)
-                } else {
-                    t.startTone(ToneGenerator.TONE_DTMF_9, 80)
-                    kotlinx.coroutines.delay(95)
-                    t.startTone(ToneGenerator.TONE_DTMF_5, 120)
-                    kotlinx.coroutines.delay(130)
-                    t.startTone(ToneGenerator.TONE_PROP_NACK, 300)
-                }
-            } catch (_: Exception) {
-            }
-        }
+    /** Load sounds from MP3 files */
+    private fun loadSounds() {
+        if (soundsLoaded) return
+        try {
+            val app = getApplication<android.app.Application>()
+            val attrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            soundPool = SoundPool.Builder().setMaxStreams(4).setAudioAttributes(attrs).build()
+            soundCorrect = soundPool!!.load(app, R.raw.sound_correct, 1)
+            soundWrong = soundPool!!.load(app, R.raw.sound_wrong, 1)
+            soundWin = soundPool!!.load(app, R.raw.sound_win, 1)
+            soundBell = soundPool!!.load(app, R.raw.sound_bell, 1)
+            soundsLoaded = true
+        } catch (_: Exception) {}
     }
 
-    /** Ascending celebratory jingle for quiz completion. */
+    /** Play correct/wrong sound */
+    fun playSound(correct: Boolean) {
+        if (!soundOn) return
+        loadSounds()
+        try {
+            val soundId = if (correct) soundCorrect else soundWrong
+            if (soundId != 0) soundPool?.play(soundId, 1f, 1f, 1, 0, 1f)
+        } catch (_: Exception) {}
+    }
+
+        /** Play win sound */
     fun playSuccessJingle() {
         if (!soundOn) return
-        viewModelScope.launch {
-            try {
-                val t = toneGen ?: ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 85).also { toneGen = it }
-                val notes = intArrayOf(
-                    ToneGenerator.TONE_DTMF_3, ToneGenerator.TONE_DTMF_5,
-                    ToneGenerator.TONE_DTMF_7, ToneGenerator.TONE_DTMF_9,
-                    ToneGenerator.TONE_DTMF_9, ToneGenerator.TONE_DTMF_9
-                )
-                for (n in notes) {
-                    t.startTone(n, 120)
-                    kotlinx.coroutines.delay(140)
-                }
-                t.startTone(ToneGenerator.TONE_PROP_ACK, 380)
-                kotlinx.coroutines.delay(400)
-                t.startTone(ToneGenerator.TONE_PROP_ACK, 380)
-            } catch (_: Exception) {
-            }
-        }
+        loadSounds()
+        try {
+            if (soundWin != 0) soundPool?.play(soundWin, 1f, 1f, 1, 0, 1f)
+        } catch (_: Exception) {}
+    }
+
+    /** Play bell sound */
+    fun playBell() {
+        if (!soundOn) return
+        loadSounds()
+        try {
+            if (soundBell != 0) soundPool?.play(soundBell, 1f, 1f, 1, 0, 1f)
+        } catch (_: Exception) {}
     }
 
     /** Small correct/wrong haptic feedback. */
@@ -378,6 +385,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun fetchCommunityQuizzes(): Result<List<com.quizforge.app.data.CommunityQuiz>> {
         communityLoading = true
         communityError = null
+        // Try cached first for instant response
         val result = communityQuizManager.fetchAndImport()
         communityLoading = false
         result.onFailure { communityError = it.message }

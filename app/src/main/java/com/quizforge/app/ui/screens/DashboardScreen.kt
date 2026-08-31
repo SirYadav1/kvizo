@@ -19,11 +19,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -109,7 +109,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         // header: title, profile avatar circle, settings
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("QuizForge", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
+                Text("Kvizo", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -213,7 +213,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 }
                 Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.weight(1f)) {
                     Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.BarChart, contentDescription = null, tint = Indigo, modifier = Modifier.size(22.dp))
+                        Icon(Icons.Filled.Timer, contentDescription = null, tint = Indigo, modifier = Modifier.size(22.dp))
                         Column(modifier = Modifier.padding(start = 8.dp)) {
                             Text(formatTime(totalTime), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Text("Total time", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -264,7 +264,6 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 QuickAction(Icons.Filled.Add, "Create Quiz", Indigo, Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
                 QuickAction(Icons.Filled.PlayArrow, "Take Quiz", Green, Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
-                QuickAction(Icons.Filled.BarChart, "Statistics", Amber, Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
             }
         }
 

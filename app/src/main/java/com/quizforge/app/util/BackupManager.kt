@@ -116,7 +116,7 @@ object BackupManager {
             pj.put("daily", stats)
             profiles.put(pj)
         }
-        root.put("app", "QuizForge")
+        root.put("app", "Kvizo")
         root.put("version", 1)
         root.put("exported_at", System.currentTimeMillis())
         root.put("profiles", profiles)
@@ -129,7 +129,7 @@ object BackupManager {
      */
     fun restore(json: String, repo: QuizRepository): List<String> {
         val root = JSONObject(json)
-        if (root.optString("app") != "QuizForge") throw IllegalArgumentException("Not a QuizForge backup file")
+        if (root.optString("app") != "Kvizo") throw IllegalArgumentException("Not a Kvizo backup file")
         val profilesArr = root.getJSONArray("profiles")
         val restoredNames = mutableListOf<String>()
 

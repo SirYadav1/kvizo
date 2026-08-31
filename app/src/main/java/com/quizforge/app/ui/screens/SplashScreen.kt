@@ -43,7 +43,7 @@ fun SplashScreen(vm: AppViewModel, nav: NavHostController) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             androidx.compose.material3.Icon(
                 painter = painterResource(R.drawable.ic_logo),
-                contentDescription = "QuizForge logo",
+                contentDescription = "Kvizo logo",
                 tint = Color.Unspecified,
                 modifier = Modifier
                     .size(104.dp)
@@ -54,7 +54,7 @@ fun SplashScreen(vm: AppViewModel, nav: NavHostController) {
                     }
             )
             Text(
-                "QuizForge",
+                "Kvizo",
                 fontWeight = FontWeight.Bold,
                 fontSize = 30.sp,
                 modifier = Modifier.padding(top = 20.dp),
