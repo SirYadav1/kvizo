@@ -5,7 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -136,10 +140,18 @@ fun KvizoRoot(vm: AppViewModel) {
             navController = nav,
             startDestination = Routes.SPLASH,
             modifier = Modifier.padding(padding),
-            enterTransition = { fadeIn(tween(120)) },
-            exitTransition = { fadeOut(tween(90)) },
-            popEnterTransition = { fadeIn(tween(120)) },
-            popExitTransition = { fadeOut(tween(90)) }
+            enterTransition = {
+                slideInHorizontally(tween(280)) { it / 4 } + fadeIn(tween(200))
+            },
+            exitTransition = {
+                fadeOut(tween(180))
+            },
+            popEnterTransition = {
+                fadeIn(tween(200))
+            },
+            popExitTransition = {
+                slideOutHorizontally(tween(250)) { it / 4 } + fadeOut(tween(180))
+            }
         ) {
             composable(Routes.SPLASH) { SplashScreen(vm, nav) }
             composable(Routes.SETUP) { ProfileSetupScreen(vm, nav) }
