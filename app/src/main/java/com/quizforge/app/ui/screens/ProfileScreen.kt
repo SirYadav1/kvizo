@@ -65,6 +65,18 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
     var editBio by remember { mutableStateOf(profile.bio) }
     var selectedAvatar by remember { mutableStateOf(profile.avatarId) }
 
+    LaunchedEffect(showEdit) {
+        if (showEdit) {
+            val p = vm.profile
+            if (p != null) {
+                editName = p.username
+                editStatus = p.status
+                editBio = p.bio
+                selectedAvatar = p.avatarId
+            }
+        }
+    }
+
     LaunchedEffect(profile.id) {
         badges = vm.repo.getBadges(profile.id)
     }
@@ -163,8 +175,11 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             text = {
                 Column {
                     Text("Avatar", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp, bottom = 10.dp)) {
-                        (0 until avatarCount).forEach { i ->
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 6.dp, bottom = 10.dp)
+                    ) {
+                        items(avatarCount) { i ->
                             Box(
                                 modifier = Modifier
                                     .size(42.dp)

@@ -27,8 +27,8 @@ object CommunityKeys {
     )
 
     // Community quiz URLs (GitHub Pages)
-    const val COMMUNITY_JSON_URL = "https://kvizo.indevs.in/community.json"
-    const val COMMUNITY_SIG_URL = "https://kvizo.indevs.in/community.sig"
+    const val COMMUNITY_JSON_URL = "https://siryadav1.github.io/kvizo-community/community.json"
+    const val COMMUNITY_SIG_URL = "https://siryadav1.github.io/kvizo-community/community.sig"
     
     // Cache settings
     const val CACHE_FILE = "community_quiz_cache.json"
