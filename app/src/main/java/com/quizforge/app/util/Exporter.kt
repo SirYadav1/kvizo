@@ -39,7 +39,7 @@ object Exporter {
     // ---------- CSV ----------
 
     fun exportAttemptsCsv(context: Context, repo: QuizRepository, profileId: Long): File {
-        val file = File(exportsDir(context), "quizforge_attempts_${stamp()}.csv")
+        val file = File(exportsDir(context), "kvizo_attempts_${stamp()}.csv")
         val sb = StringBuilder()
         sb.append("Date,Quiz,Category,Difficulty,Score,Correct,Total,Time (s),XP\n")
         val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
@@ -55,7 +55,7 @@ object Exporter {
     }
 
     fun exportQuestionsCsv(context: Context, quiz: Quiz, questions: List<Question>): File {
-        val file = File(exportsDir(context), "quizforge_${safeName(quiz.title)}_${stamp()}.csv")
+        val file = File(exportsDir(context), "kvizo_${safeName(quiz.title)}_${stamp()}.csv")
         val sb = StringBuilder()
         sb.append("#,Question,Option A,Option B,Option C,Option D,Correct Answer\n")
         for ((i, q) in questions.withIndex()) {
@@ -68,7 +68,7 @@ object Exporter {
     // ---------- PDF ----------
 
     fun exportStatsPdf(context: Context, repo: QuizRepository, profileId: Long): File {
-        val file = File(exportsDir(context), "quizforge_stats_${stamp()}.pdf")
+        val file = File(exportsDir(context), "kvizo_stats_${stamp()}.pdf")
         val doc = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 portrait
         var currentPage = doc.startPage(pageInfo)
@@ -98,7 +98,7 @@ object Exporter {
         val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
         val attempts = repo.getAttempts(profileId)
 
-        canvas.drawText("QuizForge — Statistics Report", margin, y, titlePaint); y += 22f
+        canvas.drawText("Kvizo — Statistics Report", margin, y, titlePaint); y += 22f
         canvas.drawText("Generated ${fmt.format(Date())}  •  ${attempts.size} attempts", margin, y, subPaint); y += 26f
 
         canvas.drawText("Date", margin, y, hdrPaint)
@@ -142,7 +142,7 @@ object Exporter {
     }
 
     fun exportQuizPdf(context: Context, quiz: Quiz, questions: List<Question>, withAnswerKey: Boolean): File {
-        val file = File(exportsDir(context), "quizforge_${safeName(quiz.title)}_${stamp()}.pdf")
+        val file = File(exportsDir(context), "kvizo_${safeName(quiz.title)}_${stamp()}.pdf")
         val doc = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 portrait
         var currentPage = doc.startPage(pageInfo)

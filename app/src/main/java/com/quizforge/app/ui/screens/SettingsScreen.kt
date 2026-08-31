@@ -215,7 +215,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Backup, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
                     Text("  Backup all data (JSON)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { backupSaver.launch("quizforge-backup.json") }) { Text("Save", color = Indigo) }
+                    TextButton(onClick = { backupSaver.launch("kvizo-backup.json") }) { Text("Save", color = Indigo) }
                 }
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Restore, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
@@ -247,7 +247,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                         Icon(Icons.Filled.Info, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
                     }
                     Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
-                        Text("QuizForge", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Kvizo", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         Text("Version ${BuildConfig.VERSION_NAME}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Text("Made by SirYadav1", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -9,7 +9,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.kvizo.app"
+        applicationId = "com.quizforge.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 4

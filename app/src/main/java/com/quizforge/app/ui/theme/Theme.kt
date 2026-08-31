@@ -49,7 +49,7 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun QuizForgeTheme(
+fun KvizoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {

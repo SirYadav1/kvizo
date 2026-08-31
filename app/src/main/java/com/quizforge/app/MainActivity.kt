@@ -50,7 +50,7 @@ import com.quizforge.app.ui.screens.SplashScreen
 import com.quizforge.app.ui.screens.StatsScreen
 import com.quizforge.app.ui.screens.CommunityQuizScreen
 import com.quizforge.app.ui.theme.Indigo
-import com.quizforge.app.ui.theme.QuizForgeTheme
+import com.quizforge.app.ui.theme.KvizoTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,8 +64,8 @@ class MainActivity : ComponentActivity() {
                 "dark" -> true
                 else -> androidx.compose.foundation.isSystemInDarkTheme()
             }
-            QuizForgeTheme(darkTheme = dark) {
-                QuizForgeRoot(vm)
+            KvizoTheme(darkTheme = dark) {
+                KvizoRoot(vm)
             }
         }
     }
@@ -92,7 +92,7 @@ object Routes {
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 @Composable
-fun QuizForgeRoot(vm: AppViewModel) {
+fun KvizoRoot(vm: AppViewModel) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route

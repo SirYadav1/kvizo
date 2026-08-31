@@ -58,7 +58,7 @@ fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Welcome to QuizForge", fontWeight = FontWeight.Bold, fontSize = 26.sp, modifier = Modifier.padding(top = 24.dp))
+        Text("Welcome to Kvizo", fontWeight = FontWeight.Bold, fontSize = 26.sp, modifier = Modifier.padding(top = 24.dp))
         Text("Create your local profile — no login needed", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
 
         Text("Pick an avatar", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 28.dp, bottom = 12.dp).align(Alignment.Start))
