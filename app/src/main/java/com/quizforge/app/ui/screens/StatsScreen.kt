@@ -17,7 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -204,7 +204,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
             item {
                 Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.ShowChart, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Filled.BarChart, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
                         Text("  Best score: ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("${filtered.maxOfOrNull { it.score } ?: 0}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
                     }
