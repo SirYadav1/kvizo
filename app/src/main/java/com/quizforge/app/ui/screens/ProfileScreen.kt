@@ -54,6 +54,8 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
+import com.quizforge.app.ui.components.L
+import com.quizforge.app.ui.components.KvizoButton
 
 @Composable
 fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
@@ -171,10 +173,10 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
     if (showEdit) {
         AlertDialog(
             onDismissRequest = { showEdit = false },
-            title = { Text("Edit Profile") },
+            title = { Text(L.s("edit_profile")) },
             text = {
                 Column {
-                    Text("Avatar", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(L.s("avatar"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     androidx.compose.foundation.lazy.LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 6.dp, bottom = 10.dp)
@@ -202,14 +204,14 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                     OutlinedTextField(
                         value = editName,
                         onValueChange = { editName = it },
-                        label = { Text("Username") },
+                        label = { Text(L.s("username")) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = editStatus,
                         onValueChange = { editStatus = it },
-                        label = { Text("Status (e.g. Quiz Master)") },
+                        label = { Text(L.s("status_eg")) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     )
@@ -228,9 +230,9 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                     if (editName.isNotBlank()) {
                         vm.updateProfile(editName.trim(), editStatus.trim(), editBio.trim(), selectedAvatar)
                     }
-                }) { Text("Save") }
+                }) { Text(L.s("save")) }
             },
-            dismissButton = { TextButton(onClick = { showEdit = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showEdit = false }) { Text(L.s("cancel")) } }
         )
     }
 }

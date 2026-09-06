@@ -66,6 +66,8 @@ import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
 import kotlinx.coroutines.launch
+import com.quizforge.app.ui.components.L
+import com.quizforge.app.ui.components.KvizoButton
 
 @Composable
 fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
@@ -114,7 +116,7 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("My Quizzes", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
+            Text(L.s("my_quizzes"), fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
             Surface(
                 onClick = {
                     showCommunity = true
@@ -192,7 +194,7 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
         if (visible.isEmpty()) {
             Box(modifier = Modifier.fillMaxWidth().padding(top = 60.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("No quizzes found", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Text(L.s("no_quizzes"), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                     Text("Tap + to create, or upload a .txt file", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                 }
             }
@@ -217,9 +219,9 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
                     val ok = vm.deleteQuiz(target.id)
                     if (ok) allQuizzes = allQuizzes.filter { it.id != target.id }
                     deleteTarget = null
-                }) { Text("Delete", color = Red) }
+                }) { Text(L.s("delete"), color = Red) }
             },
-            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(L.s("cancel")) } }
         )
     }
 
@@ -253,9 +255,9 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
                     } catch (e: Exception) {
                         importError = "Invalid code: " + e.message
                     }
-                }) { Text("Import") }
+                }) { Text(L.s("import")) }
             },
-            dismissButton = { TextButton(onClick = { showImportDialog = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showImportDialog = false }) { Text(L.s("cancel")) } }
         )
     }
 
@@ -387,7 +389,7 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
                     )
                     vm.refreshQuizzes()
                 })
-                DropdownMenuItem(text = { Text("Delete", color = Red) }, onClick = { menuOpen = false; onDelete() })
+                DropdownMenuItem(text = { Text(L.s("delete"), color = Red) }, onClick = { menuOpen = false; onDelete() })
             }
         }
     }
@@ -418,14 +420,13 @@ internal fun CommunityQuizCard(quiz: CommunityQuiz, onImport: () -> Unit) {
             Spacer(Modifier.height(4.dp))
             Text(quiz.questions.size.toString() + " questions \u2022 " + quiz.category + " \u2022 by " + quiz.author, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(10.dp))
-            Button(
+            KvizoButton(
                 onClick = onImport,
-                colors = ButtonDefaults.buttonColors(containerColor = Indigo),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Filled.CloudDownload, null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Import")
+                Text(L.s("import"))
             }
         }
     }

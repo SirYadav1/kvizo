@@ -45,6 +45,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
+import com.quizforge.app.ui.components.L
 
 @Composable
 fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
@@ -70,7 +71,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
             FilterChip(selected = metric == "XP", onClick = { metric = "XP" }, label = { Text("XP") })
-            FilterChip(selected = metric == "Accuracy", onClick = { metric = "Accuracy" }, label = { Text("Accuracy") })
+            FilterChip(selected = metric == "Accuracy", onClick = { metric = "Accuracy" }, label = { Text(L.s("accuracy")) })
         }
 
         Spacer(Modifier.height(10.dp))

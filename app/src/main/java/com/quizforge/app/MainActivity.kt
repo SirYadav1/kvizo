@@ -59,6 +59,7 @@ import com.quizforge.app.ui.theme.KvizoTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.quizforge.app.ui.components.L.load(this)
         enableEdgeToEdge()
         setContent {
             val vm: AppViewModel = viewModel()

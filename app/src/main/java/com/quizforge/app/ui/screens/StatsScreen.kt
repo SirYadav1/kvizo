@@ -45,6 +45,7 @@ import com.quizforge.app.ui.components.DonutChart
 import com.quizforge.app.ui.components.HeatmapCalendar
 import com.quizforge.app.ui.components.HBarChart
 import com.quizforge.app.ui.components.LineChart
+import com.quizforge.app.ui.components.L
 import com.quizforge.app.ui.components.SectionTitle
 import com.quizforge.app.ui.components.StatCard
 import com.quizforge.app.ui.theme.Amber
@@ -96,7 +97,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Statistics", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
+            Text(L.s("stats"), fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.weight(1f))
             var rangeMenu by remember { mutableStateOf(false) }
             OutlinedButton(onClick = { rangeMenu = true }, shape = RoundedCornerShape(10.dp)) {
                 Text(range, fontSize = 12.sp)
@@ -149,7 +150,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         DonutChart(accuracy, size = 110.dp)
                         Column(modifier = Modifier.padding(start = 20.dp)) {
-                            Text("Accuracy", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text(L.s("accuracy"), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                             Text("${(accuracy * 100).toInt()}%", fontWeight = FontWeight.Black, fontSize = 26.sp, color = if (accuracy >= 0.6f) Green else if (accuracy >= 0.4f) Amber else Red)
                             Text("$correct of $totalQ answers correct", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                         }

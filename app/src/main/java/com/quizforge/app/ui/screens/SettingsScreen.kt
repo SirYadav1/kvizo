@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Hearing
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restore
@@ -67,9 +68,11 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
+import com.quizforge.app.ui.components.L
 
 @Composable
 fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var settings by remember { mutableStateOf(AppSettings("system", true, true, "pause")) }
     var profiles by remember { mutableStateOf(listOf<Profile>()) }
     var confirmReset by remember { mutableStateOf(false) }
@@ -108,7 +111,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
     }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-        Text("Settings", fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
+        Text(L.s("settings"), fontWeight = FontWeight.Bold, fontSize = 24.sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
 
         message?.let {
             Surface(color = Green.copy(alpha = 0.12f), shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
@@ -150,6 +153,25 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                     Icon(Icons.Filled.Vibration, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
                     Text("  Haptic feedback", fontSize = 14.sp, modifier = Modifier.weight(1f))
                     Switch(checked = settings.hapticsEnabled, onCheckedChange = { scope.launch { vm.setHapticsEnabled(it) } })
+                }
+                // Language
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Language, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
+                    Text("  " + L.s("language"), fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    var langMenu by remember { mutableStateOf(false) }
+                    val currentLang = remember { mutableStateOf(L.currentLang()) }
+                    OutlinedButton(onClick = { langMenu = true }, shape = RoundedCornerShape(8.dp)) {
+                        Text(L.LANGUAGES.firstOrNull { it.first == currentLang.value }?.second ?: "English")
+                    }
+                    DropdownMenu(expanded = langMenu, onDismissRequest = { langMenu = false }) {
+                        L.LANGUAGES.forEach { (code, name) ->
+                            DropdownMenuItem(text = { Text(if (code == currentLang.value) "● $name" else name) }, onClick = {
+                                langMenu = false
+                                L.setLang(context, code)
+                                currentLang.value = code
+                            })
+                        }
+                    }
                 }
             }
         }
@@ -230,7 +252,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.DeleteForever, contentDescription = null, tint = Red, modifier = Modifier.size(20.dp))
                     Text("  Reset all data", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Red, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { confirmReset = true }) { Text("Reset", color = Red) }
+                    TextButton(onClick = { confirmReset = true }) { Text(L.s("reset"), color = Red) }
                 }
             }
         }
@@ -248,9 +270,9 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                     }
                     Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
                         Text("Kvizo", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Text("Version ${BuildConfig.VERSION_NAME}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(L.s("version") + " ${BuildConfig.VERSION_NAME}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Text("Made by SirYadav1", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(L.s("made_by"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(
                     "Quiz app with XP levels, badges, stats and community quizzes. Built with Kotlin + Compose.",
@@ -268,14 +290,14 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
-            title = { Text("Reset all data?") },
+            title = { Text(L.s("reset_data")) },
             text = { Text("This permanently deletes ALL profiles, quizzes, attempts and badges. A backup is recommended first.") },
             confirmButton = {
                 TextButton(onClick = {
                     confirmReset = false
                     vm.resetAll()
                     nav.navigate(Routes.SETUP) { popUpTo(Routes.SETUP) { inclusive = true } }
-                }) { Text("Delete everything", color = Red) }
+                }) { Text(L.s("delete_everything"), color = Red) }
             },
             dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } }
         )

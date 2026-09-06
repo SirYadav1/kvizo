@@ -88,6 +88,8 @@ import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
+import com.quizforge.app.ui.components.L
+import com.quizforge.app.ui.components.KvizoButton
 
 private val Cream = Color(0xFFFBF7EF)
 
@@ -259,7 +261,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
                         Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(17.dp))
                         Text("  Save Draft", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     }
-                    Button(
+                    KvizoButton(
                         onClick = { saveQuiz(vm, nav, isEdit, quizId, title, category, difficulty, tags.joinToString(", "), description, timeLimitSec, questions, STATUS_PUBLISHED) { error = it } },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
@@ -540,10 +542,8 @@ private fun EmptyStateCard(onAdd: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(14.dp))
-            Button(
+            KvizoButton(
                 onClick = onAdd,
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Indigo)
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(17.dp))
                 Text("  Add First Question", fontWeight = FontWeight.SemiBold)
@@ -760,6 +760,6 @@ private fun ImportCodeDialog(onDismiss: () -> Unit, onImported: (com.quizforge.a
                 }
             }) { Text("Load") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L.s("cancel")) } }
     )
 }

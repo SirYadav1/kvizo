@@ -62,6 +62,7 @@ import androidx.compose.foundation.Image
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
+import com.quizforge.app.ui.components.L
 
 @Composable
 fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
@@ -207,7 +208,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                         Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = Amber, modifier = Modifier.size(22.dp))
                         Column(modifier = Modifier.padding(start = 8.dp)) {
                             Text("$streak-day", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text("Streak", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(L.s("streak"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -216,7 +217,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                         Icon(Icons.Filled.Timer, contentDescription = null, tint = Indigo, modifier = Modifier.size(22.dp))
                         Column(modifier = Modifier.padding(start = 8.dp)) {
                             Text(formatTime(totalTime), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text("Total time", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(L.s("total_time"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -275,8 +276,8 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(72.dp))
-                        Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
-                        Text("Create one or import a .txt file", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                        Text(L.s("no_quizzes"), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
+                        Text(L.s("create_or_import"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }
@@ -312,8 +313,8 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(72.dp))
-                        Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
-                        Text("Create one or import a .txt file", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                        Text(L.s("no_quizzes"), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
+                        Text(L.s("create_or_import"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }

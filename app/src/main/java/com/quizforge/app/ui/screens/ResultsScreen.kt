@@ -58,6 +58,8 @@ import com.quizforge.app.ui.theme.Amber
 import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
+import com.quizforge.app.ui.components.L
+import com.quizforge.app.ui.components.KvizoButton
 
 @Composable
 fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
@@ -125,7 +127,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(12.dp))
-            Text("Quiz Complete!", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+            Text(L.s("quiz_complete"), fontWeight = FontWeight.Bold, fontSize = 24.sp)
             if (q != null) Text(q.title, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
 
             // score ring
@@ -175,7 +177,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
             if (newBadges.isNotEmpty()) {
                 Surface(shape = RoundedCornerShape(16.dp), color = Amber.copy(alpha = 0.12f), modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Badge unlocked!", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Amber)
+                        Text(L.s("badge_unlocked"), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Amber)
                         newBadges.forEach { b ->
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                                 Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(18.dp))
@@ -187,7 +189,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
             }
 
             // answer review summary
-            Text("Review", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp))
+            Text(L.s("review"), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                 ReviewStat("${a.correctAnswers}", "Correct", Green, Modifier.weight(1f))
@@ -197,7 +199,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
 
             // full answer review — what the user answered for every question
             if (reviewQuestions.isNotEmpty()) {
-                Text("Your Answers", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp))
+                Text(L.s("your_answers"), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp))
                 reviewQuestions.forEach { rq ->
                     val ans = answerMap[rq.id]
                     val userSel = ans?.selectedOption
@@ -255,7 +257,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                     Text("  Home", fontSize = 13.sp)
                 }
                 if (wrongIds.isNotEmpty()) {
-                    Button(
+                    KvizoButton(
                         onClick = {
                             nav.navigate(Routes.attempt(a.quizId, "normal", wrongIds.joinToString(","))) {
                                 popUpTo(nav.graph.findStartDestination().id) { saveState = true }
