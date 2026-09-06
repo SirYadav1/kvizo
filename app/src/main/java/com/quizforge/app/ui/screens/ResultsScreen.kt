@@ -1,6 +1,8 @@
 package com.quizforge.app.ui.screens
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -271,6 +274,31 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                         Text("  Retry ${wrongIds.size} wrong", fontSize = 13.sp)
                     }
                 }
+            }
+            Spacer(Modifier.height(14.dp))
+            val context = LocalContext.current
+            OutlinedButton(
+                onClick = {
+                    val msg = buildString {
+                        append("🔥 I scored ${a.score}% on \"${q?.title ?: "a quiz"}\" in Kvizo!\n")
+                        append("✅ ${a.correctAnswers}/${a.totalQuestions} correct · ${a.timeTakenSeconds}s · +$xpGained XP\n")
+                        append("Think you can beat me? 🏆")
+                    }
+                    context.startActivity(
+                        Intent.createChooser(
+                            Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, msg)
+                            },
+                            "Share my score"
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                Text("  Share my score", fontSize = 13.sp)
             }
             Spacer(Modifier.height(24.dp))
         }
