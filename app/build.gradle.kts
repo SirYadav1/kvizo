@@ -9,16 +9,22 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.quizforge.app"
+        applicationId = "com.kvizo.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.5.0"
+        versionCode = 21
+        versionName = "1.6.0"
     }
 
     signingConfigs {
         getByName("debug") {
             // Uses the default debug keystore
+        }
+        create("release") {
+            storeFile = file("kvizo-release.jks")
+            storePassword = "kvizo2026"
+            keyAlias = "kvizo"
+            keyPassword = "kvizo2026"
         }
     }
 
@@ -27,7 +33,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

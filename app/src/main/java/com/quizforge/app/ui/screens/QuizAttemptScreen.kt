@@ -75,6 +75,8 @@ import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Red
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.quizforge.app.ui.components.L
+import com.quizforge.app.ui.components.KvizoButton
 
 private enum class Phase { INFO, PLAYING, SUBMITTING }
 
@@ -213,7 +215,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                         Icon(Icons.Filled.Apps, contentDescription = "Navigator")
                     }
                     TextButton(onClick = { submit() }) {
-                        Text("Submit", color = Indigo, fontWeight = FontWeight.Bold)
+                        Text(L.s("submit"), color = Indigo, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -236,7 +238,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                         item {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Question ${current + 1} of ${questions.size}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Indigo, modifier = Modifier.weight(1f))
-                                if (q.id in flagged) Text("Flagged", fontSize = 11.sp, color = Red)
+                                if (q.id in flagged) Text(L.s("flagged"), fontSize = 11.sp, color = Red)
                             }
                         }
                         item {
@@ -298,10 +300,9 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                         }
                         if (revealed) {
                             item {
-                                Button(
+                                KvizoButton(
                                     onClick = { next() },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Text(if (current < questions.size - 1) "Next" else "Finish", modifier = Modifier.padding(vertical = 4.dp))
                                 }
@@ -315,7 +316,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
             if (showNavigator) {
                 ModalBottomSheet(onDismissRequest = { showNavigator = false }) {
                     Column(modifier = Modifier.padding(20.dp)) {
-                        Text("Question Navigator", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(L.s("question_navigator"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Text(
                             "Green: correct • Red: wrong • Grey: not answered • Orange: flagged",
                             fontSize = 11.sp,
@@ -480,7 +481,7 @@ private fun InfoPhase(
             }
         }
 
-        Button(onClick = onStart, modifier = Modifier.fillMaxWidth().padding(top = 24.dp), shape = RoundedCornerShape(12.dp)) {
+        KvizoButton(onClick = onStart, modifier = Modifier.fillMaxWidth().padding(top = 24.dp), shape = RoundedCornerShape(12.dp)) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Text("  Start Quiz", modifier = Modifier.padding(vertical = 6.dp))
         }

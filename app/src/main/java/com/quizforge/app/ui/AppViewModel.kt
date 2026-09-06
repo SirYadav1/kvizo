@@ -426,7 +426,31 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Steve",
             "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Tina",
             "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Uma",
-            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Victor"
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Victor",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Aria",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Bolt",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Cora",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Dax",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Echo",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Flint",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Gia",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Hiro",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Iris",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Jax",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Kira",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Leo",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Maya",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Neo",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Ori",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Piper",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Rio",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Sky",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Tara",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Uma",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Vera",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Wren",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Xio",
+            "https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=Zara"
         )
 
         // Memes/GIFs PFP options

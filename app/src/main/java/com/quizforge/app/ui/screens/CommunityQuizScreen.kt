@@ -33,6 +33,8 @@ import com.quizforge.app.ui.theme.Green
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.Orange
 import com.quizforge.app.ui.theme.Red
+import com.quizforge.app.ui.components.L
+import com.quizforge.app.ui.components.KvizoButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +65,7 @@ fun CommunityQuizScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Community Quizzes") },
+                title = { Text(L.s("community")) },
                 navigationIcon = {
                     IconButton(onClick = { nav.popBackStack() }) {
                         Icon(Icons.Filled.ArrowBack, "Back")
@@ -119,7 +121,7 @@ fun CommunityQuizScreen(
                             Text(error!!, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                             Spacer(Modifier.height(16.dp))
                             val scope = rememberCoroutineScope()
-                            Button(onClick = {
+                            KvizoButton(onClick = {
                                 isLoading = true
                                 error = null
                                 scope.launch {
@@ -134,7 +136,7 @@ fun CommunityQuizScreen(
                 }
                 filtered.isEmpty() -> {
                     Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
-                        Text("No quizzes found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(L.s("no_quizzes"), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 else -> {

@@ -42,6 +42,8 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
+import com.quizforge.app.ui.components.L
+import com.quizforge.app.ui.components.KvizoButton
 
 @Composable
 fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
@@ -58,10 +60,10 @@ fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Welcome to Kvizo", fontWeight = FontWeight.Bold, fontSize = 26.sp, modifier = Modifier.padding(top = 24.dp))
-        Text("Create your local profile — no login needed", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+        Text(L.s("welcome"), fontWeight = FontWeight.Bold, fontSize = 26.sp, modifier = Modifier.padding(top = 24.dp))
+        Text(L.s("no_login_needed"), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
 
-        Text("Pick an avatar", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 28.dp, bottom = 12.dp).align(Alignment.Start))
+        Text(L.s("pick_avatar"), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 28.dp, bottom = 12.dp).align(Alignment.Start))
 
         // Avatar grid
         val avatars = AppViewModel.AVATAR_RESOURCES
@@ -94,22 +96,22 @@ fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("Username") },
+            label = { Text(L.s("username")) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(top = 24.dp)
         )
         OutlinedTextField(
             value = status,
             onValueChange = { status = it.take(40) },
-            label = { Text("Status (optional)") },
-            placeholder = { Text("e.g. Quiz Master") },
+            label = { Text(L.s("status_optional")) },
+            placeholder = { Text(L.s("status_hint")) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
         )
         OutlinedTextField(
             value = bio,
             onValueChange = { bio = it.take(150) },
-            label = { Text("Bio (optional, max 150)") },
+            label = { Text(L.s("bio_optional")) },
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             minLines = 2
         )
@@ -118,18 +120,17 @@ fun ProfileSetupScreen(vm: AppViewModel, nav: NavHostController) {
             Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
         }
 
-        Button(
+        KvizoButton(
             onClick = {
-                if (username.isBlank()) error = "Username is required"
+                if (username.isBlank()) error = L.s("err_username_required")
                 else {
                     vm.createProfile(username.trim(), avatarId, status.trim(), bio.trim())
                     nav.navigate(Routes.HOME) { popUpTo(Routes.SPLASH) { inclusive = true } }
                 }
             },
-            modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 32.dp),
-            shape = RoundedCornerShape(14.dp)
+            modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 32.dp)
         ) {
-            Text("Start Learning", modifier = Modifier.padding(vertical = 6.dp))
+            Text(L.s("start_learning"), modifier = Modifier.padding(vertical = 6.dp))
         }
     }
 }
