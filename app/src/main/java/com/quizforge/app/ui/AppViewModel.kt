@@ -489,10 +489,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Silent launch-time check: if a newer GitHub version exists and notifications are on, notify. */
     fun checkForUpdatesAtLaunch() {
         viewModelScope.launch {
-            val s = settingsRepo.settings.first()
-            if (!s.autoUpdateCheck || !s.updateNotifications) return@launch
-            val info = checkForUpdates()
-            if (info.available) notifyUpdateAvailable()
+            try {
+                val s = settingsRepo.settings.first()
+                if (!s.autoUpdateCheck || !s.updateNotifications) return@launch
+                val info = checkForUpdates()
+                if (info.available) notifyUpdateAvailable()
+            } catch (_: Exception) {
+                // update check must never break the app
+            }
         }
     }
 
