@@ -7,11 +7,29 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.quizforge.app.R
 
 val Indigo = Color(0xFF6C4DF6)
 val IndigoDark = Color(0xFF4B2FC9)
+
+/* Violet family (Figma) — used by Forge components & AppInfo screens */
+val Violet = Color(0xFF7C3AED)
+val VioletDeep = Color(0xFF6D28D9)
+val VioletGrad = Color(0xFFA78BFA)
+val VioletLight = Color(0xFF9B72F8)
+val VioletPale = Color(0xFFEDE9FE)
+val VioletPale2 = Color(0xFFF0EBFF)
+val VioletBorderStrong = Color(0xFFC4B5FD)
+val VioletBorder = Color(0xFFE4DAFF)
+val VioletGradient: Brush = Brush.linearGradient(listOf(Violet, VioletGrad))
+
+val SpaceGrotesk = FontFamily(Font(R.font.space_grotesk))
+
 val Amber = Color(0xFFF5A623)
 val Green = Color(0xFF2EBB6E)
 val Red = Color(0xFFE5484D)

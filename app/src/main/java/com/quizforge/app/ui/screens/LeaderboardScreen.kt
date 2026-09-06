@@ -80,7 +80,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
             Box(modifier = Modifier.fillMaxWidth().padding(top = 80.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(56.dp))
-                    Text("No profiles yet", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.padding(top = 10.dp))
+                    Text(if (true) "Global leaderboard coming soon" else "No profiles yet", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.padding(top = 10.dp))
                     Text(
                         "Create a profile to start ranking",
                         fontSize = 12.sp,
