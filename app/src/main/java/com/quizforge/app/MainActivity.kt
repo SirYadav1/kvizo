@@ -53,6 +53,10 @@ import com.quizforge.app.ui.screens.SettingsScreen
 import com.quizforge.app.ui.screens.SplashScreen
 import com.quizforge.app.ui.screens.StatsScreen
 import com.quizforge.app.ui.screens.CommunityQuizScreen
+import com.quizforge.app.ui.screens.BackupScreen
+import com.quizforge.app.ui.screens.UpdaterScreen
+import com.quizforge.app.ui.screens.ChangelogScreen
+import com.quizforge.app.ui.screens.AboutScreen
 import com.quizforge.app.ui.theme.Indigo
 import com.quizforge.app.ui.theme.KvizoTheme
 
@@ -89,6 +93,10 @@ object Routes {
     const val SETTINGS = "settings"
     const val PROFILE = "profile"
     const val COMMUNITY = "community"
+    const val BACKUP = "backup"
+    const val UPDATER = "updater"
+    const val CHANGELOG = "changelog"
+    const val ABOUT = "about"
 
     fun attempt(quizId: String, mode: String = "normal", only: String = "") = "attempt/$quizId?mode=$mode&only=$only"
     fun results(attemptId: String) = "results/$attemptId"
@@ -100,6 +108,8 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 fun KvizoRoot(vm: AppViewModel) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
+    // launch-time update check (silent, notification when new version found)
+    androidx.compose.runtime.LaunchedEffect(Unit) { vm.checkForUpdatesAtLaunch() }
     val route = backStack?.destination?.route
 
     val tabs = listOf(
@@ -189,6 +199,10 @@ fun KvizoRoot(vm: AppViewModel) {
             composable(Routes.SETTINGS) { SettingsScreen(vm, nav) }
             composable(Routes.PROFILE) { ProfileScreen(vm, nav) }
             composable(Routes.COMMUNITY) { CommunityQuizScreen(vm, nav) }
+            composable(Routes.BACKUP) { BackupScreen(vm, nav) }
+            composable(Routes.UPDATER) { UpdaterScreen(vm, nav) }
+            composable(Routes.CHANGELOG) { ChangelogScreen(vm, nav) }
+            composable(Routes.ABOUT) { AboutScreen(vm, nav) }
         }
     }
 }
