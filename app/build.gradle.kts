@@ -12,8 +12,8 @@ android {
         applicationId = "com.kvizo.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 21
-        versionName = "1.6.0"
+        versionCode = 23
+        versionName = "2.0.0"
     }
 
     signingConfigs {
