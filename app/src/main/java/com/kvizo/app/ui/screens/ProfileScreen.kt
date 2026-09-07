@@ -1,404 +1,178 @@
 package com.kvizo.app.ui.screens
 
-import com.kvizo.app.ui.components.AvatarView
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.heightIn
+import com.kvizo.app.ui.theme.SpaceGrotesk
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.kvizo.app.Routes
-import com.kvizo.app.data.DIFF_EASY
-import com.kvizo.app.data.DIFF_HARD
-import com.kvizo.app.data.DIFF_MEDIUM
 import com.kvizo.app.data.Quiz
-import com.kvizo.app.logic.XpEngine
 import com.kvizo.app.ui.AppViewModel
-import com.kvizo.app.ui.components.SectionTitle
-import com.kvizo.app.ui.theme.Amber
-import com.kvizo.app.ui.theme.Green
-import com.kvizo.app.ui.theme.Indigo
-import com.kvizo.app.ui.theme.Red
-import com.kvizo.app.ui.theme.SpaceGrotesk
-import com.kvizo.app.ui.theme.Violet
-
-private val avatarCategories = listOf(
-    "Characters" to (1..8).toList(),
-    "Animals" to (9..16).toList(),
-    "Abstract" to (17..24).toList()
-)
+import com.kvizo.app.ui.components.ForgeCard
+import com.kvizo.app.ui.theme.*
+import com.kvizo.app.util.StringProvider
 
 @Composable
 fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
-    val profile = vm.profile ?: return
-    var showEdit by remember { mutableStateOf(false) }
+    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings("system", true, true, false, true, true, true, "en"))
+    val profile = vm.profile
+    val quizzes: List<Quiz> = vm.quizzes
+    val profileData = vm.profileData
 
-    val attempts = vm.profileData?.attempts ?: emptyList()
-    val quizzesCreated = vm.profileData?.quizzes ?: emptyList()
-    val totalTime = vm.profileData?.totalTime ?: 0L
-    val diffStats = vm.profileData?.diffStats ?: emptyMap()
-    val badges = vm.profileData?.badges ?: emptyList()
+    LaunchedEffect(settings.language) { StringProvider.setLanguage(settings.language) }
 
-    LaunchedEffect(profile.id) {
-        vm.ensureProfileLoaded()
-    }
+    val totalQuizzes = quizzes.size
+    val attemptsList = profileData?.attempts ?: emptyList()
+    val totalCorrect = attemptsList.sumOf { it.correctAnswers }
+    val totalAnswered = attemptsList.sumOf { it.totalQuestions }
+    val accuracy = if (totalAnswered > 0) (totalCorrect * 100 / totalAnswered) else 0
+    val xp = profile?.xp ?: 0
+    val level = profile?.level ?: ((xp / 100) + 1)
+    val progressInLevel = xp % 100
+    val playerName = profile?.username ?: "Player"
+    val badgeList = profileData?.badges ?: emptyList()
 
-    val answeredTotal = attempts.sumOf { it.totalQuestions }.coerceAtLeast(1)
-    val correctTotal = attempts.sumOf { it.correctAnswers }
-    val avg = correctTotal * 100 / answeredTotal
-    val daySet = attempts.map { XpEngine.dateStr(it.attemptedAt) }.toSet()
-    val streak = XpEngine.currentStreak(daySet)
-
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { nav.popBackStack() }) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-            }
-            Text("Profile", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = { showEdit = true }) {
-                Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = Violet)
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Filled.ArrowBack, contentDescription = null) }
+                Text("PROFILE", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 20.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+                IconButton(onClick = { nav.navigate(Routes.SETTINGS) }) { Icon(Icons.Filled.Settings, contentDescription = "Settings") }
             }
         }
 
-        // profile header
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                Box(
-                    modifier = Modifier
-                        .size(78.dp + 16.dp)
-                        .background(
-                            androidx.compose.ui.graphics.Brush.radialGradient(
-                                listOf(Violet.copy(alpha = 0.25f), androidx.compose.ui.graphics.Color.Transparent)
-                            ),
-                            CircleShape
-                        )
-                )
-                Surface(
-                    shape = RoundedCornerShape(26.dp),
-                    color = com.kvizo.app.ui.theme.violetPale(),
-                    border = androidx.compose.foundation.BorderStroke(2.dp, com.kvizo.app.ui.theme.VioletBorderStrong),
-                    modifier = Modifier.size(78.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        AvatarView(profile.avatarId, 64.dp)
+        item {
+            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Brush.horizontalGradient(listOf(Indigo, Violet)))) {
+                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+                        Text("P$level", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color.White)
                     }
-                }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 8.dp, y = 8.dp)
-                        .background(com.kvizo.app.ui.theme.violetGradient(), RoundedCornerShape(99.dp))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text("LVL ${profile.level}", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = androidx.compose.ui.graphics.Color.White)
-                }
-            }
-            Text(profile.username, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
-            val memberDate = try {
-                java.text.SimpleDateFormat("MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(profile.createdAt))
-            } catch (e: Exception) { "2024" }
-            Text(
-                listOfNotNull(if (profile.status.isNotBlank()) profile.status else null, "Member since $memberDate").joinToString(" · "),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-        }
-
-        // Level progress card
-        Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Text("Level ${profile.level} progress", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
-                    Spacer(Modifier.weight(1f))
-                    com.kvizo.app.ui.components.GradientText("${profile.xp} / ${XpEngine.xpForLevel(profile.level + 1).coerceAtLeast(1)} XP", fontSize = 12.sp)
-                }
-                com.kvizo.app.ui.components.ForgeProgressBar(progress = XpEngine.levelProgress(profile.xp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp), height = 7.dp)
-            }
-        }
-
-        // stats grid
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-            MiniStat("${quizzesCreated.size}", "Quizzes", Modifier.weight(1f), Violet)
-            MiniStat("$avg%", "Accuracy", Modifier.weight(1f), Green)
-            MiniStat("$streak-day", "Best streak", Modifier.weight(1f), Amber)
-        }
-
-        // difficulty performance
-        if (attempts.isNotEmpty()) {
-            SectionTitle("Performance by Difficulty")
-            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    listOf(DIFF_EASY, DIFF_MEDIUM, DIFF_HARD).forEach { d ->
-                        val (c, t) = diffStats[d] ?: (0 to 0)
-                        val pct = if (t > 0) c * 100 / t else 0
-                        val color = when (d) { DIFF_EASY -> Green; DIFF_HARD -> Red; else -> Amber }
-                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Star, contentDescription = null, tint = color, modifier = Modifier.size(15.dp))
-                            Text("  $d", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                            LinearProgressIndicator(progress = { pct / 100f }, modifier = Modifier.width(90.dp).height(6.dp), color = color, trackColor = MaterialTheme.colorScheme.surfaceVariant, strokeCap = androidx.compose.ui.graphics.StrokeCap.Round)
-                            Text("  $pct%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, modifier = Modifier.width(40.dp), textAlign = TextAlign.End)
+                    Column(modifier = Modifier.padding(start = 14.dp)) {
+                        Text(playerName, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color.White)
+                        Text(StringProvider.t("level") + " $level", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+                        Row(modifier = Modifier.padding(top = 4.dp)) {
+                            Text("Total: $xp XP", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f), modifier = Modifier.padding(end = 12.dp))
+                            Text("Accuracy: $accuracy%", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f), modifier = Modifier.padding(end = 12.dp))
                         }
                     }
                 }
             }
         }
 
-        // my quizzes
-        SectionTitle("My Quizzes (${quizzesCreated.size})")
-        if (quizzesCreated.isEmpty()) {
-            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                Text("No quizzes yet — create one from the Create tab!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
-            }
-        } else {
-            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    quizzesCreated.sortedByDescending { it.updatedAt }.take(6).forEach { q ->
-                        QuizRow(q, modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.attempt(q.id)) })
+        item {
+            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text(StringProvider.t("level_progress"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 13.sp, letterSpacing = 0.5.sp)
+                        Text("$xp / 100 XP", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    val fraction = if (progressInLevel > 0) progressInLevel.toFloat() / 100f else 0f
+                    Box(modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(99.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
+                        Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(fraction = fraction).background(Brush.horizontalGradient(listOf(Violet, Indigo)), RoundedCornerShape(99.dp)))
                     }
                 }
             }
         }
 
-        // badges
-        SectionTitle("Badges (${badges.size}/${com.kvizo.app.data.BADGE_DEFS.size})")
-        if (badges.isEmpty()) {
-            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                Text("No badges yet — take quizzes to earn them!", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
-            }
-        } else {
-            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    badges.forEach { b ->
-                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(18.dp))
-                            Text("  ${b.badgeName}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                            Text(XpEngine.dateStr(b.unlockedAt), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf(
+                    StringProvider.t("total_quizzes") to "$totalQuizzes",
+                    StringProvider.t("total_questions") to "${attemptsList.sumOf { it.totalQuestions }}"
+                ).forEach { (label, value) ->
+                    Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(14.dp)) {
+                        Column { Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 20.sp); Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                 }
             }
         }
 
-        // settings entry
-        Spacer(Modifier.height(12.dp))
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 1.dp,
-            modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.SETTINGS) }
-        ) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Settings, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                Text("  Settings", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-    }
-
-    if (showEdit) {
-        EditProfileDialog(
-            vm = vm,
-            onDismiss = { showEdit = false }
-        )
-    }
-}
-
-@Composable
-private fun EditProfileDialog(vm: AppViewModel, onDismiss: () -> Unit) {
-    val profile = vm.profile ?: return
-    var editName by remember { mutableStateOf(profile.username) }
-    var editStatus by remember { mutableStateOf(profile.status) }
-    var editBio by remember { mutableStateOf(profile.bio) }
-    var selectedAvatar by remember { mutableIntStateOf(profile.avatarId) }
-    var selectedCategory by remember { mutableIntStateOf(0) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Edit Profile", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                // Avatar preview
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                    Surface(
-                        shape = RoundedCornerShape(26.dp),
-                        color = com.kvizo.app.ui.theme.violetPale(),
-                        border = androidx.compose.foundation.BorderStroke(2.dp, com.kvizo.app.ui.theme.VioletBorderStrong),
-                        modifier = Modifier.size(80.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            AvatarView(selectedAvatar, 64.dp)
-                        }
+        item { Text(StringProvider.t("badges"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 13.sp, letterSpacing = 0.5.sp, modifier = Modifier.padding(top = 4.dp)) }
+        item {
+            if (badgeList.isEmpty()) {
+                Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(24.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(32.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text(StringProvider.t("complete_quizzes_unlock"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-
-                // Category tabs
-                Text("Avatar", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 6.dp, bottom = 8.dp)
-                ) {
-                    avatarCategories.forEachIndexed { idx, (name, _) ->
-                        FilterChip(
-                            selected = selectedCategory == idx,
-                            onClick = { selectedCategory = idx },
-                            label = { Text(name, fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Indigo.copy(alpha = 0.15f),
-                                selectedLabelColor = Indigo
-                            )
-                        )
-                    }
-                }
-
-                // Avatar grid for selected category
-                val (_, avatars) = avatarCategories[selectedCategory]
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(4),
-                    modifier = Modifier.heightIn(max = 180.dp).padding(bottom = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    itemsIndexed(avatars) { _, avatarId ->
-                        val isSelected = selectedAvatar == avatarId
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) Indigo.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
-                            border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, Indigo) else null,
-                            modifier = Modifier.clickable { selectedAvatar = avatarId }
-                        ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(4.dp)) {
-                                AvatarView(avatarId, 40.dp)
-                                if (isSelected) {
-                                    Box(
-                                        modifier = Modifier.align(Alignment.TopEnd).size(16.dp).background(Indigo, CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(Icons.Filled.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(10.dp))
-                                    }
+            } else {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    badgeList.take(4).forEach { badge ->
+                        Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(12.dp), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(VioletPale), contentAlignment = Alignment.Center) {
+                                    Text(badge.badgeName.take(2), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Violet)
                                 }
+                                Spacer(Modifier.height(4.dp))
+                                Text(badge.badgeName, fontSize = 9.sp, maxLines = 1)
                             }
                         }
                     }
                 }
-
-                // Text fields
-                OutlinedTextField(
-                    value = editName,
-                    onValueChange = { editName = it },
-                    label = { Text("Username") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = editStatus,
-                    onValueChange = { editStatus = it },
-                    label = { Text("Status (e.g. Quiz Master)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                )
-                OutlinedTextField(
-                    value = editBio,
-                    onValueChange = { editBio = it },
-                    label = { Text("Bio") },
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    minLines = 2
-                )
             }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                onDismiss()
-                if (editName.isNotBlank()) {
-                    vm.updateProfile(editName.trim(), editStatus.trim(), editBio.trim(), selectedAvatar)
+        }
+
+        item { Text("MY QUIZZES", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 13.sp, letterSpacing = 0.5.sp, modifier = Modifier.padding(top = 4.dp)) }
+        if (quizzes.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(24.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.Quiz, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(32.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text(StringProvider.t("your_quiz_will_appear"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-            }) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
-}
+            }
+        } else {
+            items(quizzes.take(5), key = { it.id }) { quiz: Quiz ->
+                ForgeCard(modifier = Modifier.fillMaxWidth().clickable { nav.navigate("attempt/${quiz.id}") }) {
+                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VioletPale), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Quiz, contentDescription = null, tint = Violet)
+                        }
+                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                            Text(quiz.title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
+                            Text(quiz.category, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
 
-@Composable
-private fun QuizRow(q: Quiz, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(32.dp).background(Indigo.copy(alpha = 0.12f), CircleShape), contentAlignment = Alignment.Center) {
-            Text("Q", color = Indigo, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        item {
+            Surface(shape = RoundedCornerShape(14.dp), color = VioletPale, modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.SETUP) }) {
+                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(14.dp)) {
+                    Icon(Icons.Filled.Edit, contentDescription = null, tint = Violet, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(StringProvider.t("edit_profile"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Violet)
+                }
+            }
         }
-        Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
-            Text(q.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("${q.attemptsCount} attempts  •  ${q.averageScore.toInt()}% avg", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Text(q.status.replaceFirstChar { it.uppercase() }, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = if (q.status == "draft") Amber else Green)
-    }
-}
 
-@Composable
-private fun MiniStat(value: String, label: String, modifier: Modifier = Modifier, tint: androidx.compose.ui.graphics.Color = Indigo) {
-    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp, modifier = modifier) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 12.dp)) {
-            Text(value, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = tint)
-            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        item { Spacer(Modifier.height(80.dp)) }
     }
 }

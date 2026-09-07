@@ -1,54 +1,28 @@
 package com.kvizo.app.ui.screens
 
 import com.kvizo.app.ui.components.AvatarView
+import com.kvizo.app.ui.components.ForgeCard
+import com.kvizo.app.ui.components.ForgeProgressBar
+import com.kvizo.app.ui.theme.SpaceGrotesk
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,29 +34,8 @@ import com.kvizo.app.Routes
 import com.kvizo.app.data.Quiz
 import com.kvizo.app.logic.XpEngine
 import com.kvizo.app.ui.AppViewModel
-import com.kvizo.app.ui.components.DifficultyBadge
-import com.kvizo.app.ui.components.ForgeCard
-import com.kvizo.app.ui.components.ForgeProgressBar
-import com.kvizo.app.ui.components.ForgeSectionLabel
-import com.kvizo.app.ui.components.GradientText
-import com.kvizo.app.ui.theme.Amber
-import com.kvizo.app.ui.theme.Green
-import com.kvizo.app.ui.theme.InkSub
-import com.kvizo.app.ui.theme.Indigo
-import com.kvizo.app.ui.theme.Red
-import com.kvizo.app.ui.theme.SpaceGrotesk
-import com.kvizo.app.ui.theme.Violet
-import com.kvizo.app.ui.theme.VioletLight
-import com.kvizo.app.ui.theme.VioletPale
-import com.kvizo.app.ui.theme.amberBg
-import com.kvizo.app.ui.theme.amberBorder
-import com.kvizo.app.ui.theme.greenBg
-import com.kvizo.app.ui.theme.greenBorder
-import com.kvizo.app.ui.theme.redBg
-import com.kvizo.app.ui.theme.violetBorder
-import com.kvizo.app.ui.theme.violetPale
+import com.kvizo.app.ui.theme.*
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     val profile = vm.profile ?: run {
@@ -94,15 +47,13 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     var weeklyAccuracy by remember { mutableStateOf(0f) }
     var streak by remember { mutableStateOf(0) }
     var totalTime by remember { mutableStateOf(0L) }
-    var recentBadges by remember { mutableStateOf(listOf<String>()) }
     var quizzes by remember { mutableStateOf(listOf<Quiz>()) }
-    var weakAreas by remember { mutableStateOf(listOf<String>()) }
     var questionCounts by remember { mutableStateOf(mapOf<String, Int>()) }
     var showNotifications by remember { mutableStateOf(false) }
 
     LaunchedEffect(profile.id) {
         vm.ensureHomeLoaded()
-        androidx.compose.runtime.snapshotFlow { vm.homeData }.collect { d ->
+        snapshotFlow { vm.homeData }.collect { d ->
             if (d != null) {
                 todayCount = d.todayCount
                 totalAttempts = d.totalAttempts
@@ -110,9 +61,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 questionCounts = d.questionCounts
                 totalTime = d.totalTime
                 streak = d.streak
-                recentBadges = d.recentBadges
                 weeklyAccuracy = d.weeklyAccuracy
-                weakAreas = d.weakAreas
             }
         }
     }
@@ -122,292 +71,207 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // header — logo + "Kvizo" + notifications + settings
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Icon(
-                    painterResource(R.drawable.ic_kvizo_logo),
-                    contentDescription = null,
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(30.dp)
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    "Kvizo",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
+                Icon(painterResource(R.drawable.ic_kvizo_logo), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Kvizo", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                 IconButtonBox(Icons.Filled.Notifications) { showNotifications = true }
                 IconButtonBox(Icons.Filled.Settings) { nav.navigate(Routes.SETTINGS) }
+                Spacer(Modifier.width(4.dp))
+                Box(modifier = Modifier.size(40.dp).clip(CircleShape).clickable { nav.navigate(Routes.PROFILE) }, contentAlignment = Alignment.Center) {
+                    AvatarView(profile.avatarId, 36.dp)
+                }
             }
         }
 
-        // profile card
         item {
             ForgeCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            modifier = Modifier.size(48.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            color = violetPale(),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, violetBorder())
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                AvatarView(profile.avatarId, 44.dp)
+                        Box(modifier = Modifier.size(56.dp).clip(CircleShape).border(2.5.dp, Violet, CircleShape).padding(2.dp), contentAlignment = Alignment.Center) {
+                            AvatarView(profile.avatarId, 50.dp)
+                        }
+                        Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
+                            Text("Hello, ${profile.username}!", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                                Surface(shape = RoundedCornerShape(99.dp), color = VioletPale) {
+                                    Text(XpEngine.levelTitle(profile.level), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Violet, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp))
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Text("Level ${profile.level} in ${nextLevelXp - profile.xp} XP", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
-                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text(profile.username, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(if (profile.status.isNotBlank()) profile.status else XpEngine.levelTitle(profile.level), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 1.dp))
-                        }
                         Column(horizontalAlignment = Alignment.End) {
-                            GradientText("LVL ${profile.level}", fontSize = 13.sp)
-                            Text("${profile.xp} XP", fontSize = 12.sp, color = Violet, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 1.dp))
+                            Text("${profile.xp} / $nextLevelXp XP", fontSize = 12.sp, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, color = Violet)
+                            Text("$pctToNext%", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    ForgeProgressBar(
-                        progress = XpEngine.levelProgress(profile.xp),
-                        modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
-                        height = 6.dp
-                    )
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                        Text(
-                            if (profile.level < 6) "$pctToNext% to Level ${profile.level + 1}" else "Max level reached",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.weight(1f))
-                        if (profile.level < 6) Text("$nextLevelXp XP", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    ForgeProgressBar(progress = XpEngine.levelProgress(profile.xp), modifier = Modifier.fillMaxWidth().padding(top = 14.dp), height = 7.dp)
                 }
             }
         }
 
-        // weak areas
-        if (weakAreas.isNotEmpty()) {
-            item {
-                ForgeCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
-                        Box(modifier = Modifier.size(36.dp).background(redBg(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Warning, contentDescription = null, tint = Red, modifier = Modifier.size(18.dp))
-                        }
-                        Column(modifier = Modifier.padding(start = 12.dp)) {
-                            Text("Focus area", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Red, letterSpacing = 0.08.sp)
-                            Text(
-                                "${weakAreas.joinToString()} is below 60% — keep practicing",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 18.sp,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // quick actions
         item {
-            ForgeSectionLabel("Quick actions")
+            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Bolt, contentDescription = null, tint = Violet, modifier = Modifier.size(22.dp))
+                    }
+                    Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                        Text("DAILY QUEST", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.1.sp)
+                        Text("Answer 5 Math Cards", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
+                    }
+                    Surface(shape = RoundedCornerShape(99.dp), color = Violet, modifier = Modifier.clickable { nav.navigate(Routes.QUIZZES) }) {
+                        Text("Start", color = Color.White, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
+                    }
+                }
+            }
+        }
+
+        item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                FigmaQuickAction(Icons.Filled.Edit, "Create", violetPale(), Violet, Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
-                FigmaQuickAction(Icons.Filled.PlayArrow, "Play", greenBg(), Green, Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
-                FigmaQuickAction(Icons.Filled.TrendingUp, "Stats", amberBg(), Amber, Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
+                StatMiniCard("DAILY STREAK", "${streak}d", Icons.Filled.LocalFireDepartment, Amber, Modifier.weight(1f))
+                StatMiniCard("THIS WEEK", "${weeklyAccuracy.toInt()}%", Icons.Filled.TrendingUp, Green, Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                StatMiniCard("TODAY", "$todayCount", Icons.Filled.Today, Violet, Modifier.weight(1f))
+                StatMiniCard("AUTHORED", "${quizzes.size}", Icons.Filled.Edit, Violet, Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                StatMiniCard("ACTIVITY", "$totalAttempts", Icons.Filled.CheckCircle, Green, Modifier.weight(1f))
+                StatMiniCard("SESSION", formatTime(totalTime), Icons.Filled.Schedule, Indigo, Modifier.weight(1f))
             }
         }
 
-        // popular quizzes
         item {
-            ForgeSectionLabel("Popular quizzes")
+            Text("Quick Actions", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(top = 4.dp))
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                QuickActionBubble(Icons.Filled.Edit, "Create", Violet, Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
+                QuickActionBubble(Icons.Filled.PlayArrow, "Play", Green, Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
+                QuickActionBubble(Icons.Filled.BarChart, "Stats", Amber, Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
+            }
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Popular Quizzes", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Text("View all >", fontSize = 12.sp, color = Violet, modifier = Modifier.clickable { nav.navigate(Routes.QUIZZES) })
+            }
         }
         val popular = quizzes.sortedByDescending { it.attemptsCount }
         if (popular.isEmpty()) {
             item {
                 ForgeCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(72.dp))
-                        Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
-                        Text("Create one or import a .txt file", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(64.dp))
+                        Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
+                        Text("Create one or import a .txt file", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         } else {
             items(popular.take(5), key = { it.id }) { quiz ->
-                PopularQuizRow(quiz, questionCounts[quiz.id] ?: 0) { nav.navigate(Routes.attempt(quiz.id)) }
+                PopularQuizCard(quiz, questionCounts[quiz.id] ?: 0) { nav.navigate(Routes.attempt(quiz.id)) }
             }
         }
 
-        // recent quizzes
-        item { ForgeSectionLabel("Recent quizzes") }
-        if (quizzes.isEmpty()) {
-            item {
-                ForgeCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(72.dp))
-                        Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
-                        Text("Create one or import a .txt file", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                    }
-                }
-            }
-        } else {
-            items(quizzes.take(5)) { quiz ->
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.attempt(quiz.id)) }
-                ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(36.dp).background(violetPale(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                            Text("Q", color = Violet, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        }
-                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text(quiz.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("${questionCounts[quiz.id] ?: 0} questions | ${quiz.attemptsCount} attempts", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 1.dp))
-                        }
-                        Text("  ${quiz.averageScore.toInt()}%", fontSize = 11.sp, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, color = if (quiz.averageScore >= 60) Green else Amber)
-                    }
+        item {
+            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("COMMUNITY SPOTLIGHT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Violet, letterSpacing = 0.1.sp)
+                    Text("Explore Interactive Labs", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text("Test your concepts with thousands of community flashcard sets and instant feedback.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp), lineHeight = 17.sp)
                 }
             }
         }
-        item { Spacer(Modifier.height(16.dp)) }
+
+        item { Spacer(Modifier.height(80.dp)) }
     }
 
-    // Notifications bottom sheet
     if (showNotifications) {
-        NotificationsBottomSheet(
-            notifications = vm.announcements,
-            onDismiss = { showNotifications = false }
-        )
+        NotificationsBottomSheet(notifications = vm.announcements, onDismiss = { showNotifications = false })
     }
 }
 
 @Composable
-private fun NotificationsBottomSheet(
-    notifications: List<com.kvizo.app.data.RemoteNotification>,
-    onDismiss: () -> Unit
-) {
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+private fun StatMiniCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, modifier: Modifier = Modifier) {
+    ForgeCard(modifier = modifier) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Notifications, contentDescription = null, tint = Indigo, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Notifications", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.08.sp, modifier = Modifier.weight(1f))
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
             }
-        },
-        text = {
-            if (notifications.isEmpty()) {
-                Text("No notifications yet", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    notifications.take(10).forEach { n ->
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(n.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                if (n.body.isNotBlank()) {
-                                    Text(n.body, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        }
-    )
-}
-
-/* ---- Sub-components ---- */
-
-@Composable
-private fun IconButtonBox(icon: ImageVector, onClick: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier
-            .padding(start = 8.dp)
-            .size(44.dp)
-            .clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = VioletLight,
-                modifier = Modifier.size(22.dp)
-            )
+            Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.padding(top = 6.dp))
         }
     }
 }
 
 @Composable
-private fun FigmaQuickAction(
-    icon: ImageVector,
-    label: String,
-    bg: Color,
-    tint: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = bg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 16.dp, bottom = 14.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .background(tint.copy(alpha = 0.18f), RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ) {
+private fun QuickActionBubble(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() })) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 18.dp)) {
+            Box(modifier = Modifier.size(52.dp).clip(CircleShape).background(tint.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
                 Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
             }
-            Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 8.dp))
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 10.dp))
         }
     }
 }
 
 @Composable
-private fun PopularQuizRow(quiz: Quiz, questionCount: Int, onClick: () -> Unit) {
-    ForgeCard(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
-    ) {
-        Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(40.dp).background(violetPale(), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                Text(formatCount(quiz.attemptsCount), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Violet)
+private fun PopularQuizCard(quiz: Quiz, questionCount: Int, onClick: () -> Unit) {
+    ForgeCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() })) {
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(44.dp).background(VioletPale, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Violet, modifier = Modifier.size(22.dp))
             }
             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                Text(quiz.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${quiz.category} · $questionCount questions", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 1.dp))
+                Surface(shape = RoundedCornerShape(99.dp), color = VioletPale) {
+                    Text(quiz.category, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Violet, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                }
+                Text(quiz.title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+                Text("$questionCount Qs", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val score = quiz.averageScore.toInt()
-            Surface(
-                color = if (score >= 60) greenBg() else amberBg(),
-                shape = RoundedCornerShape(99.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (score >= 60) greenBorder() else amberBorder())
-            ) {
-                Text("$score%", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = if (score >= 60) Green else Amber, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
-            }
+            Text("$score% avg", fontSize = 11.sp, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, color = if (score >= 60) Green else Amber)
         }
     }
 }
 
-private fun formatCount(n: Int): String = when {
-    n >= 1000 -> "%.1fk".format(n / 1000f)
-    else -> "$n"
+@Composable
+private fun NotificationsBottomSheet(notifications: List<com.kvizo.app.data.RemoteNotification>, onDismiss: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Notifications", fontWeight = FontWeight.Bold, fontSize = 18.sp) }, text = {
+        if (notifications.isEmpty()) Text("No notifications yet", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            notifications.take(10).forEach { n ->
+                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(n.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        if (n.body.isNotBlank()) Text(n.body, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+            }
+        }
+    }, confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } })
+}
+
+@Composable
+private fun IconButtonBox(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = Modifier.padding(start = 6.dp).size(40.dp).clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() })) {
+        Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = VioletLight, modifier = Modifier.size(20.dp)) }
+    }
+}
+
+private fun formatTime(millis: Long): String {
+    val mins = millis / 60000
+    return if (mins < 60) "${mins}m" else "${mins / 60}h ${mins % 60}m"
 }

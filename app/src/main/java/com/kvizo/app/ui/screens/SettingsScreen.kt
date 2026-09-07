@@ -1,117 +1,76 @@
 package com.kvizo.app.ui.screens
 
-import com.kvizo.app.ui.components.AvatarView
-
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Hearing
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.kvizo.app.Routes
-import com.kvizo.app.data.AppSettings
 import com.kvizo.app.ui.AppViewModel
-import com.kvizo.app.ui.components.SectionTitle
-import com.kvizo.app.ui.theme.Indigo
-import com.kvizo.app.ui.theme.Orange
-import com.kvizo.app.ui.theme.Red
-import com.kvizo.app.ui.theme.SpaceGrotesk
+import com.kvizo.app.ui.components.ForgeCard
+import com.kvizo.app.ui.theme.*
 import com.kvizo.app.util.StringProvider
 import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
-    var settings by remember { mutableStateOf(AppSettings("system", true, true)) }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var showSignOutDialog by remember { mutableStateOf(false) }
+    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings("system", true, true, false, true, true, true, "en"))
+    val coroutineScope = rememberCoroutineScope()
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showSignOutDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        vm.settings.collect { settings = it }
-        StringProvider.setLanguage(settings.language)
-    }
+    LaunchedEffect(settings.language) { StringProvider.setLanguage(settings.language) }
 
-    val languages = listOf(
-        "en" to "English",
-        "hi" to "हिन्दी",
-        "zh" to "中文",
-        "es" to "Español",
-        "fr" to "Français"
-    )
+    val languages = listOf("en" to "English", "hi" to "हिन्दी", "zh" to "中文", "es" to "Español", "fr" to "Français")
+    val themes = listOf("system" to "System", "light" to "Light", "dark" to "Dark")
 
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-        Text(StringProvider.t("settings"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Filled.ArrowBack, contentDescription = null) }
+                Text(StringProvider.t("settings"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.weight(1f))
+            }
+        }
 
-        // ---------- Appearance ----------
-        SectionTitle(StringProvider.t("theme"))
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.DarkMode, contentDescription = null, tint = Indigo, modifier = Modifier.size(24.dp))
-                    Text("  ${StringProvider.t("theme")}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                }
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                ) {
-                    Row(modifier = Modifier.padding(3.dp)) {
-                        listOf("system" to StringProvider.t("system"), "light" to StringProvider.t("light"), "dark" to StringProvider.t("dark")).forEach { (mode, label) ->
-                            val selected = settings.themeMode == mode
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (selected) MaterialTheme.colorScheme.secondary else androidx.compose.ui.graphics.Color.Transparent,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable(onClick = { scope.launch { vm.setThemeMode(mode) } }, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
-                            ) {
-                                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 8.dp)) {
-                                    Text(
-                                        label,
-                                        fontSize = 12.sp,
-                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+        item { SectionLabel("APPEARANCE") }
+        item {
+            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Palette, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
+                        }
+                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                            Text(StringProvider.t("theme"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Customize your visual mode", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 14.dp).clip(RoundedCornerShape(99.dp)).background(VioletPale), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        themes.forEach { (code, label) ->
+                            val selected = settings.themeMode == code
+                            Surface(shape = RoundedCornerShape(99.dp), color = if (selected) Violet else Color.Transparent, modifier = Modifier.weight(1f).padding(4.dp).clickable {
+                                coroutineScope.launch { vm.setThemeMode(code) }
+                            }) {
+                                Text(label, fontSize = 12.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
                             }
                         }
                     }
@@ -119,105 +78,105 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // ---------- Sound & Feedback ----------
-        SectionTitle("Sound & Feedback")
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
-            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Hearing, contentDescription = null, tint = Indigo, modifier = Modifier.size(24.dp))
-                    Text("  ${StringProvider.t("sound_effects")}", fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    Switch(checked = settings.soundEnabled, onCheckedChange = { scope.launch { vm.setSoundEnabled(it) } })
-                }
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Vibration, contentDescription = null, tint = Indigo, modifier = Modifier.size(24.dp))
-                    Text("  ${StringProvider.t("haptic_feedback")}", fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    Switch(checked = settings.hapticsEnabled, onCheckedChange = { scope.launch { vm.setHapticsEnabled(it) } })
+        item { SectionLabel("SOUND & FEEDBACK") }
+        item {
+            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingToggleRow(StringProvider.t("sound_effects"), "Play celebratory chimes & audio cues", Icons.Filled.VolumeUp, settings.soundEnabled) { vm.setSoundEnabled(it) }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    SettingToggleRow(StringProvider.t("haptic_feedback"), "Vibrate on correct and wrong answers", Icons.Filled.Vibration, settings.hapticsEnabled) { vm.setHapticsEnabled(it) }
                 }
             }
         }
 
-        // ---------- Language ----------
-        SectionTitle(StringProvider.t("language"))
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp).clickable { showLanguageDialog = true }) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Language, contentDescription = null, tint = Indigo, modifier = Modifier.size(24.dp))
-                Text("  ${StringProvider.t("language")}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                Text(languages.find { it.first == settings.language }?.second ?: "English", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        item { SectionLabel("DATA & STORAGE") }
+        item {
+            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                SettingRow(StringProvider.t("backup_restore"), "Save or import your JSON quiz backup", Icons.Filled.Cloud) { nav.navigate(Routes.BACKUP) }
             }
         }
 
-        // ---------- Backup & Restore ----------
-        SectionTitle(StringProvider.t("backup_restore"))
-        com.kvizo.app.ui.screens.SettingsRow(Icons.Filled.Storage, StringProvider.t("backup_restore"), StringProvider.t("your_data_stays_yours"), Indigo) { nav.navigate(Routes.BACKUP) }
-
-        // ---------- App info ----------
-        SectionTitle("App")
-        com.kvizo.app.ui.screens.SettingsRow(Icons.Filled.SystemUpdate, StringProvider.t("updater"), "Check for updates", com.kvizo.app.ui.theme.Violet) { nav.navigate(Routes.UPDATER) }
-        com.kvizo.app.ui.screens.SettingsRow(Icons.Filled.History, StringProvider.t("changelog"), "What's new", Orange) { nav.navigate(Routes.CHANGELOG) }
-        com.kvizo.app.ui.screens.SettingsRow(Icons.Filled.Info, StringProvider.t("about"), "Version & contributors", com.kvizo.app.ui.theme.Green) { nav.navigate(Routes.ABOUT) }
-
-        // ---------- Sign Out ----------
-        Spacer(Modifier.height(16.dp))
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().clickable { showSignOutDialog = true }) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Logout, contentDescription = null, tint = Red, modifier = Modifier.size(24.dp))
-                Text("  ${StringProvider.t("sign_out")}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Red)
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-    }
-
-    // Sign Out Dialog
-    if (showSignOutDialog) {
-        AlertDialog(
-            onDismissRequest = { showSignOutDialog = false },
-            title = { Text(StringProvider.t("sign_out")) },
-            text = { Text(StringProvider.t("sign_out_confirm")) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showSignOutDialog = false
-                    nav.navigate(Routes.SETUP) {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }) { Text(StringProvider.t("sign_out"), color = Red) }
-            },
-            dismissButton = { TextButton(onClick = { showSignOutDialog = false }) { Text(StringProvider.t("cancel")) } }
-        )
-    }
-
-    // Language Dialog
-    if (showLanguageDialog) {
-        AlertDialog(
-            onDismissRequest = { showLanguageDialog = false },
-            title = { Text(StringProvider.t("language")) },
-            text = {
+        item { SectionLabel("APPLICATION") }
+        item {
+            ForgeCard(modifier = Modifier.fillMaxWidth()) {
                 Column {
-                    languages.forEach { (code, name) ->
-                        val isSelected = settings.language == code
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    scope.launch { vm.setLanguage(code) }
-                                    StringProvider.setLanguage(code)
-                                    showLanguageDialog = false
-                                }
-                                .padding(vertical = 12.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(name, fontSize = 16.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
-                            if (isSelected) {
-                                Text("✓", fontSize = 16.sp, color = Indigo, fontWeight = FontWeight.Bold)
-                            }
-                        }
+                    SettingRow(StringProvider.t("changelog"), "What's new in every build", Icons.Filled.Update) { nav.navigate(Routes.CHANGELOG) }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    SettingRow(StringProvider.t("about"), "Version 1.6.1, developer & contributors", Icons.Filled.Info) { nav.navigate(Routes.ABOUT) }
+                }
+            }
+        }
+
+        item { SectionLabel("LANGUAGE") }
+        item {
+            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                SettingRow(StringProvider.t("language"), languages.find { it.first == settings.language }?.second ?: "English", Icons.Filled.Language) { showLanguageDialog = true }
+            }
+        }
+
+        item {
+            Surface(shape = RoundedCornerShape(14.dp), color = RedBg, border = BorderStroke(1.dp, RedBorder), modifier = Modifier.fillMaxWidth().clickable { showSignOutDialog = true }) {
+                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                    Icon(Icons.Filled.Logout, contentDescription = null, tint = Red, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(StringProvider.t("sign_out"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Red)
+                }
+            }
+        }
+        item { Spacer(Modifier.height(80.dp)) }
+    }
+
+    if (showLanguageDialog) {
+        AlertDialog(onDismissRequest = { showLanguageDialog = false }, title = { Text(StringProvider.t("language"), fontWeight = FontWeight.Bold) }, text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                languages.forEach { (code, name) ->
+                    val isSelected = settings.language == code
+                    Surface(shape = RoundedCornerShape(12.dp), color = if (isSelected) VioletPale else Color.Transparent, modifier = Modifier.fillMaxWidth().clickable {
+                        coroutineScope.launch { vm.setLanguage(code) }; StringProvider.setLanguage(code); showLanguageDialog = false
+                    }) {
+                        Text(name, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, color = if (isSelected) Violet else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(14.dp))
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showLanguageDialog = false }) { Text(StringProvider.t("close")) }
             }
-        )
+        }, confirmButton = { TextButton(onClick = { showLanguageDialog = false }) { Text(StringProvider.t("close")) } })
+    }
+
+    if (showSignOutDialog) {
+        AlertDialog(onDismissRequest = { showSignOutDialog = false }, title = { Text(StringProvider.t("sign_out"), fontWeight = FontWeight.Bold) }, text = { Text(StringProvider.t("sign_out_confirm")) }, confirmButton = {
+            TextButton(onClick = { showSignOutDialog = false; nav.navigate(Routes.SETUP) { popUpTo(0) { inclusive = true } } }) { Text(StringProvider.t("sign_out"), color = Red) }
+        }, dismissButton = { TextButton(onClick = { showSignOutDialog = false }) { Text(StringProvider.t("cancel")) } })
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(text, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.1.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+}
+
+@Composable
+private fun SettingToggleRow(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
+        }
+        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = onToggle, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Violet, uncheckedThumbColor = Color.White, uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant))
+    }
+}
+
+@Composable
+private fun SettingRow(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() }).padding(16.dp)) {
+        Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
+        }
+        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
