@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kvizo adaptive foreground: white bolt + sparkles on transparent (bg layer = #6C4DF6) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- bolt -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,24 L36,62 L52,62 L47,84 L74,44 L57,44 Z" />
+    <!-- sparkles -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M30,28 L31.8,34 L37.8,35.8 L31.8,37.6 L30,43.6 L28.2,37.6 L22.2,35.8 L28.2,34 Z" />
+    <path
+        android:fillColor="#FF6EC7"
+        android:pathData="M78,64 L79.6,68.6 L84.2,70.2 L79.6,71.8 L78,76.4 L76.4,71.8 L71.8,70.2 L76.4,68.6 Z" />
+</vector>
