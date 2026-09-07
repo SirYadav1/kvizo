@@ -13,7 +13,6 @@ import java.security.Signature
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
-/** Holds the bare community.json filename so it survives R8 (parity with release dex). */
 @androidx.annotation.Keep
 object CommunityFileNameHolder {
     @androidx.annotation.Keep
@@ -151,26 +150,24 @@ class CommunityQuizManager(private val context: Context) {
         }
     }
 
-    private fun verifyEd25519Signature(
-        data: ByteArray,
-        signature: ByteArray,
-        publicKeyHex: String
-    ): Boolean {
-        return try {
-            val pubBytes = hexToBytes(publicKeyHex)
-            val spec = X509EncodedKeySpec(
-                byteArrayOf(0x30, 0x2A.toByte(), 0x30, 0x05, 0x06, 0x03, 0x2B, 0x65, 0x70, 0x03, 0x21, 0x00) + pubBytes
-            )
-            val kf = KeyFactory.getInstance("Ed25519")
-            val publicKey = kf.generatePublic(spec)
-            val sig = Signature.getInstance("Ed25519")
-            sig.initVerify(publicKey)
-            sig.update(data)
-            sig.verify(signature)
-        } catch (e: Exception) {
-            false
-        }
+    private fun verifyEd25519Signature(data: ByteArray, signature: ByteArray, publicKeyHex: String): Boolean {
+        return tryEd25519Verify(data, signature, publicKeyHex, "Ed25519") ||
+               tryEd25519Verify(data, signature, publicKeyHex, "EdDSA")
     }
+
+    private fun tryEd25519Verify(data: ByteArray, signature: ByteArray, publicKeyHex: String, algorithm: String): Boolean = try {
+        val pubBytes = hexToBytes(publicKeyHex)
+        val x509Prefix = byteArrayOf(
+            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00
+        )
+        val spec = X509EncodedKeySpec(x509Prefix + pubBytes)
+        val kf = KeyFactory.getInstance(algorithm)
+        val publicKey = kf.generatePublic(spec)
+        val sig = Signature.getInstance(algorithm)
+        sig.initVerify(publicKey)
+        sig.update(data)
+        sig.verify(signature)
+    } catch (_: Exception) { false }
 
     private fun parseQuizzes(data: JSONObject): List<CommunityQuiz> {
         val quizzes = mutableListOf<CommunityQuiz>()

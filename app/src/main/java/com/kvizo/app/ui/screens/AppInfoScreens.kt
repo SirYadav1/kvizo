@@ -164,16 +164,16 @@ fun BackupScreen(vm: AppViewModel, nav: NavHostController) {
         SectionTitle("Backup")
         PressGlowButton(
             onClick = { backupSaver.launch("kvizo-backup.json") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).height(72.dp),
             shape = RoundedCornerShape(16.dp),
             containerColor = MaterialTheme.colorScheme.secondary,
             contentColor = MaterialTheme.colorScheme.onSecondary
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-                Icon(Icons.Filled.Backup, contentDescription = null)
-                Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text("  Back up all data", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("  Save a JSON file with everything", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                Icon(Icons.Filled.Backup, contentDescription = null, modifier = Modifier.size(28.dp))
+                Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                    Text("Back up all data", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text("Save a JSON file with everything", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -182,16 +182,16 @@ fun BackupScreen(vm: AppViewModel, nav: NavHostController) {
         SectionTitle("Restore")
         PressGlowButton(
             onClick = { restorePicker.launch(arrayOf("application/json", "text/*", "*/*")) },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).height(72.dp),
             shape = RoundedCornerShape(16.dp),
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-                Icon(Icons.Filled.Restore, contentDescription = null)
-                Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text("  Restore from JSON", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("  Import stats, badges & quizzes you made", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                Icon(Icons.Filled.Restore, contentDescription = null, modifier = Modifier.size(28.dp))
+                Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                    Text("Restore from JSON", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text("Import stats, badges & quizzes you made", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

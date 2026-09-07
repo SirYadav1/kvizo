@@ -1,22 +1,16 @@
 package com.kvizo.app.util
 
 import android.util.Base64
-import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters
-import org.bouncycastle.crypto.signers.Ed25519Signer
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStreamReader
 import java.io.BufferedReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.KeyFactory
+import java.security.Signature
+import java.security.spec.X509EncodedKeySpec
 
-/**
- * Signed community content fetcher — GitHub Pages source, Ed25519 verified,
- * offline cache fallback. Byte-faithful port of the released 1.5.0 client:
- *   https://siryadav1.github.io/kvizo-community/<file>       (content)
- *   https://siryadav1.github.io/kvizo-community/<file>.sig   (b64 Ed25519 signature)
- */
 object CommunityFetch {
     const val COMMUNITY_JSON = "community.json"
     private const val BASE = "https://siryadav1.github.io/kvizo-community/"
@@ -24,7 +18,6 @@ object CommunityFetch {
     private const val CONNECT_TIMEOUT = 8_000
     private const val READ_TIMEOUT = 10_000
 
-    /** Downloads + verifies + caches; on network failure falls back to the verified cache. */
     fun fetch(name: String): ByteArray {
         return try {
             val data = downloadBytes(BASE + name)
@@ -32,9 +25,8 @@ object CommunityFetch {
             verify(sigText, data)
             cache(name, data)
             data
-        } catch (e: SecurityException) {
-            throw e
-        } catch (_: Exception) {
+        } catch (e: SecurityException) { throw e }
+        catch (_: Exception) {
             val cached = readCache(name) ?: throw IllegalStateException("no network and no cache for $name")
             val sig = readCache(name + ".sig") ?: throw IllegalStateException("no cached signature for $name")
             if (!verifySignature(String(sig, Charsets.UTF_8), cached)) {
@@ -52,9 +44,7 @@ object CommunityFetch {
             val out = ByteArrayOutputStream(maxOf(8192, input.available()))
             input.copyTo(out)
             return out.toByteArray()
-        } finally {
-            conn.disconnect()
-        }
+        } finally { conn.disconnect() }
     }
 
     private fun downloadText(url: String): String {
@@ -62,9 +52,7 @@ object CommunityFetch {
         try {
             requireOk(conn)
             return BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8)).use { it.readText() }
-        } finally {
-            conn.disconnect()
-        }
+        } finally { conn.disconnect() }
     }
 
     private fun open(url: String): HttpURLConnection {
@@ -82,58 +70,65 @@ object CommunityFetch {
     }
 
     private fun verify(sigTextB64: String, data: ByteArray) {
-        val sig = Base64.decode(sigTextB64.trim(), Base64.DEFAULT)
-        val key = Ed25519PublicKeyParameters(Base64.decode(PUBLIC_KEY_B64, Base64.DEFAULT), 0)
-        val verifier = Ed25519Signer()
-        verifier.init(false, key)
-        verifier.update(data, 0, data.size)
-        if (!verifier.verifySignature(sig)) {
+        if (!verifySignature(sigTextB64, data)) {
             throw SecurityException("Signature verification failed")
         }
     }
 
     private fun cache(name: String, data: ByteArray) = CacheProvider.write(name, data)
-
     private fun readCache(name: String): ByteArray? = CacheProvider.read(name)
 
-    /** Ed25519 verify — returns true when [sigB64] is a valid signature of [data]. */
     @androidx.annotation.Keep
     fun verifySignature(sigB64: String, data: ByteArray): Boolean = try {
-        val sig = Base64.decode(sigB64.trim(), Base64.DEFAULT)
-        val key = Ed25519PublicKeyParameters(Base64.decode(PUBLIC_KEY_B64, Base64.DEFAULT), 0)
-        val verifier = Ed25519Signer()
-        verifier.init(false, key)
-        verifier.update(data, 0, data.size)
-        verifier.verifySignature(sig)
+        val sigBytes = Base64.decode(sigB64.trim(), Base64.DEFAULT)
+        val keyBytes = Base64.decode(PUBLIC_KEY_B64, Base64.DEFAULT)
+        val x509Prefix = byteArrayOf(
+            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00
+        )
+        val keySpec = X509EncodedKeySpec(x509Prefix + keyBytes)
+        val publicKey = KeyFactory.getInstance("Ed25519").generatePublic(keySpec)
+        val sigObj = Signature.getInstance("Ed25519")
+        sigObj.initVerify(publicKey)
+        sigObj.update(data)
+        sigObj.verify(sigBytes)
+    } catch (e: Exception) {
+        tryEdDsaFallback(sigB64, data)
+    }
+
+    private fun tryEdDsaFallback(sigB64: String, data: ByteArray): Boolean = try {
+        val sigBytes = Base64.decode(sigB64.trim(), Base64.DEFAULT)
+        val keyBytes = Base64.decode(PUBLIC_KEY_B64, Base64.DEFAULT)
+        val x509Prefix = byteArrayOf(
+            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00
+        )
+        val keySpec = X509EncodedKeySpec(x509Prefix + keyBytes)
+        val publicKey = KeyFactory.getInstance("EdDSA").generatePublic(keySpec)
+        val sigObj = Signature.getInstance("EdDSA")
+        sigObj.initVerify(publicKey)
+        sigObj.update(data)
+        sigObj.verify(sigBytes)
     } catch (_: Exception) { false }
 
-    /** Deterministic b64 signature helper (kept for parity with the release client's signing utility). */
     @androidx.annotation.Keep
     fun generateSignature(data: ByteArray, privateKeyB64: String): String = try {
-        val key = Ed25519PrivateKeyParameters(Base64.decode(privateKeyB64, Base64.DEFAULT), 0)
-        val signer = Ed25519Signer()
-        signer.init(true, key)
-        signer.update(data, 0, data.size)
-        Base64.encodeToString(signer.generateSignature(), Base64.NO_WRAP)
+        val keyBytes = Base64.decode(privateKeyB64, Base64.DEFAULT)
+        val pkcs8Prefix = byteArrayOf(
+            0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20
+        )
+        val keySpec = java.security.spec.PKCS8EncodedKeySpec(pkcs8Prefix + keyBytes)
+        val privateKey = KeyFactory.getInstance("Ed25519").generatePrivate(keySpec)
+        val sigObj = Signature.getInstance("Ed25519")
+        sigObj.initSign(privateKey)
+        sigObj.update(data)
+        Base64.encodeToString(sigObj.sign(), Base64.NO_WRAP)
     } catch (_: Exception) { "" }
 
-    /** Holds the application context set once by AnnouncementWorker. */
     object CacheProvider {
         @Volatile lateinit var appContext: android.content.Context
-
         private fun dir(): File = File(appContext.cacheDir, "community").apply { mkdirs() }
-
         fun write(name: String, data: ByteArray) {
-            try {
-                val tmp = File(dir(), name + ".tmp")
-                tmp.writeBytes(data)
-                tmp.renameTo(File(dir(), name))
-            } catch (_: Exception) { }
+            try { val tmp = File(dir(), name + ".tmp"); tmp.writeBytes(data); tmp.renameTo(File(dir(), name)) } catch (_: Exception) { }
         }
-
-        fun read(name: String): ByteArray? = try {
-            val f = File(dir(), name)
-            if (f.exists()) f.readBytes() else null
-        } catch (_: Exception) { null }
+        fun read(name: String): ByteArray? = try { val f = File(dir(), name); if (f.exists()) f.readBytes() else null } catch (_: Exception) { null }
     }
 }

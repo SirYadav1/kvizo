@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -32,10 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import com.kvizo.app.R
 
-/**
- * Image avatar catalog — 24 illustrated avatars (1..24), rendered from
- * the packaged avatar_1..avatar_24 webp resources.
- */
 object AvatarCatalog {
     const val COUNT = 24
     val ALL: IntRange = 1..COUNT
@@ -49,17 +47,15 @@ object AvatarCatalog {
         R.drawable.avatar_21, R.drawable.avatar_22, R.drawable.avatar_23, R.drawable.avatar_24,
     )
 
-    /** Drawable resource for avatar id (1..24), or null when out of range. */
     fun res(id: Int): Int? = if (id in 1..COUNT) drawables[id - 1] else null
 }
 
-/** Renders an avatar image for ids 1..24. */
 @Composable
 fun AvatarView(
     id: Int,
     size: Dp,
     modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.Fit,
+    contentScale: ContentScale = ContentScale.Crop,
 ) {
     val r = AvatarCatalog.res(id)
     if (r != null) {
@@ -67,14 +63,15 @@ fun AvatarView(
             painter = painterResource(r),
             contentDescription = null,
             contentScale = contentScale,
-            modifier = modifier.size(size),
+            modifier = modifier
+                .size(size)
+                .clip(CircleShape),
         )
     } else {
         Box(modifier = modifier.size(size))
     }
 }
 
-/** Small uppercase section label used above avatar groups. */
 @Composable
 private fun AvatarSectionLabel(text: String) {
     Text(
@@ -87,7 +84,6 @@ private fun AvatarSectionLabel(text: String) {
     )
 }
 
-/** Single selectable avatar tile with selection ring + check bubble. */
 @Composable
 private fun AvatarTile(
     id: Int,
@@ -107,24 +103,30 @@ private fun AvatarTile(
         modifier = Modifier
             .size(tileSize)
             .graphicsLayer { scaleX = selScale.value; scaleY = selScale.value }
+            .clip(CircleShape)
             .background(
                 if (isSelected) selectedTint.copy(alpha = 0.18f) else androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
                 CircleShape,
             )
             .border(
-                width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) selectedTint else androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
+                width = if (isSelected) 2.5.dp else 1.5.dp,
+                color = if (isSelected) selectedTint else borderColor.copy(alpha = 0.25f),
                 shape = CircleShape,
             )
             .clickable { onSelect(id) },
         contentAlignment = Alignment.Center,
     ) {
-        AvatarView(id = id, size = tileSize * 0.86f, modifier = Modifier.padding(2.dp))
+        AvatarView(
+            id = id,
+            size = tileSize * 0.82f,
+            modifier = Modifier.clip(CircleShape),
+        )
         if (isSelected) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(16.dp)
+                    .clip(CircleShape)
                     .background(selectedTint, CircleShape)
                     .border(2.dp, androidx.compose.material3.MaterialTheme.colorScheme.background, CircleShape),
                 contentAlignment = Alignment.Center,
@@ -135,24 +137,26 @@ private fun AvatarTile(
     }
 }
 
-/**
- * Avatar picker grid — all 24 avatars, 4 per row. Used by profile setup and
- * the edit-profile dialog.
- */
 @Composable
 fun AvatarPickerGrid(
     selected: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    tileSize: Dp = 44.dp,
+    tileSize: Dp = 48.dp,
     selectedTint: Color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
     borderColor: Color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         AvatarSectionLabel("Avatar")
         AvatarCatalog.ALL.toList().chunked(4).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.forEach { id ->
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                val spacing = 12.dp
+                row.forEachIndexed { idx, id ->
+                    if (idx > 0) Box(modifier = Modifier.size(spacing))
                     AvatarTile(id, selected, onSelect, tileSize, selectedTint, borderColor)
                 }
             }

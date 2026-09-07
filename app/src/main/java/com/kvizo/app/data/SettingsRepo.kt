@@ -14,13 +14,14 @@ import java.util.UUID
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
 data class AppSettings(
-    val themeMode: String,   // "system" | "light" | "dark"
+    val themeMode: String,
     val soundEnabled: Boolean,
     val hapticsEnabled: Boolean,
-    val leaderboardOnline: Boolean = false, // flips to true once the online login system is live
-    val autoUpdateCheck: Boolean = true,    // check GitHub for new releases on app start
-    val updateNotifications: Boolean = true, // show a notification when a new version is found
-    val announcementsEnabled: Boolean = true // community announcements via the Kvizo server
+    val leaderboardOnline: Boolean = false,
+    val autoUpdateCheck: Boolean = true,
+    val updateNotifications: Boolean = true,
+    val announcementsEnabled: Boolean = true,
+    val language: String = "en"
 )
 
 class SettingsRepo(private val context: Context) {
@@ -32,6 +33,7 @@ class SettingsRepo(private val context: Context) {
     private val autoUpdateKey = booleanPreferencesKey("auto_update_check")
     private val updateNotifKey = booleanPreferencesKey("update_notifications")
     private val announcementsKey = booleanPreferencesKey("announcements_enabled")
+    private val languageKey = stringPreferencesKey("language")
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
         AppSettings(
@@ -41,34 +43,27 @@ class SettingsRepo(private val context: Context) {
             leaderboardOnline = p[leaderboardOnlineKey] ?: false,
             autoUpdateCheck = p[autoUpdateKey] ?: true,
             updateNotifications = p[updateNotifKey] ?: true,
-            announcementsEnabled = p[announcementsKey] ?: true
+            announcementsEnabled = p[announcementsKey] ?: true,
+            language = p[languageKey] ?: "en"
         )
     }
 
     suspend fun setThemeMode(mode: String) = context.dataStore.edit { it[themeKey] = mode }
-
     suspend fun setSoundEnabled(v: Boolean) = context.dataStore.edit { it[soundKey] = v }
-
     suspend fun setHapticsEnabled(v: Boolean) = context.dataStore.edit { it[hapticsKey] = v }
-
     suspend fun setAutoUpdateCheck(v: Boolean) = context.dataStore.edit { it[autoUpdateKey] = v }
-
     suspend fun setUpdateNotifications(v: Boolean) = context.dataStore.edit { it[updateNotifKey] = v }
-
     suspend fun setAnnouncementsEnabled(v: Boolean) = context.dataStore.edit { it[announcementsKey] = v }
+    suspend fun setLanguage(lang: String) = context.dataStore.edit { it[languageKey] = lang }
 
-    /** Latest announcement timestamp this install has already seen/shown. */
     suspend fun lastAnnouncementSeen(): Long {
         context.dataStore.data.first().let { p -> p[lastSeenKey]?.let { return it } }
         return 0L
     }
 
     suspend fun setLastAnnouncementSeen(ts: Long) = context.dataStore.edit { it[lastSeenKey] = ts }
-
-    /** Flip this to true only when the online login system is enabled — leaderboard then reads from the server. */
     suspend fun setLeaderboardOnline(v: Boolean) = context.dataStore.edit { it[leaderboardOnlineKey] = v }
 
-    /** Stable per-install device id used for online tracking (no signup). */
     suspend fun getDeviceId(): String {
         context.dataStore.data.first().let { p ->
             p[deviceIdKey]?.let { return it }

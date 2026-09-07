@@ -355,6 +355,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun setHapticsEnabled(v: Boolean) = viewModelScope.launch { settingsRepo.setHapticsEnabled(v) }
     fun setAutoUpdateCheck(v: Boolean) = viewModelScope.launch { settingsRepo.setAutoUpdateCheck(v) }
     fun setUpdateNotifications(v: Boolean) = viewModelScope.launch { settingsRepo.setUpdateNotifications(v) }
+    fun setLanguage(lang: String) = viewModelScope.launch { settingsRepo.setLanguage(lang) }
 
     // ---------- profile ----------
 

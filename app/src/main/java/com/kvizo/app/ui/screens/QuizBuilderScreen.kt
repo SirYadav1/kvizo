@@ -166,7 +166,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
             val text = resolver.openInputStream(uri)?.bufferedReader()?.use { br -> br.readText() }
             if (text.isNullOrBlank()) { error = "File is empty"; return@rememberLauncherForActivityResult }
             val parsed = QuizImporter.detectAndParse(name, text, "temp")
-            questions = (questions + parsed.map { EQ.from(it) }).toMutableList()
+            questions = (parsed.map { EQ.from(it) } + questions).toMutableList()
             val ext = name?.substringAfterLast('.', "").orEmpty().uppercase().ifBlank { "TXT" }
             info = "Imported ${parsed.size} questions ($ext)"
             error = null
@@ -272,7 +272,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
             item {
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Questions (${questions.size})", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { questions = (questions + EQ()).toMutableList() }) {
+                    TextButton(onClick = { questions = (listOf(EQ()) + questions).toMutableList() }) {
                         Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Text("  Add Question")
                     }
@@ -280,7 +280,7 @@ fun QuizBuilderScreen(vm: AppViewModel, nav: NavHostController, quizId: String?)
             }
 
             if (questions.isEmpty()) {
-                item { EmptyStateCard(onAdd = { questions = (questions + EQ()).toMutableList() }) }
+                item { EmptyStateCard(onAdd = { questions = (listOf(EQ()) + questions).toMutableList() }) }
             }
 
             itemsIndexed(questions, key = { _, eq -> System.identityHashCode(eq) }) { idx, eq ->

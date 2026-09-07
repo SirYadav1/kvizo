@@ -1,6 +1,5 @@
 package com.kvizo.app.ui.screens
 
-import com.kvizo.app.ui.components.AvatarPickerGrid
 import com.kvizo.app.ui.components.AvatarView
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -21,12 +20,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -34,6 +35,8 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -45,6 +48,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -68,15 +72,19 @@ import com.kvizo.app.ui.theme.Amber
 import com.kvizo.app.ui.theme.Green
 import com.kvizo.app.ui.theme.Indigo
 import com.kvizo.app.ui.theme.Red
+import com.kvizo.app.ui.theme.SpaceGrotesk
+import com.kvizo.app.ui.theme.Violet
+
+private val avatarCategories = listOf(
+    "Characters" to (1..8).toList(),
+    "Animals" to (9..16).toList(),
+    "Abstract" to (17..24).toList()
+)
 
 @Composable
 fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
     val profile = vm.profile ?: return
     var showEdit by remember { mutableStateOf(false) }
-    var editName by remember { mutableStateOf(profile.username) }
-    var editStatus by remember { mutableStateOf(profile.status) }
-    var editBio by remember { mutableStateOf(profile.bio) }
-    var selectedAvatar by remember { mutableStateOf(profile.avatarId) }
 
     val attempts = vm.profileData?.attempts ?: emptyList()
     val quizzesCreated = vm.profileData?.quizzes ?: emptyList()
@@ -88,7 +96,6 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
         vm.ensureProfileLoaded()
     }
 
-    val avatarCount = vm.avatarCount()
     val answeredTotal = attempts.sumOf { it.totalQuestions }.coerceAtLeast(1)
     val correctTotal = attempts.sumOf { it.correctAnswers }
     val avg = correctTotal * 100 / answeredTotal
@@ -100,14 +107,14 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             IconButton(onClick = { nav.popBackStack() }) {
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
             }
-            Text("Profile", fontFamily = com.kvizo.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+            Text("Profile", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp)
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { showEdit = true }) {
-                Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = com.kvizo.app.ui.theme.Violet)
+                Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = Violet)
             }
         }
 
-        // profile header — Figma: glowing avatar + LVL gradient pill + name + member since
+        // profile header
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
             Box(contentAlignment = Alignment.Center) {
                 Box(
@@ -115,7 +122,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                         .size(78.dp + 16.dp)
                         .background(
                             androidx.compose.ui.graphics.Brush.radialGradient(
-                                listOf(com.kvizo.app.ui.theme.VioletLight.copy(alpha = 0.25f), androidx.compose.ui.graphics.Color.Transparent)
+                                listOf(Violet.copy(alpha = 0.25f), androidx.compose.ui.graphics.Color.Transparent)
                             ),
                             CircleShape
                         )
@@ -137,16 +144,10 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                         .background(com.kvizo.app.ui.theme.violetGradient(), RoundedCornerShape(99.dp))
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
-                    Text(
-                        "LVL ${profile.level}",
-                        fontFamily = com.kvizo.app.ui.theme.SpaceGrotesk,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        color = androidx.compose.ui.graphics.Color.White
-                    )
+                    Text("LVL ${profile.level}", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = androidx.compose.ui.graphics.Color.White)
                 }
             }
-            Text(profile.username, fontFamily = com.kvizo.app.ui.theme.SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
+            Text(profile.username, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
             val memberDate = try {
                 java.text.SimpleDateFormat("MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(profile.createdAt))
             } catch (e: Exception) { "2024" }
@@ -158,8 +159,8 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             )
         }
 
-        // Level progress card — Figma: label + gradient XP + gradient bar
-        androidx.compose.material3.Surface(
+        // Level progress card
+        Surface(
             shape = RoundedCornerShape(18.dp),
             color = MaterialTheme.colorScheme.surface,
             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -169,24 +170,17 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text("Level ${profile.level} progress", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                     Spacer(Modifier.weight(1f))
-                    com.kvizo.app.ui.components.GradientText(
-                        "${profile.xp} / ${XpEngine.xpForLevel(profile.level + 1).coerceAtLeast(1)} XP",
-                        fontSize = 12.sp
-                    )
+                    com.kvizo.app.ui.components.GradientText("${profile.xp} / ${XpEngine.xpForLevel(profile.level + 1).coerceAtLeast(1)} XP", fontSize = 12.sp)
                 }
-                com.kvizo.app.ui.components.ForgeProgressBar(
-                    progress = XpEngine.levelProgress(profile.xp),
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    height = 7.dp
-                )
+                com.kvizo.app.ui.components.ForgeProgressBar(progress = XpEngine.levelProgress(profile.xp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp), height = 7.dp)
             }
         }
 
-        // stats grid — Figma: Quizzes / Accuracy / Best streak
+        // stats grid
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-            MiniStat("${quizzesCreated.size}", "Quizzes", Modifier.weight(1f), com.kvizo.app.ui.theme.Violet)
-            MiniStat("$avg%", "Accuracy", Modifier.weight(1f), com.kvizo.app.ui.theme.Green)
-            MiniStat("$streak-day", "Best streak", Modifier.weight(1f), com.kvizo.app.ui.theme.Amber)
+            MiniStat("${quizzesCreated.size}", "Quizzes", Modifier.weight(1f), Violet)
+            MiniStat("$avg%", "Accuracy", Modifier.weight(1f), Green)
+            MiniStat("$streak-day", "Best streak", Modifier.weight(1f), Amber)
         }
 
         // difficulty performance
@@ -197,21 +191,11 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                     listOf(DIFF_EASY, DIFF_MEDIUM, DIFF_HARD).forEach { d ->
                         val (c, t) = diffStats[d] ?: (0 to 0)
                         val pct = if (t > 0) c * 100 / t else 0
-                        val color = when (d) {
-                            DIFF_EASY -> Green
-                            DIFF_HARD -> Red
-                            else -> Amber
-                        }
+                        val color = when (d) { DIFF_EASY -> Green; DIFF_HARD -> Red; else -> Amber }
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.Star, contentDescription = null, tint = color, modifier = Modifier.size(15.dp))
                             Text("  $d", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                            LinearProgressIndicator(
-                                progress = { pct / 100f },
-                                modifier = Modifier.width(90.dp).height(6.dp),
-                                color = color,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                            )
+                            LinearProgressIndicator(progress = { pct / 100f }, modifier = Modifier.width(90.dp).height(6.dp), color = color, trackColor = MaterialTheme.colorScheme.surfaceVariant, strokeCap = androidx.compose.ui.graphics.StrokeCap.Round)
                             Text("  $pct%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color, modifier = Modifier.width(40.dp), textAlign = TextAlign.End)
                         }
                     }
@@ -255,7 +239,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // settings entry — at the very bottom
+        // settings entry
         Spacer(Modifier.height(12.dp))
         Surface(
             shape = RoundedCornerShape(14.dp),
@@ -274,55 +258,125 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
     }
 
     if (showEdit) {
-        AlertDialog(
-            onDismissRequest = { showEdit = false },
-            title = { Text("Edit Profile") },
-            text = {
-                Column {
-                    Text("Avatar", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    AvatarPickerGrid(
-                        selected = selectedAvatar,
-                        onSelect = { selectedAvatar = it },
-                        tileSize = 42.dp,
-                        modifier = Modifier
-                            .padding(top = 6.dp, bottom = 10.dp)
-                            .verticalScroll(rememberScrollState())
-                            .heightIn(max = 210.dp)
-                    )
-                    OutlinedTextField(
-                        value = editName,
-                        onValueChange = { editName = it },
-                        label = { Text("Username") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = editStatus,
-                        onValueChange = { editStatus = it },
-                        label = { Text("Status (e.g. Quiz Master)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    OutlinedTextField(
-                        value = editBio,
-                        onValueChange = { editBio = it },
-                        label = { Text("Bio") },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        minLines = 2
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showEdit = false
-                    if (editName.isNotBlank()) {
-                        vm.updateProfile(editName.trim(), editStatus.trim(), editBio.trim(), selectedAvatar)
-                    }
-                }) { Text("Save") }
-            },
-            dismissButton = { TextButton(onClick = { showEdit = false }) { Text("Cancel") } }
+        EditProfileDialog(
+            vm = vm,
+            onDismiss = { showEdit = false }
         )
     }
+}
+
+@Composable
+private fun EditProfileDialog(vm: AppViewModel, onDismiss: () -> Unit) {
+    val profile = vm.profile ?: return
+    var editName by remember { mutableStateOf(profile.username) }
+    var editStatus by remember { mutableStateOf(profile.status) }
+    var editBio by remember { mutableStateOf(profile.bio) }
+    var selectedAvatar by remember { mutableIntStateOf(profile.avatarId) }
+    var selectedCategory by remember { mutableIntStateOf(0) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Profile", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                // Avatar preview
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Surface(
+                        shape = RoundedCornerShape(26.dp),
+                        color = com.kvizo.app.ui.theme.violetPale(),
+                        border = androidx.compose.foundation.BorderStroke(2.dp, com.kvizo.app.ui.theme.VioletBorderStrong),
+                        modifier = Modifier.size(80.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            AvatarView(selectedAvatar, 64.dp)
+                        }
+                    }
+                }
+
+                // Category tabs
+                Text("Avatar", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 6.dp, bottom = 8.dp)
+                ) {
+                    avatarCategories.forEachIndexed { idx, (name, _) ->
+                        FilterChip(
+                            selected = selectedCategory == idx,
+                            onClick = { selectedCategory = idx },
+                            label = { Text(name, fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Indigo.copy(alpha = 0.15f),
+                                selectedLabelColor = Indigo
+                            )
+                        )
+                    }
+                }
+
+                // Avatar grid for selected category
+                val (_, avatars) = avatarCategories[selectedCategory]
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    modifier = Modifier.heightIn(max = 180.dp).padding(bottom = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    itemsIndexed(avatars) { _, avatarId ->
+                        val isSelected = selectedAvatar == avatarId
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) Indigo.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, Indigo) else null,
+                            modifier = Modifier.clickable { selectedAvatar = avatarId }
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(4.dp)) {
+                                AvatarView(avatarId, 40.dp)
+                                if (isSelected) {
+                                    Box(
+                                        modifier = Modifier.align(Alignment.TopEnd).size(16.dp).background(Indigo, CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Filled.Check, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(10.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Text fields
+                OutlinedTextField(
+                    value = editName,
+                    onValueChange = { editName = it },
+                    label = { Text("Username") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = editStatus,
+                    onValueChange = { editStatus = it },
+                    label = { Text("Status (e.g. Quiz Master)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                )
+                OutlinedTextField(
+                    value = editBio,
+                    onValueChange = { editBio = it },
+                    label = { Text("Bio") },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    minLines = 2
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onDismiss()
+                if (editName.isNotBlank()) {
+                    vm.updateProfile(editName.trim(), editStatus.trim(), editBio.trim(), selectedAvatar)
+                }
+            }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
 
 @Composable
@@ -335,12 +389,7 @@ private fun QuizRow(q: Quiz, modifier: Modifier = Modifier) {
             Text(q.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("${q.attemptsCount} attempts  •  ${q.averageScore.toInt()}% avg", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(
-            q.status.capitalize(),
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = if (q.status == "draft") Amber else Green
-        )
+        Text(q.status.replaceFirstChar { it.uppercase() }, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = if (q.status == "draft") Amber else Green)
     }
 }
 
@@ -353,11 +402,3 @@ private fun MiniStat(value: String, label: String, modifier: Modifier = Modifier
         }
     }
 }
-
-private fun formatTime(totalSeconds: Long): String {
-    val h = totalSeconds / 3600
-    val m = (totalSeconds % 3600) / 60
-    return if (h > 0) "${h}h ${m}m" else "${m}m"
-}
-
-private fun String.capitalize(): String = replaceFirstChar { it.uppercase() }

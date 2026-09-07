@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrendingUp
@@ -36,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -96,6 +98,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     var quizzes by remember { mutableStateOf(listOf<Quiz>()) }
     var weakAreas by remember { mutableStateOf(listOf<String>()) }
     var questionCounts by remember { mutableStateOf(mapOf<String, Int>()) }
+    var showNotifications by remember { mutableStateOf(false) }
 
     LaunchedEffect(profile.id) {
         vm.ensureHomeLoaded()
@@ -121,7 +124,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // header — logo + "Kvizo" + two icon buttons
+        // header — logo + "Kvizo" + notifications + settings
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Icon(
@@ -139,12 +142,12 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
                 )
-                IconButtonBox(Icons.Filled.BarChart) { nav.navigate(Routes.STATS) }
+                IconButtonBox(Icons.Filled.Notifications) { showNotifications = true }
                 IconButtonBox(Icons.Filled.Settings) { nav.navigate(Routes.SETTINGS) }
             }
         }
 
-        // profile card — Figma: avatar tile + name + LVL gradient text + XP
+        // profile card
         item {
             ForgeCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -168,7 +171,6 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                             Text("${profile.xp} XP", fontSize = 12.sp, color = Violet, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 1.dp))
                         }
                     }
-                    // XP bar — Figma: 6px rounded, gradient, "64% to Level 5" / "2,000 XP"
                     ForgeProgressBar(
                         progress = XpEngine.levelProgress(profile.xp),
                         modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
@@ -187,25 +189,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // stats — Figma 2-col grid: 🔥 Streak / 📊 This week
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                FigmaStatCard(Icons.Filled.LocalFireDepartment, "Streak", "$streak", if (streak >= 3) "🔥 on fire!" else "days in a row", if (streak >= 3) Amber else Violet, Modifier.weight(1f))
-                FigmaStatCard(Icons.Filled.BarChart, "This week", "${(weeklyAccuracy * 100).toInt()}%", "accuracy", Green, Modifier.weight(1f))
-            }
-        }
-
-        // secondary mini stats — every card explains its own data
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MiniChip("$todayCount", "quizzes\ntoday", Modifier.weight(1f))
-                MiniChip("${quizzes.size}", "quizzes\ncreated", Modifier.weight(1f))
-                MiniChip("$totalAttempts", "attempts\ntaken", Modifier.weight(1f))
-                MiniChip(formatTime(totalTime), "time\nplayed", Modifier.weight(1f))
-            }
-        }
-
-        // weak areas — Figma "Focus area" warning card
+        // weak areas
         if (weakAreas.isNotEmpty()) {
             item {
                 ForgeCard(modifier = Modifier.fillMaxWidth()) {
@@ -228,7 +212,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // quick actions — Figma 3-tile grid, bigger icons in tinted tiles
+        // quick actions
         item {
             ForgeSectionLabel("Quick actions")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
@@ -294,9 +278,58 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         }
         item { Spacer(Modifier.height(16.dp)) }
     }
+
+    // Notifications bottom sheet
+    if (showNotifications) {
+        NotificationsBottomSheet(
+            notifications = vm.announcements,
+            onDismiss = { showNotifications = false }
+        )
+    }
 }
 
-/* ---- Figma sub-components ---- */
+@Composable
+private fun NotificationsBottomSheet(
+    notifications: List<com.kvizo.app.data.RemoteNotification>,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Notifications, contentDescription = null, tint = Indigo, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Notifications", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            }
+        },
+        text = {
+            if (notifications.isEmpty()) {
+                Text("No notifications yet", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    notifications.take(10).forEach { n ->
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(n.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                if (n.body.isNotBlank()) {
+                                    Text(n.body, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
+}
+
+/* ---- Sub-components ---- */
 
 @Composable
 private fun IconButtonBox(icon: ImageVector, onClick: () -> Unit) {
@@ -315,38 +348,6 @@ private fun IconButtonBox(icon: ImageVector, onClick: () -> Unit) {
                 contentDescription = null,
                 tint = VioletLight,
                 modifier = Modifier.size(22.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun FigmaStatCard(icon: ImageVector, label: String, value: String, sub: String, valueColor: Color, modifier: Modifier = Modifier) {
-    ForgeCard(modifier = modifier) {
-        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = valueColor, modifier = Modifier.size(15.dp))
-                Text("  $label", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
-            }
-            Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = valueColor, modifier = Modifier.padding(top = 6.dp))
-            Text(sub, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 1.dp))
-        }
-    }
-}
-
-@Composable
-private fun MiniChip(value: String, label: String, modifier: Modifier = Modifier) {
-    ForgeCard(modifier = modifier) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 10.dp)) {
-            Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(
-                label,
-                fontSize = 8.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                letterSpacing = 0.15.sp,
-                lineHeight = 11.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(top = 2.dp)
             )
         }
     }
@@ -409,10 +410,4 @@ private fun PopularQuizRow(quiz: Quiz, questionCount: Int, onClick: () -> Unit) 
 private fun formatCount(n: Int): String = when {
     n >= 1000 -> "%.1fk".format(n / 1000f)
     else -> "$n"
-}
-
-private fun formatTime(totalSeconds: Long): String {
-    val h = totalSeconds / 3600
-    val m = (totalSeconds % 3600) / 60
-    return if (h > 0) "${h}h ${m}m" else "${m}m"
 }
