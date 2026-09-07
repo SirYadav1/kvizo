@@ -15,14 +15,17 @@ object CommunityKeys {
     // Current key (Ed25519 public key, 32 bytes hex)
     const val CURRENT_KEY_ID = "kvizo-pub-2024-01"
     const val CURRENT_PUBLIC_KEY = "120f69eae51f05b9c73ef14a0848080d096904f0db9f8d8a3506e85b5a29aee1"
+    const val NEW_KEY_ID = "kvizo-pub-2026-09"
+    const val NEW_PUBLIC_KEY = "edca7daf5e8222d97918ed950441dcdbe295e5c41d23f9a5da665081323a20c5"
 
     // Previous key (grace period for rotation)
     const val PREV_KEY_ID = "kvizo-pub-2023-12"
-    const val PREV_PUBLIC_KEY = "0000000000000000000000000000000000000000000000000000000000000000"
+    const val PREV_PUBLIC_KEY = "edca7daf5e8222d97918ed950441dcdbe295e5c41d23f9a5da665081323a20c5"
 
     // Trusted key list (for future rotation)
     val TRUSTED_KEYS = mapOf(
         CURRENT_KEY_ID to CURRENT_PUBLIC_KEY,
+        NEW_KEY_ID to NEW_PUBLIC_KEY,
         PREV_KEY_ID to PREV_PUBLIC_KEY
     )
 
