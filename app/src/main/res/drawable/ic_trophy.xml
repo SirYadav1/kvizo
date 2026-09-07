@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trophy icon (celebration / achievements) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- cup -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M18,10 h28 v12 a14,14 0 0,1 -28,0 z" />
+    <!-- cup inner shine -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M22,14 h20 v8 a10,10 0 0,1 -20,0 z" />
+    <!-- handles -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M18,12 h-8 a8,8 0 0,0 0,16 h6 v-4 h-6 a4,4 0 0,1 0,-8 h8 z" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M46,12 h8 a8,8 0 0,1 0,16 h-6 v-4 h6 a4,4 0 0,0 0,-8 h-8 z" />
+    <!-- stem + base -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M29,36 h6 v8 h-6 z" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M20,48 h24 v6 h-24 z" />
+    <!-- star -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,22 L34,27 L39,27 L35,30 L36,35 L32,32 L28,35 L29,30 L25,27 L30,27 Z" />
+</vector>
