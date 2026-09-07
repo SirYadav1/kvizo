@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -138,7 +139,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                 MetricCard(StringProvider.t("daily_streak"), "${streak}d", Icons.Filled.LocalFireDepartment, Red, Modifier.weight(1f), StringProvider.t("days_in_a_row"))
-                MetricCard(StringProvider.t("this_week"), "${weeklyAccuracy.toInt()}% acc.", Icons.Filled.TrendingUp, Violet, Modifier.weight(1f), StringProvider.t("accuracy"))
+                MetricCard(StringProvider.t("this_week"), "${weeklyAccuracy.toInt()}% acc.", Icons.AutoMirrored.Filled.TrendingUp, Violet, Modifier.weight(1f), StringProvider.t("accuracy"))
             }
         }
 
