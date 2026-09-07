@@ -29,10 +29,13 @@ object CommunityKeys {
         PREV_KEY_ID to PREV_PUBLIC_KEY
     )
 
-    // Community quiz URLs (GitHub Pages)
+    // Community quiz URLs (Cloudflare Workers)
+    private const val CLOUDFLARE_BASE = "https://kvizo-community.sundramy807.workers.dev"
     const val COMMUNITY_FILE = "community.json"
-    const val COMMUNITY_JSON_URL = "https://siryadav1.github.io/kvizo-community/" + COMMUNITY_FILE
-    const val COMMUNITY_SIG_URL = "https://siryadav1.github.io/kvizo-community/community.sig"
+    const val COMMUNITY_JSON_URL = "$CLOUDFLARE_BASE/community.json"
+    const val COMMUNITY_SIG_URL = "$CLOUDFLARE_BASE/community.sig"
+    const val NOTIFICATIONS_JSON_URL = "$CLOUDFLARE_BASE/notifications.json"
+    const val NOTIFICATIONS_SIG_URL = "$CLOUDFLARE_BASE/notifications.json.sig"
     
     // Cache settings
     const val CACHE_FILE = "community_quiz_cache.json"
