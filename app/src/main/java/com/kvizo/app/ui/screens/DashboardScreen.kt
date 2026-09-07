@@ -35,6 +35,7 @@ import com.kvizo.app.data.Quiz
 import com.kvizo.app.logic.XpEngine
 import com.kvizo.app.ui.AppViewModel
 import com.kvizo.app.ui.theme.*
+import com.kvizo.app.util.StringProvider
 
 @Composable
 fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
@@ -50,6 +51,9 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     var quizzes by remember { mutableStateOf(listOf<Quiz>()) }
     var questionCounts by remember { mutableStateOf(mapOf<String, Int>()) }
     var showNotifications by remember { mutableStateOf(false) }
+    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings("system", true, true, false, true, true, true, "en"))
+
+    LaunchedEffect(settings.language) { StringProvider.setLanguage(settings.language) }
 
     LaunchedEffect(profile.id) {
         vm.ensureHomeLoaded()
@@ -95,13 +99,13 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                             AvatarView(profile.avatarId, 50.dp)
                         }
                         Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
-                            Text("Hello, ${profile.username}!", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("${StringProvider.t("welcome_to_kvizo").substringBefore(" ")}${profile.username}!", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                                 Surface(shape = RoundedCornerShape(99.dp), color = VioletPale) {
                                     Text(XpEngine.levelTitle(profile.level), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Violet, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp))
                                 }
                                 Spacer(Modifier.width(8.dp))
-                                Text("Level ${profile.level} in ${nextLevelXp - profile.xp} XP", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(StringProvider.t("level") + " ${profile.level} ${StringProvider.t("in")} ${nextLevelXp - profile.xp} XP", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         Column(horizontalAlignment = Alignment.End) {
@@ -121,11 +125,11 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                         Icon(Icons.Filled.Bolt, contentDescription = null, tint = Violet, modifier = Modifier.size(22.dp))
                     }
                     Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                        Text("DAILY QUEST", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.1.sp)
-                        Text("Answer 5 Math Cards", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
+                        Text(StringProvider.t("daily_quest").uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Violet, letterSpacing = 0.1.sp)
+                        Text(StringProvider.t("answer_5_math"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
                     }
                     Surface(shape = RoundedCornerShape(99.dp), color = Violet, modifier = Modifier.clickable { nav.navigate(Routes.QUIZZES) }) {
-                        Text("Start", color = Color.White, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
+                        Text(StringProvider.t("start"), color = Color.White, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
                     }
                 }
             }
@@ -133,38 +137,40 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
 
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                StatMiniCard("DAILY STREAK", "${streak}d", Icons.Filled.LocalFireDepartment, Amber, Modifier.weight(1f))
-                StatMiniCard("THIS WEEK", "${weeklyAccuracy.toInt()}%", Icons.Filled.TrendingUp, Green, Modifier.weight(1f))
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                StatMiniCard("TODAY", "$todayCount", Icons.Filled.Today, Violet, Modifier.weight(1f))
-                StatMiniCard("AUTHORED", "${quizzes.size}", Icons.Filled.Edit, Violet, Modifier.weight(1f))
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                StatMiniCard("ACTIVITY", "$totalAttempts", Icons.Filled.CheckCircle, Green, Modifier.weight(1f))
-                StatMiniCard("SESSION", formatTime(totalTime), Icons.Filled.Schedule, Indigo, Modifier.weight(1f))
+                MetricCard(StringProvider.t("daily_streak"), "${streak}d", Icons.Filled.LocalFireDepartment, Red, Modifier.weight(1f), StringProvider.t("days_in_a_row"))
+                MetricCard(StringProvider.t("this_week"), "${weeklyAccuracy.toInt()}% acc.", Icons.Filled.TrendingUp, Violet, Modifier.weight(1f), StringProvider.t("accuracy"))
             }
         }
 
         item {
-            Text("Quick Actions", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(top = 4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                MetricCard(StringProvider.t("today"), "$todayCount", Icons.Filled.CalendarToday, Violet, Modifier.weight(1f), StringProvider.t("quizzes_today"))
+                MetricCard(StringProvider.t("authored"), "${quizzes.size}", Icons.Filled.EditNote, Indigo, Modifier.weight(1f), StringProvider.t("quizzes_created"))
+            }
+        }
+
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                MetricCard(StringProvider.t("activity"), "$totalAttempts", Icons.Filled.TaskAlt, Green, Modifier.weight(1f), StringProvider.t("attempts_taken"))
+                MetricCard(StringProvider.t("session"), formatTime(totalTime), Icons.Filled.Timer, Amber, Modifier.weight(1f), StringProvider.t("time_played"))
+            }
+        }
+
+        item {
+            Text(StringProvider.t("quick_actions"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(top = 4.dp))
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickActionBubble(Icons.Filled.Edit, "Create", Violet, Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
-                QuickActionBubble(Icons.Filled.PlayArrow, "Play", Green, Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
-                QuickActionBubble(Icons.Filled.BarChart, "Stats", Amber, Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
+                QuickActionBubble(Icons.Filled.Edit, StringProvider.t("create"), Violet, Modifier.weight(1f)) { nav.navigate(Routes.BUILDER) }
+                QuickActionBubble(Icons.Filled.PlayArrow, StringProvider.t("play"), Green, Modifier.weight(1f)) { nav.navigate(Routes.QUIZZES) }
+                QuickActionBubble(Icons.Filled.BarChart, StringProvider.t("stats"), Amber, Modifier.weight(1f)) { nav.navigate(Routes.STATS) }
             }
         }
 
         item {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Popular Quizzes", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                Text("View all >", fontSize = 12.sp, color = Violet, modifier = Modifier.clickable { nav.navigate(Routes.QUIZZES) })
+                Text(StringProvider.t("popular_quizzes"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Text(StringProvider.t("view_all") + " > ", fontSize = 12.sp, color = Violet, modifier = Modifier.clickable { nav.navigate(Routes.QUIZZES) })
             }
         }
         val popular = quizzes.sortedByDescending { it.attemptsCount }
@@ -173,8 +179,8 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 ForgeCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(painterResource(R.drawable.ic_empty_quiz), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(64.dp))
-                        Text("No quizzes yet", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
-                        Text("Create one or import a .txt file", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(StringProvider.t("no_quizzes_yet"), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
+                        Text(StringProvider.t("create_or_import"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -187,9 +193,9 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         item {
             ForgeCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("COMMUNITY SPOTLIGHT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Violet, letterSpacing = 0.1.sp)
-                    Text("Explore Interactive Labs", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
-                    Text("Test your concepts with thousands of community flashcard sets and instant feedback.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp), lineHeight = 17.sp)
+                    Text(StringProvider.t("community_spotlight").uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Violet, letterSpacing = 0.1.sp)
+                    Text(StringProvider.t("explore_labs"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text(StringProvider.t("explore_labs_desc"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp), lineHeight = 17.sp)
                 }
             }
         }
@@ -203,14 +209,17 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
 }
 
 @Composable
-private fun StatMiniCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, modifier: Modifier = Modifier) {
+private fun MetricCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, modifier: Modifier = Modifier, subtitle: String = "") {
     ForgeCard(modifier = modifier) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.08.sp, modifier = Modifier.weight(1f))
-                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
             }
             Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.padding(top = 6.dp))
+            if (subtitle.isNotEmpty()) {
+                Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+            }
         }
     }
 }
@@ -239,7 +248,7 @@ private fun PopularQuizCard(quiz: Quiz, questionCount: Int, onClick: () -> Unit)
                     Text(quiz.category, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Violet, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                 }
                 Text(quiz.title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
-                Text("$questionCount Qs", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("$questionCount ${StringProvider.t("questions")}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val score = quiz.averageScore.toInt()
             Text("$score% avg", fontSize = 11.sp, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, color = if (score >= 60) Green else Amber)
@@ -249,8 +258,8 @@ private fun PopularQuizCard(quiz: Quiz, questionCount: Int, onClick: () -> Unit)
 
 @Composable
 private fun NotificationsBottomSheet(notifications: List<com.kvizo.app.data.RemoteNotification>, onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Notifications", fontWeight = FontWeight.Bold, fontSize = 18.sp) }, text = {
-        if (notifications.isEmpty()) Text("No notifications yet", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(StringProvider.t("notifications"), fontWeight = FontWeight.Bold, fontSize = 18.sp) }, text = {
+        if (notifications.isEmpty()) Text(StringProvider.t("no_notifications"), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             notifications.take(10).forEach { n ->
                 Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
@@ -261,7 +270,7 @@ private fun NotificationsBottomSheet(notifications: List<com.kvizo.app.data.Remo
                 }
             }
         }
-    }, confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } })
+    }, confirmButton = { TextButton(onClick = onDismiss) { Text(StringProvider.t("close")) } })
 }
 
 @Composable

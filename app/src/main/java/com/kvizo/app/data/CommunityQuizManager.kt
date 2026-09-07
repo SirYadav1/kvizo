@@ -1,9 +1,9 @@
 package com.kvizo.app.data
 
 import android.content.Context
+import android.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
@@ -11,7 +11,6 @@ import java.net.URL
 import java.security.KeyFactory
 import java.security.Signature
 import java.security.spec.X509EncodedKeySpec
-import java.util.Base64
 
 @androidx.annotation.Keep
 object CommunityFileNameHolder {
@@ -31,8 +30,8 @@ class CommunityQuizManager(private val context: Context) {
 
     suspend fun fetchAndImport(): Result<List<CommunityQuiz>> = withContext(Dispatchers.IO) {
         try {
-            val json = fetchUrl(CommunityKeys.COMMUNITY_JSON_URL, CommunityFileNameHolder.FILE)
-            val sig = fetchUrlBytes(CommunityKeys.COMMUNITY_SIG_URL)
+            val json = fetchUrl(CommunityKeys.COMMUNITY_JSON_URL)
+            val sigBase64 = fetchUrlText(CommunityKeys.COMMUNITY_SIG_URL)
 
             val data = JSONObject(json)
             verifyFreshness(data)
@@ -41,12 +40,13 @@ class CommunityQuizManager(private val context: Context) {
             val publicKeyHex = CommunityKeys.TRUSTED_KEYS[keyId]
                 ?: return@withContext Result.failure(SecurityException("Unknown key: $keyId"))
 
-            if (!verifyEd25519Signature(json.toByteArray(), sig, publicKeyHex)) {
+            val sigBytes = Base64.decode(sigBase64.trim(), Base64.DEFAULT)
+            if (!verifyEd25519Signature(json.toByteArray(), sigBytes, publicKeyHex)) {
                 return@withContext Result.failure(SecurityException("Signature verification failed"))
             }
 
             val quizzes = parseQuizzes(data)
-            cacheVerified(json, sig)
+            cacheVerified(json, sigBase64)
             Result.success(quizzes)
         } catch (e: Exception) {
             val cached = getCached()
@@ -110,12 +110,12 @@ class CommunityQuizManager(private val context: Context) {
         imported
     }
 
-    private fun fetchUrl(urlStr: String, @Suppress("UNUSED_PARAMETER") name: String = "community.json"): String {
+    private fun fetchUrl(urlStr: String): String {
         val url = URL(urlStr)
         val conn = url.openConnection() as HttpURLConnection
         conn.connectTimeout = CONNECT_TIMEOUT
         conn.readTimeout = READ_TIMEOUT
-        conn.setRequestProperty("User-Agent", "Kvizo/1.4.0")
+        conn.setRequestProperty("User-Agent", "Kvizo/1.6.1")
         try {
             check(conn.responseCode == 200) { "HTTP ${conn.responseCode}" }
             return conn.inputStream.bufferedReader().use { it.readText() }
@@ -124,18 +124,8 @@ class CommunityQuizManager(private val context: Context) {
         }
     }
 
-    private fun fetchUrlBytes(urlStr: String): ByteArray {
-        val url = URL(urlStr)
-        val conn = url.openConnection() as HttpURLConnection
-        conn.connectTimeout = CONNECT_TIMEOUT
-        conn.readTimeout = READ_TIMEOUT
-        conn.setRequestProperty("User-Agent", "Kvizo/1.4.0")
-        try {
-            check(conn.responseCode == 200) { "HTTP ${conn.responseCode}" }
-            return conn.inputStream.use { it.readBytes() }
-        } finally {
-            conn.disconnect()
-        }
+    private fun fetchUrlText(urlStr: String): String {
+        return fetchUrl(urlStr)
     }
 
     private fun verifyFreshness(data: JSONObject) {
@@ -224,12 +214,12 @@ class CommunityQuizManager(private val context: Context) {
             .trim()
     }
 
-    private fun cacheVerified(json: String, sig: ByteArray) {
+    private fun cacheVerified(json: String, sigBase64: String) {
         try {
             val cacheDir = File(context.cacheDir, "community")
             cacheDir.mkdirs()
             File(cacheDir, CommunityKeys.CACHE_FILE).writeText(json)
-            File(cacheDir, CommunityKeys.CACHE_SIG_FILE).writeBytes(sig)
+            File(cacheDir, CommunityKeys.CACHE_SIG_FILE).writeText(sigBase64)
         } catch (_: Exception) { }
     }
 
@@ -245,13 +235,14 @@ class CommunityQuizManager(private val context: Context) {
             if (age > CommunityKeys.MAX_CACHE_AGE_MS) return null
 
             val json = jsonFile.readText()
-            val sig = sigFile.readBytes()
+            val sigBase64 = sigFile.readText()
             val data = JSONObject(json)
 
             val keyId = data.getString("key_id")
             val publicKeyHex = CommunityKeys.TRUSTED_KEYS[keyId] ?: return null
 
-            if (!verifyEd25519Signature(json.toByteArray(), sig, publicKeyHex)) return null
+            val sigBytes = Base64.decode(sigBase64.trim(), Base64.DEFAULT)
+            if (!verifyEd25519Signature(json.toByteArray(), sigBytes, publicKeyHex)) return null
 
             parseQuizzes(data)
         } catch (_: Exception) {
