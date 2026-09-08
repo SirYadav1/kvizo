@@ -559,11 +559,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun ensureSoundPool(): SoundPool? {
         soundPool?.let { return it }
         return try {
+            // Game SFX: USAGE_GAME routes strictly to the media stream
+            // (STREAM_MUSIC volume) with the low-latency playback path.
             val attrs = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
-            val sp = SoundPool.Builder().setMaxStreams(4).setAudioAttributes(attrs).build()
+            val sp = SoundPool.Builder().setMaxStreams(5).setAudioAttributes(attrs).build()
             soundCorrectId = sp.load(appContext, R.raw.sound_correct, 1)
             soundWrongId = sp.load(appContext, R.raw.sound_wrong, 1)
             soundWin = sp.load(appContext, R.raw.sound_win, 1)
@@ -580,8 +582,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun playSound(correct: Boolean) {
         if (!soundOn) return
         val sp = ensureSoundPool() ?: return
+        val id = if (correct) soundCorrectId else soundWrongId
+        if (id == 0) return // sample not loaded yet
         try {
-            sp.play(if (correct) soundCorrectId else soundWrongId, 1f, 1f, 1, 0, 1f)
+            sp.play(id, 1f, 1f, 1, 0, 1f)
         } catch (_: Exception) {
         }
     }
@@ -590,6 +594,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun playSuccessJingle() {
         if (!soundOn) return
         val sp = ensureSoundPool() ?: return
+        if (soundWin == 0) return
         try {
             sp.play(soundWin, 1f, 1f, 1, 0, 1f)
         } catch (_: Exception) {
@@ -600,6 +605,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun playBell() {
         if (!soundOn) return
         val sp = ensureSoundPool() ?: return
+        if (soundBell == 0) return
         try {
             sp.play(soundBell, 1f, 1f, 1, 0, 1f)
         } catch (_: Exception) {
@@ -610,6 +616,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun playSplashJingle() {
         if (!soundOn) return
         val sp = ensureSoundPool() ?: return
+        if (soundSplash == 0) return
         try {
             sp.play(soundSplash, 0.8f, 0.8f, 1, 0, 1f)
         } catch (_: Exception) {
