@@ -2,6 +2,8 @@ package com.kvizo.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -77,63 +79,61 @@ fun CommunityQuizScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
-    ) { padding ->
-        LazyColumn(
+      ) { padding ->
+        Column(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .fillMaxSize()
         ) {
             // Compact title
-            item {
-                Text(StringProvider.t("download_quizzes"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp, 
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-            }
+            Text(
+                StringProvider.t("download_quizzes"),
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
 
             // Search bar
-            item {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search quizzes...") },
-                    leadingIcon = { Icon(Icons.Filled.Search, null) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp)
-                )
-            }
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search quizzes...") },
+                leadingIcon = { Icon(Icons.Filled.Search, null) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp)
+            )
 
-            // Category chips
+            // Category chips — fixed header, horizontally scrollable
             if (categories.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedCategory == null,
+                        onClick = { selectedCategory = null },
+                        label = { Text("All") }
+                    )
+                    categories.forEach { cat ->
                         FilterChip(
-                            selected = selectedCategory == null,
-                            onClick = { selectedCategory = null },
-                            label = { Text("All") }
+                            selected = selectedCategory == cat,
+                            onClick = { selectedCategory = if (selectedCategory == cat) null else cat },
+                            label = { Text(cat) }
                         )
-                        categories.forEach { cat ->
-                            FilterChip(
-                                selected = selectedCategory == cat,
-                                onClick = { selectedCategory = if (selectedCategory == cat) null else cat },
-                                label = { Text(cat) }
-                            )
-                        }
                     }
                 }
+            } else {
+                Spacer(Modifier.height(8.dp))
             }
 
             when {
                 isLoading -> {
-                    item {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth().padding(top = 80.dp)
-                        ) {
+                    Box(Modifier.fillMaxWidth().weight(1f).padding(top = 32.dp), contentAlignment = Alignment.TopCenter) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = Indigo)
                             Spacer(Modifier.height(16.dp))
                             Text(StringProvider.t("loading"), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -141,83 +141,85 @@ fun CommunityQuizScreen(
                     }
                 }
                 error != null -> {
-                    item {
-                        Box(Modifier.fillMaxWidth().padding(top = 80.dp, start = 16.dp, end = 16.dp), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Couldn't load community quizzes", color = Red, fontWeight = FontWeight.Bold)
-                                Spacer(Modifier.height(8.dp))
-                                Text(error!!, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                                Spacer(Modifier.height(16.dp))
-                                TextButton(onClick = {
-                                    scope.launch {
-                                        isLoading = true
-                                        error = null
-                                        val result = vm.fetchCommunityQuizzes()
-                                        result.onSuccess { quizzes = it }
-                                        result.onFailure { error = it.message ?: "Failed to load" }
-                                        isLoading = false
-                                    }
-                                }) { Text("Retry", color = Indigo) }
-                            }
+                    Box(Modifier.fillMaxWidth().weight(1f).padding(top = 32.dp, start = 16.dp, end = 16.dp), contentAlignment = Alignment.TopCenter) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Couldn't load community quizzes", color = Red, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(8.dp))
+                            Text(error!!, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                            Spacer(Modifier.height(16.dp))
+                            TextButton(onClick = {
+                                scope.launch {
+                                    isLoading = true
+                                    error = null
+                                    val result = vm.fetchCommunityQuizzes()
+                                    result.onSuccess { quizzes = it }
+                                    result.onFailure { error = it.message ?: "Failed to load" }
+                                    isLoading = false
+                                }
+                            }) { Text("Retry", color = Indigo) }
                         }
                     }
                 }
                 filtered.isEmpty() -> {
-                    item {
-                        Box(Modifier.fillMaxWidth().padding(top = 80.dp), contentAlignment = Alignment.Center) {
-                            Text("No community quizzes yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                    Box(Modifier.fillMaxWidth().weight(1f).padding(top = 32.dp), contentAlignment = Alignment.TopCenter) {
+                        Text("No community quizzes yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 else -> {
-                    items(filtered, key = { it.id }) { quiz ->
-                        var msg by remember(quiz.id) { mutableStateOf<String?>(null) }
-                        val imported = remember(quiz.id) { mutableStateOf(false) }
-                        ForgeCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(filtered, key = { it.id }) { quiz ->
+                            var msg by remember(quiz.id) { mutableStateOf<String?>(null) }
+                            val imported = remember(quiz.id) { mutableStateOf(false) }
+                            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            quiz.title,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 14.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        Spacer(Modifier.size(6.dp))
+                                        StatusPill(quiz.category, Green, com.kvizo.app.ui.theme.greenBg())
+                                    }
                                     Text(
-                                        quiz.title,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 14.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f, fill = false)
-                                    )
-                                    Spacer(Modifier.size(6.dp))
-                                    StatusPill(quiz.category, Green, com.kvizo.app.ui.theme.greenBg())
-                                }
-                                Text(
-                                    "${quiz.difficulty} \u2022 ${quiz.questions.size} questions \u2022 by ${quiz.author}",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                                if (msg != null) {
-                                    Text(
-                                        msg!!,
+                                        "${quiz.difficulty} \u2022 ${quiz.questions.size} questions \u2022 by ${quiz.author}",
                                         fontSize = 11.sp,
-                                        color = if (msg!!.startsWith("Imported")) Green else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(top = 4.dp)
                                     )
-                                }
-                                TextButton(
-                                    enabled = !imported.value,
-                                    onClick = {
-                                        imported.value = true
-                                        vm.importCommunityQuiz(quiz) { m ->
-                                            msg = m
-                                            if (!m.startsWith("Imported")) imported.value = false
-                                        }
-                                    },
-                                    modifier = Modifier.align(Alignment.End)
-                                ) {
-                                    Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = Indigo, modifier = Modifier.size(15.dp))
-                                    Text(
-                                        if (imported.value) "Imported" else "  Import",
-                                        fontSize = 12.sp,
-                                        color = Indigo
-                                    )
+                                    if (msg != null) {
+                                        Text(
+                                            msg!!,
+                                            fontSize = 11.sp,
+                                            color = if (msg!!.startsWith("Imported")) Green else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(top = 4.dp)
+                                        )
+                                    }
+                                    TextButton(
+                                        enabled = !imported.value,
+                                        onClick = {
+                                            imported.value = true
+                                            vm.importCommunityQuiz(quiz) { m ->
+                                                msg = m
+                                                if (!m.startsWith("Imported")) imported.value = false
+                                            }
+                                        },
+                                        modifier = Modifier.align(Alignment.End)
+                                    ) {
+                                        Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = Indigo, modifier = Modifier.size(15.dp))
+                                        Text(
+                                            if (imported.value) "Imported" else "  Import",
+                                            fontSize = 12.sp,
+                                            color = Indigo
+                                        )
+                                    }
                                 }
                             }
                         }
