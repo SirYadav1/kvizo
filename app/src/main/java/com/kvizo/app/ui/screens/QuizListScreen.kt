@@ -48,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -281,7 +282,7 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 0.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.attempt(quiz.id)) }
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).clickable { nav.navigate(Routes.attempt(quiz.id)) }
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {

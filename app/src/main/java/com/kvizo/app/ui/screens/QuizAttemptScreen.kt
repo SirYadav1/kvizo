@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -55,17 +56,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
 import com.kvizo.app.Routes
@@ -128,16 +133,23 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
     var settings by remember { mutableStateOf(AppSettings("system", true, true)) }
     LaunchedEffect(Unit) { vm.settings.collect { settings = it } }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    // auto-pause: when the app goes to the background mid-quiz, freeze it
+    // auto-pause ONLY when the app itself loses focus / goes to background
+    // (notification shade, home button, app switch). Uses the Activity lifecycle —
+    // in-app navigation never pauses the Activity, so leaving the quiz screen
+    // can no longer flash the paused overlay.
     var paused by remember { mutableStateOf(false) }
-    DisposableEffect(lifecycleOwner) {
+    var showExitConfirm by remember { mutableStateOf(false) }
+    val activity = LocalContext.current as? ComponentActivity
+    val latestPhase = rememberUpdatedState(phase)
+    DisposableEffect(activity) {
         val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP && phase == Phase.PLAYING) paused = true
+            if (event == Lifecycle.Event.ON_PAUSE && latestPhase.value == Phase.PLAYING) paused = true
         }
-        lifecycleOwner.lifecycle.addObserver(obs)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+        activity?.lifecycle?.addObserver(obs)
+        onDispose { activity?.lifecycle?.removeObserver(obs) }
     }
+    // hardware / gesture back during an active quiz asks for confirmation first
+    BackHandler(enabled = phase == Phase.PLAYING) { showExitConfirm = true }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     fun submit() {
@@ -210,6 +222,19 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
         }
 
         Phase.PLAYING -> {
+            if (showExitConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showExitConfirm = false },
+                    title = { Text("Leave quiz?") },
+                    text = { Text("Are you sure you want to leave the quiz? Progress will be lost.") },
+                    confirmButton = {
+                        TextButton(onClick = { showExitConfirm = false; nav.popBackStack() }) { Text("Exit") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showExitConfirm = false }) { Text("Cancel") }
+                    }
+                )
+            }
             val q = questions[current]
             Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 // top bar — Figma: surface + bottom border, back tile, centered title, timer chip
@@ -227,7 +252,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                         modifier = Modifier.size(34.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            IconButton(onClick = { nav.popBackStack() }, modifier = Modifier.size(34.dp)) {
+                            IconButton(onClick = { if (phase == Phase.PLAYING) showExitConfirm = true else nav.popBackStack() }, modifier = Modifier.size(34.dp)) {
                                 Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp))
                             }
                         }
@@ -336,6 +361,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .scale(scale)
+                                    .clip(RoundedCornerShape(14.dp))
                                     .clickable(
                                         interactionSource = interactionSource,
                                         indication = androidx.compose.foundation.LocalIndication.current,
@@ -436,6 +462,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                                     Box(
                                         modifier = Modifier
                                             .size(40.dp)
+                                            .clip(RoundedCornerShape(10.dp))
                                             .background(bg, RoundedCornerShape(10.dp))
                                             .clickable {
                                                 current = idx

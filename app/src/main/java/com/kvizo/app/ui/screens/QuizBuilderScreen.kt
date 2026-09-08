@@ -423,7 +423,7 @@ private fun DifficultyCard(current: String, onSelect: (String) -> Unit) {
                     shape = RoundedCornerShape(14.dp),
                     color = if (selected) c.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, if (selected) c.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
-                    modifier = Modifier.weight(1f).clickable { onSelect(d) }
+                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable { onSelect(d) }
                 ) {
                     Row(
                         modifier = Modifier.padding(vertical = 10.dp),

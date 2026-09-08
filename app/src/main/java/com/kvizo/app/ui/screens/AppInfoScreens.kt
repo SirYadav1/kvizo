@@ -142,7 +142,7 @@ fun BackupScreen(vm: AppViewModel, nav: NavHostController) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+        modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp)) {
             androidx.compose.material3.IconButton(onClick = { nav.popBackStack() }) {
@@ -164,32 +164,26 @@ fun BackupScreen(vm: AppViewModel, nav: NavHostController) {
         SectionTitle("Backup")
         PressGlowButton(
             onClick = { backupSaver.launch("kvizo-backup.json") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).height(64.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).height(60.dp),
             shape = RoundedCornerShape(16.dp),
             containerColor = MaterialTheme.colorScheme.secondary
         ) {
             Icon(Icons.Filled.Backup, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(10.dp))
-            Column {
-                Text("Back up all data", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
-                Text("Save a JSON file", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-            }
+            Spacer(Modifier.width(12.dp))
+            Text("Back up all data", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White, maxLines = 1)
         }
 
         // Restore / import
         SectionTitle("Restore")
         PressGlowButton(
             onClick = { restorePicker.launch(arrayOf("application/json", "text/*", "*/*")) },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).height(64.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).height(60.dp),
             shape = RoundedCornerShape(16.dp),
             containerColor = MaterialTheme.colorScheme.primary
         ) {
             Icon(Icons.Filled.Restore, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(10.dp))
-            Column {
-                Text("Restore from JSON", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
-                Text("Import your data", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-            }
+            Spacer(Modifier.width(12.dp))
+            Text("Restore from JSON", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White, maxLines = 1)
         }
 
         ForgeCard(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {

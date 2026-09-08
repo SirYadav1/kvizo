@@ -246,13 +246,13 @@ fun PressGlowButton(
                     )
                 }
             }
+            .clip(shape)
             .clickable(
                 enabled = enabled,
                 interactionSource = interaction,
                 indication = androidx.compose.foundation.LocalIndication.current,
                 onClick = onClick
-            )
-            .clip(shape),
+            ),
         contentAlignment = Alignment.Center
     ) {
         Surface(

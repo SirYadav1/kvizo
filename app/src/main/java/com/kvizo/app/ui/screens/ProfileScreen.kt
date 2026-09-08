@@ -233,7 +233,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             }
         } else {
             items(quizzes.take(5), key = { it.id }) { quiz: Quiz ->
-                ForgeCard(modifier = Modifier.fillMaxWidth().clickable { nav.navigate("attempt/${quiz.id}") }) {
+                ForgeCard(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).clickable { nav.navigate("attempt/${quiz.id}") }) {
                     Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
                             Icon(Icons.Filled.Quiz, contentDescription = null, tint = Violet)
@@ -249,7 +249,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
         }
 
         item {
-            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.EDIT_PROFILE) }) {
+            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { nav.navigate(Routes.EDIT_PROFILE) }) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(14.dp)) {
                     Icon(Icons.Filled.Edit, contentDescription = null, tint = Violet, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))

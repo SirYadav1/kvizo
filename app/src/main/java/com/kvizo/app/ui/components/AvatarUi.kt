@@ -113,6 +113,7 @@ private fun AvatarTile(
                 color = if (isSelected) selectedTint else borderColor.copy(alpha = 0.25f),
                 shape = CircleShape,
             )
+            .clip(CircleShape)
             .clickable { onSelect(id) },
         contentAlignment = Alignment.Center,
     ) {

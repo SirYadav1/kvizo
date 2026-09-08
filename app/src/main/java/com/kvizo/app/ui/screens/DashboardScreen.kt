@@ -125,7 +125,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                         Text(StringProvider.t("daily_quest").uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Violet, letterSpacing = 0.1.sp)
                         Text(StringProvider.t("answer_5_math"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
                     }
-                    Surface(shape = RoundedCornerShape(99.dp), color = Violet, modifier = Modifier.clickable { nav.navigate(Routes.QUIZZES) }) {
+                    Surface(shape = RoundedCornerShape(99.dp), color = Violet, modifier = Modifier.clip(RoundedCornerShape(99.dp)).clickable { nav.navigate(Routes.QUIZZES) }) {
                         Text(StringProvider.t("start"), color = Color.White, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
                     }
                 }
@@ -188,7 +188,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         }
 
         item {
-            ForgeCard(modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.COMMUNITY) }) {
+            ForgeCard(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).clickable { nav.navigate(Routes.COMMUNITY) }) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(StringProvider.t("community_spotlight").uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Violet, letterSpacing = 0.1.sp)
                     Text(StringProvider.t("explore_labs"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))

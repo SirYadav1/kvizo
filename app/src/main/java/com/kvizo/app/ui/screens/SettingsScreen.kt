@@ -67,7 +67,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                     Row(modifier = Modifier.fillMaxWidth().padding(top = 14.dp).clip(RoundedCornerShape(99.dp)).background(MaterialTheme.colorScheme.primaryContainer), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         themes.forEach { (code, label) ->
                             val selected = settings.themeMode == code
-                            Surface(shape = RoundedCornerShape(99.dp), color = if (selected) Violet else Color.Transparent, modifier = Modifier.weight(1f).padding(4.dp).clickable {
+                            Surface(shape = RoundedCornerShape(99.dp), color = if (selected) Violet else Color.Transparent, modifier = Modifier.weight(1f).padding(4.dp).clip(RoundedCornerShape(99.dp)).clickable {
                                 coroutineScope.launch { vm.setThemeMode(code) }
                             }) {
                                 Text(label, fontSize = 12.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
@@ -115,7 +115,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
         }
 
         item {
-            Surface(shape = RoundedCornerShape(14.dp), color = RedBg, border = BorderStroke(1.dp, RedBorder), modifier = Modifier.fillMaxWidth().clickable { showSignOutDialog = true }) {
+            Surface(shape = RoundedCornerShape(14.dp), color = RedBg, border = BorderStroke(1.dp, RedBorder), modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { showSignOutDialog = true }) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
                     Icon(Icons.Filled.Logout, contentDescription = null, tint = Red, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
@@ -131,7 +131,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 languages.forEach { (code, name) ->
                     val isSelected = settings.language == code
-                    Surface(shape = RoundedCornerShape(12.dp), color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, modifier = Modifier.fillMaxWidth().clickable {
+                    Surface(shape = RoundedCornerShape(12.dp), color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
                         coroutineScope.launch { vm.setLanguage(code) }; StringProvider.setLanguage(code); showLanguageDialog = false
                     }) {
                         Text(name, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, color = if (isSelected) Violet else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(14.dp))
