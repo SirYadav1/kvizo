@@ -56,7 +56,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
             ForgeCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
                             Icon(Icons.Filled.Palette, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
                         }
                         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
@@ -64,7 +64,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
                             Text("Customize your visual mode", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 14.dp).clip(RoundedCornerShape(99.dp)).background(VioletPale), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 14.dp).clip(RoundedCornerShape(99.dp)).background(MaterialTheme.colorScheme.primaryContainer), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         themes.forEach { (code, label) ->
                             val selected = settings.themeMode == code
                             Surface(shape = RoundedCornerShape(99.dp), color = if (selected) Violet else Color.Transparent, modifier = Modifier.weight(1f).padding(4.dp).clickable {
@@ -131,7 +131,7 @@ fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 languages.forEach { (code, name) ->
                     val isSelected = settings.language == code
-                    Surface(shape = RoundedCornerShape(12.dp), color = if (isSelected) VioletPale else Color.Transparent, modifier = Modifier.fillMaxWidth().clickable {
+                    Surface(shape = RoundedCornerShape(12.dp), color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, modifier = Modifier.fillMaxWidth().clickable {
                         coroutineScope.launch { vm.setLanguage(code) }; StringProvider.setLanguage(code); showLanguageDialog = false
                     }) {
                         Text(name, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, color = if (isSelected) Violet else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(14.dp))
@@ -156,7 +156,7 @@ private fun SectionLabel(text: String) {
 @Composable
 private fun SettingToggleRow(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onToggle: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
         }
         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
@@ -170,7 +170,7 @@ private fun SettingToggleRow(title: String, subtitle: String, icon: ImageVector,
 @Composable
 private fun SettingRow(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() }).padding(16.dp)) {
-        Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
         }
         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {

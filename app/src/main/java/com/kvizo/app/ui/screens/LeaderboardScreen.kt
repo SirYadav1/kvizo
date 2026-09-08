@@ -190,7 +190,7 @@ private fun Podium(top3: List<LeaderboardEntry>, vm: AppViewModel, metric: Strin
             val bg = when (e.rank) {
                 1 -> amberBg()
                 2 -> MaterialTheme.colorScheme.surfaceVariant
-                else -> violetPale()
+                else -> MaterialTheme.colorScheme.primaryContainer
             }
             val displayValue = if (metric == "XP") "${e.xp}" else "${e.accuracy}%"
             Column(
@@ -237,7 +237,7 @@ private fun Podium(top3: List<LeaderboardEntry>, vm: AppViewModel, metric: Strin
                         .padding(top = 6.dp)
                         .width(60.dp)
                         .height(if (e.rank == 1) 56.dp else if (e.rank == 2) 42.dp else 30.dp)
-                        .background(if (e.rank == 1) violetPale() else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        .background(if (e.rank == 1) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                 )
             }
         }

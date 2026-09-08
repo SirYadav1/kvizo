@@ -126,7 +126,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 hapticsOn = s.hapticsEnabled
             }
         }
-        viewModelScope.launch { startSyncLoop() }
     }
 
     private suspend fun startSyncLoop() {

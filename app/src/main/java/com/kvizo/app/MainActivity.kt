@@ -73,6 +73,7 @@ import com.kvizo.app.ui.screens.QuizListScreen
 import com.kvizo.app.ui.screens.ResultsScreen
 import com.kvizo.app.ui.screens.AboutScreen
 import com.kvizo.app.ui.screens.CommunityQuizScreen
+import com.kvizo.app.ui.screens.EditProfileScreen
 import com.kvizo.app.ui.screens.BackupScreen
 import com.kvizo.app.ui.screens.ChangelogScreen
 import com.kvizo.app.ui.screens.SettingsScreen
@@ -149,6 +150,7 @@ object Routes {
     const val CHANGELOG = "changelog"
     const val ABOUT = "about"
     const val COMMUNITY = "community"
+    const val EDIT_PROFILE = "edit_profile"
 
     fun attempt(quizId: String, mode: String = "normal", only: String = "") = "attempt/$quizId?mode=$mode&only=$only"
     fun results(attemptId: String) = "results/$attemptId"
@@ -173,29 +175,7 @@ fun KvizoRoot(vm: AppViewModel) {
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            val notice = vm.syncNotice
-            if (notice != null) {
-                Surface(color = Indigo, modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Filled.Celebration, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(16.dp))
-                        Text(
-                            "  $notice",
-                            color = androidx.compose.ui.graphics.Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp)
-                        )
-                        IconButton(onClick = { vm.dismissSyncNotice() }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Dismiss", tint = androidx.compose.ui.graphics.Color.White)
-                        }
-                    }
-                }
-            }
-        },
+        topBar = {},
         bottomBar = {
             if (showBottomBar) {
                 GlassBottomBar(
@@ -282,6 +262,7 @@ fun KvizoRoot(vm: AppViewModel) {
             composable(Routes.CHANGELOG) { ChangelogScreen(vm, nav) }
             composable(Routes.ABOUT) { AboutScreen(vm, nav) }
             composable(Routes.COMMUNITY) { CommunityQuizScreen(vm, nav) }
+            composable(Routes.EDIT_PROFILE) { EditProfileScreen(vm, nav) }
         }
     }
 }

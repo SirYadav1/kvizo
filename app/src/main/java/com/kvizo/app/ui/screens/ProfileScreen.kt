@@ -123,7 +123,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
                     badgeList.take(4).forEach { badge ->
                         Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(12.dp), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(VioletPale), contentAlignment = Alignment.Center) {
+                                Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
                                     Text(badge.badgeName.take(2), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Violet)
                                 }
                                 Spacer(Modifier.height(4.dp))
@@ -150,7 +150,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             items(quizzes.take(5), key = { it.id }) { quiz: Quiz ->
                 ForgeCard(modifier = Modifier.fillMaxWidth().clickable { nav.navigate("attempt/${quiz.id}") }) {
                     Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(VioletPale), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
                             Icon(Icons.Filled.Quiz, contentDescription = null, tint = Violet)
                         }
                         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
@@ -164,7 +164,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
         }
 
         item {
-            Surface(shape = RoundedCornerShape(14.dp), color = VioletPale, modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.SETUP) }) {
+            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.EDIT_PROFILE) }) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(14.dp)) {
                     Icon(Icons.Filled.Edit, contentDescription = null, tint = Violet, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))

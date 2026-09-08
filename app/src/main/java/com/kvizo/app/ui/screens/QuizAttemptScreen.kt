@@ -99,6 +99,18 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
         base.shuffled()
     }
 
+    // Guard: if quiz has no questions, show error instead of crashing
+    if (quiz == null || questions.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("This quiz has no questions", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = { nav.popBackStack() }) { Text("Go Back") }
+            }
+        }
+        return
+    }
+
     var phase by remember { mutableStateOf(Phase.INFO) }
     var current by remember { mutableStateOf(0) }
     var answers by remember { mutableStateOf(mutableMapOf<String, String>()) }

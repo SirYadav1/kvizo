@@ -220,12 +220,12 @@ fun PressGlowButton(
     val pressed by interaction.collectIsPressedAsState()
     val glow by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (pressed) 1f else 0f,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 450f),
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.65f, stiffness = 800f),
         label = "pressGlow"
     )
     val scale by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (pressed) 0.97f else 1f,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.75f, stiffness = 700f),
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.65f, stiffness = 900f),
         label = "pressScale"
     )
     Box(

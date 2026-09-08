@@ -102,7 +102,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                         Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
                             Text("${StringProvider.t("welcome_to_kvizo").substringBefore(" ")}${profile.username}!", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                                Surface(shape = RoundedCornerShape(99.dp), color = VioletPale) {
+                                Surface(shape = RoundedCornerShape(99.dp), color = MaterialTheme.colorScheme.primaryContainer) {
                                     Text(XpEngine.levelTitle(profile.level), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Violet, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp))
                                 }
                                 Spacer(Modifier.width(8.dp))
@@ -122,7 +122,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         item {
             ForgeCard(modifier = Modifier.fillMaxWidth()) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(40.dp).background(VioletPale, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
                         Icon(Icons.Filled.Bolt, contentDescription = null, tint = Violet, modifier = Modifier.size(22.dp))
                     }
                     Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
@@ -192,11 +192,17 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         }
 
         item {
-            ForgeCard(modifier = Modifier.fillMaxWidth()) {
+            ForgeCard(modifier = Modifier.fillMaxWidth().clickable { nav.navigate(Routes.COMMUNITY) }) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(StringProvider.t("community_spotlight").uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Violet, letterSpacing = 0.1.sp)
                     Text(StringProvider.t("explore_labs"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
                     Text(StringProvider.t("explore_labs_desc"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp), lineHeight = 17.sp)
+                    Surface(shape = RoundedCornerShape(99.dp), color = Violet, modifier = Modifier.padding(top = 12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)) {
+                            Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Text("  " + StringProvider.t("download_quizzes"), color = Color.White, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                    }
                 }
             }
         }
@@ -241,11 +247,11 @@ private fun QuickActionBubble(icon: androidx.compose.ui.graphics.vector.ImageVec
 private fun PopularQuizCard(quiz: Quiz, questionCount: Int, onClick: () -> Unit) {
     ForgeCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() })) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(44.dp).background(VioletPale, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(44.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Violet, modifier = Modifier.size(22.dp))
             }
             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                Surface(shape = RoundedCornerShape(99.dp), color = VioletPale) {
+                Surface(shape = RoundedCornerShape(99.dp), color = MaterialTheme.colorScheme.primaryContainer) {
                     Text(quiz.category, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Violet, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                 }
                 Text(quiz.title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))

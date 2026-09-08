@@ -286,7 +286,7 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
         SectionTitle("Current version")
         ForgeCard(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(46.dp).background(VioletPale, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.size(46.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Filled.Info, contentDescription = null, tint = Violet, modifier = Modifier.size(22.dp))
                 }
                 Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
