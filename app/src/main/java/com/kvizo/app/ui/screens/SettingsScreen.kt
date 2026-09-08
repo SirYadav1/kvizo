@@ -169,7 +169,7 @@ private fun SettingToggleRow(title: String, subtitle: String, icon: ImageVector,
 
 @Composable
 private fun SettingRow(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() }).padding(16.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = androidx.compose.foundation.LocalIndication.current, interactionSource = remember { MutableInteractionSource() }).padding(16.dp)) {
         Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
         }

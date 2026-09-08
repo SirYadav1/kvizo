@@ -233,7 +233,7 @@ private fun MetricCard(label: String, value: String, icon: androidx.compose.ui.g
 
 @Composable
 private fun QuickActionBubble(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() })) {
+    Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = modifier.clickable(onClick = onClick, indication = androidx.compose.foundation.LocalIndication.current, interactionSource = remember { MutableInteractionSource() })) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 18.dp)) {
             Box(modifier = Modifier.size(52.dp).clip(CircleShape).background(tint.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
                 Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
@@ -245,7 +245,7 @@ private fun QuickActionBubble(icon: androidx.compose.ui.graphics.vector.ImageVec
 
 @Composable
 private fun PopularQuizCard(quiz: Quiz, questionCount: Int, onClick: () -> Unit) {
-    ForgeCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() })) {
+    ForgeCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick, indication = androidx.compose.foundation.LocalIndication.current, interactionSource = remember { MutableInteractionSource() })) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(44.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Violet, modifier = Modifier.size(22.dp))
@@ -282,7 +282,7 @@ private fun NotificationsBottomSheet(notifications: List<com.kvizo.app.data.Remo
 
 @Composable
 private fun IconButtonBox(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = Modifier.padding(start = 6.dp).size(40.dp).clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() })) {
+    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = Modifier.padding(start = 6.dp).size(40.dp).clickable(onClick = onClick, indication = androidx.compose.foundation.LocalIndication.current, interactionSource = remember { MutableInteractionSource() })) {
         Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = VioletLight, modifier = Modifier.size(20.dp)) }
     }
 }

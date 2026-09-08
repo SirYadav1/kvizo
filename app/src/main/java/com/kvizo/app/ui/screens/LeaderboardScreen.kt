@@ -100,7 +100,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
                                 if (selected) VioletGradient else androidx.compose.ui.graphics.SolidColor(Color.Transparent),
                                 RoundedCornerShape(10.dp)
                             )
-                            .clickable(onClick = { metric = m }, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
+                            .clickable(onClick = { metric = m }, indication = androidx.compose.foundation.LocalIndication.current, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
                             .padding(vertical = 7.dp),
                         contentAlignment = Alignment.Center
                     ) {

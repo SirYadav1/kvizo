@@ -84,21 +84,10 @@ fun CommunityQuizScreen(
                 .fillMaxSize(),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            // Header info card
+            // Compact title
             item {
-                ForgeCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = Violet, modifier = Modifier.size(20.dp))
-                            }
-                            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                                Text(StringProvider.t("explore_labs"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text(StringProvider.t("explore_labs_desc"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
-                            }
-                        }
-                    }
-                }
+                Text(StringProvider.t("download_quizzes"), fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 16.sp, 
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
 
             // Search bar

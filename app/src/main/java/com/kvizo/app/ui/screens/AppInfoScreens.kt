@@ -89,7 +89,7 @@ fun SettingsRow(
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
+            .clickable(onClick = onClick, indication = androidx.compose.foundation.LocalIndication.current, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
     ) {
         Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(38.dp).background(tint.copy(alpha = 0.14f), RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
@@ -142,7 +142,7 @@ fun BackupScreen(vm: AppViewModel, nav: NavHostController) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+        modifier = Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp)) {
             androidx.compose.material3.IconButton(onClick = { nav.popBackStack() }) {
@@ -170,10 +170,10 @@ fun BackupScreen(vm: AppViewModel, nav: NavHostController) {
             contentColor = MaterialTheme.colorScheme.onSecondary
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-                Icon(Icons.Filled.Backup, contentDescription = null, modifier = Modifier.size(28.dp))
+                Icon(Icons.Filled.Backup, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                 Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                    Text("Back up all data", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("Save a JSON file with everything", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Back up all data", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                    Text("Save a JSON file with everything", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                 }
             }
         }
@@ -188,10 +188,10 @@ fun BackupScreen(vm: AppViewModel, nav: NavHostController) {
             contentColor = MaterialTheme.colorScheme.onPrimary
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-                Icon(Icons.Filled.Restore, contentDescription = null, modifier = Modifier.size(28.dp))
+                Icon(Icons.Filled.Restore, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                 Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                    Text("Restore from JSON", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("Import stats, badges & quizzes you made", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Restore from JSON", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                    Text("Import stats, badges & quizzes you made", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                 }
             }
         }
@@ -274,7 +274,7 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp)) {
             androidx.compose.material3.IconButton(onClick = { nav.popBackStack() }) {
                 Icon(Icons.Filled.ChevronRight, contentDescription = null, modifier = Modifier.size(20.dp).rotate(180f))
@@ -437,7 +437,7 @@ private val changelog = listOf(
 @Composable
 fun ChangelogScreen(vm: AppViewModel, nav: NavHostController) {
     Column(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+        modifier = Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp)) {
             androidx.compose.material3.IconButton(onClick = { nav.popBackStack() }) {
@@ -476,7 +476,7 @@ fun ChangelogScreen(vm: AppViewModel, nav: NavHostController) {
 @Composable
 fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
     Column(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+        modifier = Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp)) {
             androidx.compose.material3.IconButton(onClick = { nav.popBackStack() }) {

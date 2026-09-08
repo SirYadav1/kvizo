@@ -166,7 +166,7 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
                                 else androidx.compose.ui.graphics.SolidColor(androidx.compose.ui.graphics.Color.Transparent),
                                 RoundedCornerShape(10.dp)
                             )
-                            .clickable(onClick = { range = r }, indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
+                            .clickable(onClick = { range = r }, indication = androidx.compose.foundation.LocalIndication.current, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() })
                             .padding(vertical = 7.dp),
                         contentAlignment = Alignment.Center
                     ) {

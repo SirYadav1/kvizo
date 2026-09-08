@@ -143,7 +143,7 @@ fun GlassBottomBar(
                                 }
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
+                                    indication = androidx.compose.foundation.LocalIndication.current,
                                     role = Role.Tab
                                 ) { onSelect(item.route) }
                                 .padding(horizontal = 14.dp, vertical = 7.dp)
