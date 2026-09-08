@@ -25,6 +25,7 @@ import androidx.navigation.NavHostController
 import com.kvizo.app.Routes
 import com.kvizo.app.data.Quiz
 import com.kvizo.app.ui.AppViewModel
+import com.kvizo.app.ui.components.AvatarView
 import com.kvizo.app.ui.components.ForgeCard
 import com.kvizo.app.ui.theme.*
 import com.kvizo.app.util.StringProvider
@@ -65,7 +66,7 @@ fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
             Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Brush.horizontalGradient(listOf(Indigo, Violet)))) {
                 Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                        Text("P$level", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color.White)
+                        AvatarView(profile?.avatarId ?: 1, 50.dp)
                     }
                     Column(modifier = Modifier.padding(start = 14.dp)) {
                         Text(playerName, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color.White)

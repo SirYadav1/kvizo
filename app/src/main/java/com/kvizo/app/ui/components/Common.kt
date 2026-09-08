@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -248,9 +249,10 @@ fun PressGlowButton(
             .clickable(
                 enabled = enabled,
                 interactionSource = interaction,
-                indication = null,
+                indication = androidx.compose.foundation.LocalIndication.current,
                 onClick = onClick
-            ),
+            )
+            .clip(shape),
         contentAlignment = Alignment.Center
     ) {
         Surface(

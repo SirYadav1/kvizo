@@ -81,7 +81,7 @@ val LocalThemeDark = androidx.compose.runtime.staticCompositionLocalOf { false }
 
 @Composable
 fun violetGradient(): Brush =
-    if (LocalThemeDark.current) Brush.linearGradient(listOf(Color(0xFFB9A6FF), Color(0xFFD6C8FF)))
+    if (LocalThemeDark.current) Brush.linearGradient(listOf(Color(0xFF4A2B82), Color(0xFF7B52B8)))
     else VioletGradient
 
 /* Dark-aware semantic fills — deep violet-tinted backgrounds for dark surfaces */

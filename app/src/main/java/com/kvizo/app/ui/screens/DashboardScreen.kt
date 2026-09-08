@@ -85,10 +85,6 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 Text("Kvizo", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                 IconButtonBox(Icons.Filled.Notifications) { showNotifications = true }
                 IconButtonBox(Icons.Filled.Settings) { nav.navigate(Routes.SETTINGS) }
-                Spacer(Modifier.width(4.dp))
-                Box(modifier = Modifier.size(40.dp).clip(CircleShape).clickable { nav.navigate(Routes.PROFILE) }, contentAlignment = Alignment.Center) {
-                    AvatarView(profile.avatarId, 36.dp)
-                }
             }
         }
 

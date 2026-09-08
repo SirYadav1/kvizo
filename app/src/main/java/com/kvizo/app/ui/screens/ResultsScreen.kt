@@ -212,25 +212,32 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                 }
             }
 
-            // new badges — Figma "Badge Unlocked" pill card
-            if (newBadges.isNotEmpty()) {
-                Surface(
-                    shape = RoundedCornerShape(99.dp),
-                    color = amberBg(),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, amberBorder()),
-                    modifier = Modifier.padding(top = 12.dp)
+            // new badges — animated pill cards
+            newBadges.forEachIndexed { idx, name ->
+                var visible by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) { visible = true }
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = visible,
+                    enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + androidx.compose.animation.fadeIn()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        shape = RoundedCornerShape(99.dp),
+                        color = amberBg(),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, amberBorder()),
+                        modifier = Modifier.padding(top = 12.dp)
                     ) {
-                        Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(18.dp))
-                        Text(
-                            "  Badge Unlocked: ${newBadges.joinToString()}",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Amber
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = Amber, modifier = Modifier.size(18.dp))
+                            Text(
+                                "  Badge Unlocked: $name",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Amber
+                            )
+                        }
                     }
                 }
             }

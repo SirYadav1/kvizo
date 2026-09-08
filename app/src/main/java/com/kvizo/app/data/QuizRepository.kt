@@ -497,15 +497,79 @@ class QuizRepository(context: Context) {
         val profile = getProfileById(profileId)
         val level = profile?.level ?: 1
 
+        // === MILESTONE BADGES ===
         if (attempts.size == 1) grant("first_quiz", "First Quiz")
+        if (attempts.size >= 5) grant("quiz_5", "Quiz Regular")
+        if (attempts.size >= 10) grant("quiz_10", "Quiz Enthusiast")
+        if (attempts.size >= 25) grant("quiz_25", "Quiz Master")
+        if (attempts.size >= 50) grant("bookworm", "Bookworm")
+        if (attempts.size >= 100) grant("quiz_100", "Century of Attempts")
+        if (attempts.size >= 250) grant("quiz_250", "Quiz Legend")
+        if (attempts.size >= 500) grant("quiz_500", "Quiz God")
+        
+        // === PERFECT SCORE BADGES ===
         if (total > 0 && correct == total) grant("perfect_score", "Perfect Score")
-        if (perfectCount >= 3) grant("flawless_3", "Flawless")
+        if (perfectCount >= 3) grant("flawless_3", "Flawless x3")
+        if (perfectCount >= 5) grant("flawless_5", "Flawless x5")
+        if (perfectCount >= 10) grant("flawless_10", "Flawless x10")
+        if (perfectCount >= 25) grant("flawless_25", "Flawless Master")
+        
+        // === STREAK BADGES ===
         if (streak >= 3) grant("streak_3", "3-Day Streak")
         if (streak >= 7) grant("streak_7", "7-Day Streak")
         if (longestStreakDays >= 14) grant("streak_14", "Fortnight Streak")
         if (streak >= 30) grant("streak_30", "30-Day Streak")
+        if (longestStreakDays >= 60) grant("streak_60", "2-Month Warrior")
+        if (longestStreakDays >= 90) grant("streak_90", "3-Month Champion")
+        if (longestStreakDays >= 180) grant("streak_180", "6-Month Legend")
+        if (longestStreakDays >= 365) grant("streak_365", "Year-Long Master")
+        
+        // === SPEED BADGES ===
         if (timeTaken < 60 && total >= 1) grant("speed_demon", "Speed Demon")
         if (total >= 3 && timeTaken <= total * 2) grant("speed_king", "Speed King")
+        if (total >= 5 && timeTaken <= total) grant("speed_blitz", "Blitz Mode")
+        if (total >= 10 && timeTaken <= 30) grant("lightning_fast", "Lightning Fast")
+        
+        // === ACCURACY BADGES ===
+        if (attempts.size >= 5 && totalAnswered > 0 && totalCorrect * 100 / totalAnswered >= 80) grant("sharpshooter_80", "Sharp Shooter")
+        if (attempts.size >= 10 && totalAnswered > 0 && totalCorrect * 100 / totalAnswered >= 90) grant("sharpshooter", "Sharpshooter")
+        if (attempts.size >= 20 && totalAnswered > 0 && totalCorrect * 100 / totalAnswered >= 95) grant("sniper", "Sniper Elite")
+        if (attempts.size >= 50 && totalAnswered > 0 && totalCorrect * 100 / totalAnswered >= 97) grant("perfect_aim", "Perfect Aim")
+        
+        // === XP BADGES ===
+        if (totalXp >= 100) grant("xp_100", "XP Starter")
+        if (totalXp >= 500) grant("xp_500", "XP Hunter")
+        if (totalXp >= 1000) grant("xp_1000", "XP Warrior")
+        if (totalXp >= 2500) grant("xp_2500", "XP Champion")
+        if (totalXp >= 5000) grant("xp_5000", "XP Master")
+        if (totalXp >= 10000) grant("centurion", "Centurion")
+        if (totalXp >= 25000) grant("xp_25000", "XP Legend")
+        if (totalXp >= 50000) grant("xp_50000", "XP God")
+        
+        // === LEVEL BADGES ===
+        if (level >= 2) grant("level_2", "Rising Star")
+        if (level >= 3) grant("level_3", "Getting Stronger")
+        if (level >= 4) grant("level_4", "Power Player")
+        if (level >= 5) grant("level_5", "Elite Player")
+        if (level >= 6) grant("legend", "Legendary")
+        if (level >= 7) grant("level_7", "Mythic")
+        if (level >= 8) grant("level_8", "Transcendent")
+        if (level >= 10) grant("level_10", "Grandmaster")
+        
+        // === COMBO & SPECIAL BADGES ===
+        var run = 0
+        var bestRun = 0
+        for (ok in sequence) {
+            run = if (ok) run + 1 else 0
+            if (run > bestRun) bestRun = run
+        }
+        if (bestRun >= 3) grant("combo_3", "Triple Combo")
+        if (bestRun >= 5) grant("rapid_fire", "Rapid Fire")
+        if (bestRun >= 7) grant("combo_7", "Lucky 7")
+        if (bestRun >= 10) grant("combo_10", "Unstoppable")
+        if (bestRun >= 15) grant("combo_15", "Unbreakable")
+        if (bestRun >= 20) grant("combo_20", "Combo God")
+        
         // Comeback: rough first half, near-perfect second half, solid overall score
         if (total >= 4) {
             val half = total / 2
@@ -518,21 +582,23 @@ class QuizRepository(context: Context) {
                 if (firstScore <= 40 && secondScore >= 80 && overall >= 60) grant("comeback", "Comeback King")
             }
         }
-        // Rapid Fire: 5 consecutive correct answers in one attempt
-        var run = 0
-        var bestRun = 0
-        for (ok in sequence) {
-            run = if (ok) run + 1 else 0
-            if (run > bestRun) bestRun = run
-        }
-        if (bestRun >= 5) grant("rapid_fire", "Rapid Fire")
-        if (attempts.size >= 50) grant("bookworm", "Bookworm")
+        
+        // === ANSWER COUNT BADGES ===
+        if (totalAnswered >= 50) grant("ans_50", "Answer Collector")
+        if (totalAnswered >= 100) grant("ans_100", "Century of Answers")
+        if (totalAnswered >= 250) grant("ans_250", "Answer Expert")
         if (totalAnswered >= 500) grant("marathon", "Marathon Runner")
+        if (totalAnswered >= 1000) grant("ans_1000", "Answer Master")
+        if (totalAnswered >= 2500) grant("ans_2500", "Answer Legend")
+        
+        // === CORRECT ANSWER BADGES ===
+        if (totalCorrect >= 25) grant("correct_25", "25 Correct")
+        if (totalCorrect >= 50) grant("correct_50", "50 Correct")
         if (totalCorrect >= 100) grant("century", "Century")
-        if (attempts.size >= 10 && totalAnswered > 0 && totalCorrect * 100 / totalAnswered >= 90) {
-            grant("sharpshooter", "Sharpshooter")
-        }
-        // Category King: 90%+ accuracy in a category with at least 3 attempts there.
+        if (totalCorrect >= 250) grant("correct_250", "250 Correct")
+        if (totalCorrect >= 500) grant("correct_500", "500 Correct")
+        
+        // === CATEGORY BADGES ===
         val catAttempts = attempts.filter { a ->
             getQuizById(a.quizId)?.category == quiz.category
         }
@@ -541,13 +607,32 @@ class QuizRepository(context: Context) {
             val catTotal = catAttempts.sumOf { it.totalQuestions }
             if (catTotal > 0 && catCorrect * 100 / catTotal >= 90) grant("category_king", "Category King")
         }
+        if (catAttempts.size >= 10) grant("category_10", "Category Regular")
+        if (catAttempts.size >= 25) grant("category_25", "Category Expert")
+        
+        // === CREATOR BADGES ===
+        if (ownQuizCount >= 1) grant("creator_1", "First Creation")
         if (ownQuizCount >= 5) grant("creator", "Creator")
+        if (ownQuizCount >= 10) grant("creator_10", "Prolific Creator")
         if (ownQuizCount >= 20) grant("quiz_producer", "Quiz Producer")
+        if (ownQuizCount >= 50) grant("creator_50", "Master Creator")
+        
+        // === COMMUNITY BADGES ===
+        if (remoteAttempts >= 1) grant("community_1", "Community Explorer")
         if (remoteAttempts >= 3) grant("community_pioneer", "Community Pioneer")
+        if (remoteAttempts >= 10) grant("community_10", "Community Veteran")
+        if (remoteAttempts >= 25) grant("community_25", "Community Champion")
+        
+        // === TIME-BASED BADGES ===
         if (XpEngine.isNight(now)) grant("night_owl", "Night Owl")
         if (XpEngine.isEarlyMorning(now)) grant("early_bird", "Early Bird")
-        if (level >= 6) grant("legend", "Legendary")
-        if (totalXp >= 10000) grant("centurion", "Centurion")
+        
+        // === DIFFICULTY BADGES ===
+        if (quiz.difficulty == "Hard" && total > 0 && correct == total) grant("hard_perfect", "Hard Perfect")
+        if (quiz.difficulty == "Expert" && total > 0 && correct == total) grant("expert_perfect", "Expert Perfect")
+        if (quiz.difficulty == "Hard" && correct * 100 / total >= 80) grant("hard_80", "Hard Survivor")
+        if (quiz.difficulty == "Expert" && correct * 100 / total >= 60) grant("expert_60", "Expert Survivor")
+        
         return unlocked
     }
 
