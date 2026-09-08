@@ -104,6 +104,7 @@ class CommunityQuizManager(private val context: Context) {
                         isBookmarked = false
                     ))
                 }
+                repository.insertQuestions(questions)
                 imported++
             } catch (_: Exception) { }
         }

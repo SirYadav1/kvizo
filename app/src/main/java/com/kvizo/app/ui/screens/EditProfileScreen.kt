@@ -120,7 +120,7 @@ fun EditProfileScreen(vm: AppViewModel, nav: NavHostController) {
             onClick = {
                 if (username.isNotBlank()) {
                     vm.updateProfile(username.trim(), status.trim(), bio.trim(), avatarId)
-                    saved = true
+                    nav.popBackStack()
                 }
             },
             modifier = Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 34.dp),
