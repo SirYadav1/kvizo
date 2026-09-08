@@ -264,7 +264,7 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp)) {
             androidx.compose.material3.IconButton(onClick = { nav.popBackStack() }) {
                 Icon(Icons.Filled.ChevronRight, contentDescription = null, modifier = Modifier.size(20.dp).rotate(180f))
@@ -427,7 +427,7 @@ private val changelog = listOf(
 @Composable
 fun ChangelogScreen(vm: AppViewModel, nav: NavHostController) {
     Column(
-        modifier = Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+        modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp)) {
             androidx.compose.material3.IconButton(onClick = { nav.popBackStack() }) {
@@ -466,7 +466,7 @@ fun ChangelogScreen(vm: AppViewModel, nav: NavHostController) {
 @Composable
 fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
     Column(
-        modifier = Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+        modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp)) {
             androidx.compose.material3.IconButton(onClick = { nav.popBackStack() }) {
