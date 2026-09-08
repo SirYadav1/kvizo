@@ -56,6 +56,7 @@ import com.kvizo.app.ui.theme.Amber
 import com.kvizo.app.ui.theme.Green
 import com.kvizo.app.ui.theme.Indigo
 import com.kvizo.app.ui.theme.Red
+import com.kvizo.app.util.StringProvider
 import com.kvizo.app.util.Exporter
 
 @Composable
@@ -181,12 +182,19 @@ fun StatsScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatCard("${filtered.size}", "Quizzes", Modifier.weight(1f), Indigo)
-                    StatCard("$streak-day", "Streak", Modifier.weight(1f), Amber)
-                    StatCard(formatHm(totalTime), "Time", Modifier.weight(1f), Green)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatCard("${filtered.size}", StringProvider.t("quizzes_today").replace("today", "").trim(), Modifier.weight(1f), Indigo)
+                    StatCard("$streak-day", StringProvider.t("daily_streak").replace("Daily", "").trim(), Modifier.weight(1f), Amber)
+                    StatCard(formatHm(totalTime), StringProvider.t("time_played").replace("Time", "").trim(), Modifier.weight(1f), Green)
+                }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatCard("${(accuracy * 100).toInt()}%", StringProvider.t("accuracy"), Modifier.weight(1f), if (accuracy >= 0.7f) Green else Red)
+                    StatCard("$correct", StringProvider.t("correct_answers").take(10), Modifier.weight(1f), Indigo)
+                    StatCard("${filtered.maxOfOrNull { it.score } ?: 0}", "Best", Modifier.weight(1f), Amber)
                 }
             }
 

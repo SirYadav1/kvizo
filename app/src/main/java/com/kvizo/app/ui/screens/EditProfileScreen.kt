@@ -5,6 +5,9 @@ import com.kvizo.app.ui.theme.SpaceGrotesk
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -59,7 +62,15 @@ fun EditProfileScreen(vm: AppViewModel, nav: NavHostController) {
 
         Spacer(Modifier.height(16.dp))
 
-        Text("Pick an avatar", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 12.dp).align(Alignment.Start))
+        // Big avatar preview
+        Box(modifier = Modifier.size(120.dp).clip(RoundedCornerShape(60.dp)).background(Indigo.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+            com.kvizo.app.ui.components.AvatarView(avatarId, 100.dp)
+        }
+        Spacer(Modifier.height(6.dp))
+        Text("Tap to change", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Spacer(Modifier.height(16.dp))
+        Text("Pick an avatar", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(bottom = 10.dp).align(Alignment.Start))
         AvatarPickerGrid(selected = avatarId, onSelect = { avatarId = it }, modifier = Modifier.fillMaxWidth())
 
         OutlinedTextField(

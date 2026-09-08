@@ -82,7 +82,8 @@ fun CommunityQuizScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp)
+            contentPadding = PaddingValues(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             // Compact title
             item {
@@ -97,7 +98,7 @@ fun CommunityQuizScreen(
                     onValueChange = { searchQuery = it },
                     placeholder = { Text("Search quizzes...") },
                     leadingIcon = { Icon(Icons.Filled.Search, null) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp)
                 )

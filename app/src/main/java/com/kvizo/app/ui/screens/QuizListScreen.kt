@@ -324,21 +324,42 @@ private fun QuizCard(vm: AppViewModel, quiz: Quiz, questionCount: Int, nav: NavH
                     DropdownMenuItem(text = { Text("Edit") }, onClick = { menuOpen = false; nav.navigate("builder?quizId=${quiz.id}") })
                 }
                 DropdownMenuItem(text = { Text("Duplicate") }, onClick = { menuOpen = false; vm.duplicateQuiz(quiz.id) })
-                DropdownMenuItem(text = { Text("Share code") }, onClick = {
+                DropdownMenuItem(text = { Text("Copy share code") }, onClick = {
                     menuOpen = false
-                    val code = com.kvizo.app.util.ShareCodec.encode(
-                        com.kvizo.app.util.ShareCodec.SharedQuiz(
-                            quiz.title, quiz.category, quiz.difficulty, quiz.tags, quiz.timeLimitSeconds,
-                            vm.repo.getQuestions(quiz.id)
+                    try {
+                        val code = com.kvizo.app.util.ShareCodec.encode(
+                            com.kvizo.app.util.ShareCodec.SharedQuiz(
+                                quiz.title, quiz.category, quiz.difficulty, quiz.tags, quiz.timeLimitSeconds,
+                                vm.repo.getQuestions(quiz.id)
+                            )
                         )
-                    )
-                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(android.content.Intent.EXTRA_TEXT, "Kvizo quiz: ${quiz.title}\nShare code:\n$code")
+                        val clipboard = vm.getApplication<android.app.Application>().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("Quiz Share Code", code)
+                        clipboard.setPrimaryClip(clip)
+                        android.widget.Toast.makeText(vm.getApplication(), "Share code copied!", android.widget.Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        android.widget.Toast.makeText(vm.getApplication(), "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
                     }
-                    androidx.core.content.ContextCompat.startActivity(
-                        vm.getApplication<android.app.Application>(), android.content.Intent.createChooser(intent, "Share quiz"), null
-                    )
+                })
+                DropdownMenuItem(text = { Text("Share via...") }, onClick = {
+                    menuOpen = false
+                    try {
+                        val code = com.kvizo.app.util.ShareCodec.encode(
+                            com.kvizo.app.util.ShareCodec.SharedQuiz(
+                                quiz.title, quiz.category, quiz.difficulty, quiz.tags, quiz.timeLimitSeconds,
+                                vm.repo.getQuestions(quiz.id)
+                            )
+                        )
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, "Kvizo quiz: ${quiz.title}\nShare code:\n$code")
+                        }
+                        androidx.core.content.ContextCompat.startActivity(
+                            vm.getApplication<android.app.Application>(), android.content.Intent.createChooser(intent, "Share quiz"), null
+                        )
+                    } catch (e: Exception) {
+                        android.widget.Toast.makeText(vm.getApplication(), "Error sharing: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 })
                 if (!quiz.isRemote) {
                     DropdownMenuItem(text = { Text(if (quiz.status == STATUS_ARCHIVED) "Unarchive" else "Archive") }, onClick = {
