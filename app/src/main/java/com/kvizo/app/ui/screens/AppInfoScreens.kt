@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
@@ -51,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -395,6 +398,15 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
 private data class ChangelogEntry(val version: String, val date: String, val items: List<String>)
 
 private val changelog = listOf(
+    ChangelogEntry("2.0.0", "Sep 9, 2026", listOf(
+        "80+ badges across 15 categories with unlock celebrations",
+        "Community quizzes with one-tap import",
+        "Quiz share codes — share any quiz offline via clipboard",
+        "Quiz exit confirmation & auto-pause only on true backgrounding",
+        "Brand-new app icon",
+        "Smoother buttons, clipped ripples & press animations",
+        "Full 5-language support with instant switching"
+    )),
     ChangelogEntry("1.5.0", "Aug 8, 2026", listOf(
         "Speedometer score sweep — settles exactly on your score",
         "One-shot confetti celebration on finish",
@@ -405,7 +417,7 @@ private val changelog = listOf(
         "Quiz pauses automatically when you leave the app"
     )),
     ChangelogEntry("1.4.0", "Aug 6, 2026", listOf(
-        "Figma violet redesign — new UI everywhere",
+        "Violet redesign — new UI everywhere",
         "Space Grotesk display font",
         "Dark mode improvements & SVG icons",
         "Press-glow buttons",
@@ -504,7 +516,7 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
                     Image(
                         painter = painterResource(com.kvizo.app.R.drawable.ic_dev_avatar),
                         contentDescription = "Developer photo",
-                        modifier = Modifier.size(44.dp)
+                        modifier = Modifier.size(48.dp).clip(CircleShape)
                     )
                     Column(modifier = Modifier.padding(start = 12.dp)) {
                         Text("SirYadav1", fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -512,9 +524,10 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
-                    SocialButton("GitHub", "github.com/SirYadav1", "https://github.com/SirYadav1", Modifier.weight(1f))
-                    SocialButton("Telegram", "@SirYadav1", "https://t.me/SirYadav1", Modifier.weight(1f))
-                    SocialButton("Instagram", "@SirYadav1", "https://instagram.com/SirYadav1", Modifier.weight(1f))
+                    SocialButton("GitHub", "SirYadav1", "https://github.com/SirYadav1", Modifier.weight(1f),
+                        icon = { Icon(painterResource(com.kvizo.app.R.drawable.ic_github), contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp)) })
+                    SocialButton("Telegram", "Siryadav", "https://t.me/SirYadav1", Modifier.weight(1f),
+                        icon = { Icon(Icons.Filled.Send, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp)) })
                 }
             }
         }
@@ -523,10 +536,7 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
         SectionTitle("Contributors")
         ForgeCard(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                ContributorRow("🧑‍💻", "SirYadav1", "Founder & lead developer")
-                ContributorRow("🧪", "Kvizo Community", "Testers & feedback")
-                ContributorRow("🎨", "Figma community", "Design inspiration")
-                ContributorRow("❤️", "You", "Every quiz, every XP — thanks for playing!")
+                Text("No contributors yet — be the first!", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 6.dp))
                 OutlinedButton(
                     onClick = {
                         val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/SirYadav1/kvizo"))
@@ -545,7 +555,7 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
 }
 
 @Composable
-private fun SocialButton(label: String, handle: String, url: String, modifier: Modifier = Modifier) {
+private fun SocialButton(label: String, handle: String, url: String, modifier: Modifier = Modifier, icon: @Composable (() -> Unit)? = null) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -562,7 +572,8 @@ private fun SocialButton(label: String, handle: String, url: String, modifier: M
             .padding(vertical = 10.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Indigo)
+            icon?.invoke()
+            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Indigo, modifier = Modifier.padding(top = if (icon != null) 4.dp else 0.dp))
             Text(handle, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
