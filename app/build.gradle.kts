@@ -5,14 +5,14 @@ plugins {
 }
 
 android {
-    namespace = "com.quizforge.app"
+    namespace = "com.kvizo.app"
     compileSdk = 34
 
     defaultConfig {
         applicationId = "com.kvizo.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 23
+        versionCode = 24
         versionName = "2.0.0"
     }
 
