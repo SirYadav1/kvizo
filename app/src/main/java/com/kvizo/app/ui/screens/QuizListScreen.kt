@@ -131,7 +131,7 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // Figma search bar: 10x14 padding, radius 14, surface + border
+        // Forge search bar: 10x14 padding, radius 14, surface + border
         Surface(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -157,7 +157,7 @@ fun QuizListScreen(vm: AppViewModel, nav: NavHostController) {
             }
         }
 
-        // status tabs — Figma gradient pills
+        // status tabs — Forge gradient pills
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp).horizontalScroll(rememberScrollState())) {
             PillChip("All", selected = statusFilter == null, onClick = { statusFilter = null })
             PillChip("Published", selected = statusFilter == STATUS_PUBLISHED, onClick = { statusFilter = STATUS_PUBLISHED })

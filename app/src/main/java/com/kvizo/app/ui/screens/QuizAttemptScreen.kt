@@ -237,7 +237,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
             }
             val q = questions[current]
             Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-                // top bar — Figma: surface + bottom border, back tile, centered title, timer chip
+                // top bar — Forge: surface + bottom border, back tile, centered title, timer chip
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -272,7 +272,7 @@ fun QuizAttemptScreen(vm: AppViewModel, nav: NavHostController, quizId: String, 
                         Spacer(Modifier.width(34.dp))
                     }
                 }
-                // Figma progress: 5px rounded gradient
+                // Forge progress: 5px rounded gradient
                 com.kvizo.app.ui.components.ForgeProgressBar(
                     progress = (current + 1f) / questions.size,
                     modifier = Modifier.fillMaxWidth(),
@@ -510,7 +510,7 @@ private fun PointsBar(runScore: Int, maxScore: Int, lastCorrect: Boolean) {
 }
 
 @Composable
-/** Figma timer chip — red pill with clock icon. */
+/** Forge timer chip — red pill with clock icon. */
 private fun TimerChip(text: String, color: Color) {
     Surface(
         color = com.kvizo.app.ui.theme.redBg(),

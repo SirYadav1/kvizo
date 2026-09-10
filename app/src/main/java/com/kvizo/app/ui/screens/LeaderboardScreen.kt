@@ -83,7 +83,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        // Figma segmented control — XP / Accuracy
+        // Forge segmented control — XP / Accuracy
         Surface(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -132,7 +132,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
             }
         } else {
             Column {
-                // Figma podium — order [2nd, 1st, 3rd]
+                // Forge podium — order [2nd, 1st, 3rd]
                 if (top3.isNotEmpty()) {
                     Podium(top3, vm, metric, Modifier.fillMaxWidth().padding(bottom = 6.dp))
                 }
@@ -170,7 +170,7 @@ fun LeaderboardScreen(vm: AppViewModel, nav: NavHostController) {
     }
 }
 
-/** Figma podium: 2nd | 1st | 3rd with colored avatar tiles + rank bubbles + bars. */
+/** Forge podium: 2nd | 1st | 3rd with colored avatar tiles + rank bubbles + bars. */
 @Composable
 private fun Podium(top3: List<LeaderboardEntry>, vm: AppViewModel, metric: String, modifier: Modifier = Modifier) {
     val order = top3.sortedBy { if (it.rank == 1) 0 else if (it.rank == 2) 1 else 2 }

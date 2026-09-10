@@ -156,7 +156,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
             modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Figma header: "QUIZ COMPLETE" kicker + title
+            // Forge header: "QUIZ COMPLETE" kicker + title
             Text(
                 "QUIZ COMPLETE",
                 fontSize = 11.sp,
@@ -183,7 +183,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                 modifier = Modifier.padding(top = 12.dp)
             )
 
-            // XP card — Figma: white card, gradient icon tile, +XP, level total
+            // XP card — Forge: white card, gradient icon tile, +XP, level total
             ForgeCard(modifier = Modifier.fillMaxWidth().padding(top = 18.dp)) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Surface(
@@ -300,7 +300,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
                 }
             }
 
-            // actions — Figma: Try Again (gradient) + Continue (purple press glow)
+            // actions — Forge: Try Again (gradient) + Continue (purple press glow)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
                 PressGlowButton(
                     onClick = { nav.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true }; launchSingleTop = true } },
@@ -363,7 +363,7 @@ fun ResultsScreen(vm: AppViewModel, nav: NavHostController, attemptId: String) {
     }
 }
 
-/** Figma score ring — glow halo, gradient stroke, white center with gradient number. */
+/** Forge score ring — glow halo, gradient stroke, white center with gradient number. */
 @Composable
 private fun ScoreRing(score: Int, modifier: Modifier = Modifier, onSettled: () -> Unit = {}) {
     val pct = (score / 100f).coerceIn(0f, 1f)
@@ -377,7 +377,7 @@ private fun ScoreRing(score: Int, modifier: Modifier = Modifier, onSettled: () -
     }
     val shownScore = (score * animated.value).roundToInt().coerceIn(0, 100)
     Box(modifier = modifier.size(158.dp), contentAlignment = Alignment.Center) {
-        // halo glow (Figma: conic-gradient blurred at 30% opacity)
+        // halo glow (Forge: conic-gradient blurred at 30% opacity)
         Box(
             modifier = Modifier
                 .size(158.dp + 28.dp)
@@ -413,7 +413,7 @@ private fun ScoreRing(score: Int, modifier: Modifier = Modifier, onSettled: () -
                 style = Stroke(width = stroke, cap = StrokeCap.Round)
             )
         }
-        // center circle (Figma: 108dp white, glow shadow)
+        // center circle (Forge: 108dp white, glow shadow)
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surface,

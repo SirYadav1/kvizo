@@ -18,26 +18,26 @@ import androidx.compose.ui.unit.sp
 import com.kvizo.app.R
 
 /* ------------------------------------------------------------------ */
-/* "Forge" design system — Figma violet: #7C3AED → #A78BFA             */
+/* "Forge" design system — Forge violet: #7C3AED → #A78BFA             */
 /* Light surfaces tinted #F5F3FF, Space Grotesk display type           */
 /* ------------------------------------------------------------------ */
 
 /* Primary violet family */
-val Violet = Color(0xFF7C3AED)          // Figma primary
+val Violet = Color(0xFF7C3AED)          // Forge primary
 val VioletDeep = Color(0xFF6D28D9)      // deeper violet for dark elements
-val VioletGrad = Color(0xFFA78BFA)      // Figma gradient end
+val VioletGrad = Color(0xFFA78BFA)      // Forge gradient end
 val VioletLight = Color(0xFF9B72F8)     // icon / mid tints
-val VioletPale = Color(0xFFEDE9FE)      // soft container (Figma primaryPale)
+val VioletPale = Color(0xFFEDE9FE)      // soft container (Forge primaryPale)
 val VioletPale2 = Color(0xFFF0EBFF)     // lighter container
 val VioletBorderStrong = Color(0xFFC4B5FD)
 val VioletBorder = Color(0xFFE4DAFF)
 
 /* Text */
-val Ink = Color(0xFF1E1333)             // Figma text (deep purple-black)
+val Ink = Color(0xFF1E1333)             // Forge text (deep purple-black)
 val InkSub = Color(0xFF6B5B8A)          // secondary text
 val InkMuted = Color(0xFFA094B8)        // muted text
 
-/* Semantic colors (Figma) */
+/* Semantic colors (Forge) */
 val Green = Color(0xFF059669)
 val GreenBg = Color(0xFFECFDF5)
 val GreenBorder = Color(0xFFA7F3D0)
@@ -49,7 +49,7 @@ val AmberBg = Color(0xFFFFFBEB)
 val AmberBorder = Color(0xFFFDE68A)
 val Orange = Color(0xFFF57C2F)
 
-/* Surfaces — light (Figma: bg #F5F3FF, surface white, alt #EDE9FE) */
+/* Surfaces — light (Forge: bg #F5F3FF, surface white, alt #EDE9FE) */
 val BackgroundLight = Color(0xFFF5F3FF)
 val SurfaceLight = Color(0xFFFFFFFF)
 val SurfaceAltLight = Color(0xFFEDE9FE)
@@ -68,7 +68,7 @@ val Indigo = Violet
 val IndigoDark = VioletDeep
 val IndigoSoft = VioletPale
 
-/* Gradient — Figma linear-gradient(135deg, #7C3AED, #A78BFA) */
+/* Gradient — Forge linear-gradient(135deg, #7C3AED, #A78BFA) */
 val VioletGradient: Brush = Brush.linearGradient(listOf(Violet, VioletGrad))
 
 /** Dark-aware violet gradient (brighter in dark mode for contrast). */
@@ -104,8 +104,7 @@ fun redBorder(): Color = if (LocalThemeDark.current) Color(0xFFA3415A) else RedB
 @Composable
 fun violetBorder(): Color = if (LocalThemeDark.current) Color(0xFF5B46B8) else VioletBorderStrong
 
-/** Figma glow shadow: 0 2px 20px rgba(124,58,237,0.1) */
-val FigmaGlow = Color(0x1A7C3AED)
+/** Forge glow shadow: 0 2px 20px rgba(124,58,237,0.1) */
 
 /* Space Grotesk (variable font, wght 300–700) */
 @OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
@@ -184,7 +183,7 @@ val KvizoTypography = androidx.compose.material3.Typography(
 )
 
 /* ------------------------------------------------------------------ */
-/* Shapes — Figma radii: 10, 12, 14, 16, 18, 26, 99                    */
+/* Shapes — Forge radii: 10, 12, 14, 16, 18, 26, 99                    */
 /* ------------------------------------------------------------------ */
 
 private val AppShapes = Shapes(

@@ -69,10 +69,10 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 /* ------------------------------------------------------------------ */
-/* Figma design-system components ("Forge")                            */
+/* Forge design-system components ("Forge")                            */
 /* ------------------------------------------------------------------ */
 
-/** Figma card: white, 1px border, radius 18 (ee in the Figma prototype). */
+/** Forge card: white, 1px border, radius 18 (ee in the Forge prototype). */
 @Composable
 fun ForgeCard(
     modifier: Modifier = Modifier,
@@ -87,7 +87,7 @@ fun ForgeCard(
     ) { content() }
 }
 
-/** Section label — uppercase, 10–11px, letter-spaced (Figma style). */
+/** Section label — uppercase, 10–11px, letter-spaced (Forge style). */
 @Composable
 fun ForgeSectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
@@ -100,7 +100,7 @@ fun ForgeSectionLabel(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** Gradient text (Figma .grad-text) — violet → light-violet sweep (dark-aware). */
+/** Gradient text (Forge .grad-text) — violet → light-violet sweep (dark-aware). */
 @Composable
 fun GradientText(text: String, fontSize: androidx.compose.ui.unit.TextUnit, fontWeight: FontWeight = FontWeight.Bold, modifier: Modifier = Modifier) {
     Text(
@@ -148,7 +148,7 @@ fun PillChip(
     }
 }
 
-/** Colored status pill (Figma status chips) — tinted bg + colored border. */
+/** Colored status pill (Forge status chips) — tinted bg + colored border. */
 @Composable
 fun StatusPill(
     label: String,
@@ -172,7 +172,7 @@ fun StatusPill(
     }
 }
 
-/** Figma progress bar — 5–7px, rounded 99, gradient fill (dark-aware). */
+/** Forge progress bar — 5–7px, rounded 99, gradient fill (dark-aware). */
 @Composable
 fun ForgeProgressBar(progress: Float, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 6.dp) {
     Box(
@@ -189,7 +189,7 @@ fun ForgeProgressBar(progress: Float, modifier: Modifier = Modifier, height: and
     }
 }
 
-/** Uppercase tiny label with letter-spacing (Figma "Question 5 of 12"). */
+/** Uppercase tiny label with letter-spacing (Forge "Question 5 of 12"). */
 @Composable
 fun ForgeKicker(text: String, modifier: Modifier = Modifier) {
     Text(
