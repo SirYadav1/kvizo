@@ -21,7 +21,7 @@
 
 Kvizo is an offline-first Android quiz app built with Kotlin and Jetpack Compose. Create your own quizzes, take them in normal or timed mode, earn XP, keep daily streaks, unlock 80+ badges, and pull community quizzes straight into the app. No account, no server needed — everything lives on your device.
 
-The `server/` folder is an optional companion (admin panel + community feed hosting). Ignore it and the app still does everything locally.
+Community quizzes are served as static files from GitHub — no backend needed, the app works fully offline.
 
 ## Features
 
@@ -64,7 +64,7 @@ app/src/main/java/com/kvizo/app/
 ├── ui/screens/  # Compose screens (dashboard, quiz, stats, profile…)
 ├── ui/components/ # Forge design-system components
 └── util/        # Backup, export, share codes, crash logger
-server/          # Optional Node companion service
+
 ```
 
 ## License
