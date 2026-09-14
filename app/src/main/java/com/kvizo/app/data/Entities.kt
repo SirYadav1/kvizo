@@ -182,3 +182,19 @@ val BADGE_DEFS = listOf(
     "legend" to "Legendary",
     "centurion" to "Centurion"
 )
+
+data class CommunityQuiz(
+    val id: String,
+    val title: String,
+    val category: String,
+    val difficulty: String,
+    val author: String,
+    val questions: List<CommunityQuestion>
+)
+
+data class CommunityQuestion(
+    val question: String,
+    val options: List<String>,
+    val correctIndex: Int,
+    val explanation: String
+)

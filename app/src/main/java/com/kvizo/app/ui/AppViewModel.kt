@@ -190,7 +190,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val pid = profile?.id ?: return
         try {
             val manager = CommunityQuizManager(getApplication())
-            val remote = manager.fetchAndImport().getOrNull() ?: return
+            val remote = manager.fetchAll()
             val added = manager.importToDatabase(remote, repo, pid)
             if (added > 0) {
                 syncNotice = if (added == 1) "New community quiz added!"
@@ -205,8 +205,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Load community quizzes for the Community screen (with signature verification + cache fallback). */
     suspend fun fetchCommunityQuizzes(): Result<List<CommunityQuiz>> {
-        val manager = CommunityQuizManager(getApplication())
-        return manager.fetchAndImport()
+        return try {
+            val manager = CommunityQuizManager(getApplication())
+            val quizzes = manager.fetchAll()
+            Result.success(quizzes)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     /** Import one community quiz from the Community screen; returns a user-facing message. */
