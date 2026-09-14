@@ -1,6 +1,9 @@
 package com.kvizo.app.util
 
 import android.util.Base64
+import com.kvizo.app.data.CommunityQuiz
+import com.kvizo.app.data.CommunityQuestion
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStreamReader
@@ -13,15 +16,80 @@ import java.security.spec.X509EncodedKeySpec
 
 object CommunityFetch {
     const val COMMUNITY_JSON = "community.json"
-    private const val BASE = "https://siryadav1.github.io/kvizo-community/"
+    private const val WORKER_BASE = "https://kvizo-api.YOUR_SUBDOMAIN.workers.dev/v1"
+    private const val GITHUB_RAW = "https://raw.githubusercontent.com/SirYadav1/kvizo-community/master"
     private const val PUBLIC_KEY_B64 = "rAg23MFmib9Qpf6ENfk4RuBQ4dSJNJ17jFVFFdu5PSw="
     private const val CONNECT_TIMEOUT = 8_000
     private const val READ_TIMEOUT = 10_000
 
+    fun fetchManifest(): JSONObject? {
+        return try {
+            val data = downloadBytes("$WORKER_BASE/manifest")
+            val json = JSONObject(String(data, Charsets.UTF_8))
+            val cachedVersion = readCache("manifest_version")?.toString()?.toIntOrNull() ?: 0
+            val serverVersion = json.optInt("version", 0)
+            if (serverVersion < cachedVersion) {
+                readCache("manifest.json")?.let { JSONObject(String(it, Charsets.UTF_8)) }
+            } else {
+                cache("manifest.json", data)
+                cache("manifest_version", serverVersion.toString().toByteArray())
+                json
+            }
+        } catch (_: Exception) {
+            readCache("manifest.json")?.let { JSONObject(String(it, Charsets.UTF_8)) }
+        }
+    }
+
+    fun fetchQuizzesByCategory(category: String = "all"): List<CommunityQuiz> {
+        return try {
+            val catParam = if (category == "all") "" else "?category=$category"
+            val data = downloadBytes("$WORKER_BASE/quizzes$catParam")
+            val json = JSONObject(String(data, Charsets.UTF_8))
+            val arr = json.getJSONArray("quizzes")
+            (0 until arr.length()).map { i ->
+                val obj = arr.getJSONObject(i)
+                CommunityQuiz(
+                    id = obj.getString("id"),
+                    title = obj.getString("title"),
+                    category = obj.getString("category"),
+                    difficulty = obj.optString("difficulty", "Medium"),
+                    author = obj.optString("author", "Unknown"),
+                    questions = emptyList()
+                )
+            }
+        } catch (_: Exception) {
+            fetchLegacy()
+        }
+    }
+
+    fun fetchQuizFull(quizId: String): CommunityQuiz? {
+        return try {
+            val data = downloadBytes("$WORKER_BASE/quiz/$quizId")
+            val q = JSONObject(String(data, Charsets.UTF_8))
+            parseQuiz(q)
+        } catch (_: Exception) {
+            fetchLegacy().find { it.id == quizId }
+        }
+    }
+
+    fun fetchLegacy(): List<CommunityQuiz> {
+        return try {
+            val data = downloadBytes("$GITHUB_RAW/community.json")
+            val sigText = downloadText("$GITHUB_RAW/community.json.sig")
+            verify(sigText, data)
+            cache(COMMUNITY_JSON, data)
+            parseAll(data)
+        } catch (e: SecurityException) { throw e }
+        catch (_: Exception) {
+            val cached = readCache(COMMUNITY_JSON) ?: return emptyList()
+            parseAll(cached)
+        }
+    }
+
     fun fetch(name: String): ByteArray {
         return try {
-            val data = downloadBytes(BASE + name)
-            val sigText = downloadText(BASE + name + ".sig")
+            val data = downloadBytes("$GITHUB_RAW/$name")
+            val sigText = downloadText("$GITHUB_RAW/$name.sig")
             verify(sigText, data)
             cache(name, data)
             data
@@ -34,6 +102,37 @@ object CommunityFetch {
             }
             cached
         }
+    }
+
+    private fun parseAll(data: ByteArray): List<CommunityQuiz> {
+        val json = JSONObject(String(data, Charsets.UTF_8))
+        val arr = json.getJSONArray("quizzes")
+        return (0 until arr.length()).mapNotNull { parseQuiz(arr.getJSONObject(it)) }
+    }
+
+    private fun parseQuiz(q: JSONObject): CommunityQuiz {
+        val questionsArr = q.optJSONArray("questions")
+        val questions = if (questionsArr != null) {
+            (0 until questionsArr.length()).map { i ->
+                val ques = questionsArr.getJSONObject(i)
+                val opts = ques.getJSONArray("options")
+                CommunityQuestion(
+                    question = ques.getString("question"),
+                    options = (0 until opts.length()).map { opts.getString(it) },
+                    correctIndex = ques.getInt("correct_index"),
+                    explanation = ques.optString("explanation", "")
+                )
+            }
+        } else emptyList()
+
+        return CommunityQuiz(
+            id = q.getString("id"),
+            title = q.getString("title"),
+            category = q.getString("category"),
+            difficulty = q.optString("difficulty", "Medium"),
+            author = q.optString("author", "Unknown"),
+            questions = questions
+        )
     }
 
     private fun downloadBytes(url: String): ByteArray {
