@@ -587,7 +587,6 @@ private fun SocialButton(label: String, handle: String, url: String, modifier: M
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             icon?.invoke()
             Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Indigo, modifier = Modifier.padding(top = if (icon != null) 4.dp else 0.dp))
-            Text(handle, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
 }
