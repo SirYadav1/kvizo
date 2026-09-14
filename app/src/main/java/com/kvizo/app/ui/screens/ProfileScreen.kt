@@ -42,7 +42,7 @@ import androidx.compose.material3.TextButton
 fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
     val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings("system", true, true, false, true, true, true, "en"))
     val profile = vm.profile
-    val quizzes: List<Quiz> = vm.quizzes
+    val quizzes: List<Quiz> = vm.quizzes.filter { !it.isRemote }
     val profileData = vm.profileData
 
     LaunchedEffect(settings.language) { StringProvider.setLanguage(settings.language) }
