@@ -16,7 +16,7 @@ import java.security.spec.X509EncodedKeySpec
 
 object CommunityFetch {
     const val COMMUNITY_JSON = "community.json"
-    private const val WORKER_BASE = "https://kvizo-api.YOUR_SUBDOMAIN.workers.dev/v1"
+    private const val WORKER_BASE = "https://kvizo-api.sundramy807.workers.dev/v1"
     private const val GITHUB_RAW = "https://raw.githubusercontent.com/SirYadav1/kvizo-community/master"
     private const val PUBLIC_KEY_B64 = "rAg23MFmib9Qpf6ENfk4RuBQ4dSJNJ17jFVFFdu5PSw="
     private const val CONNECT_TIMEOUT = 8_000
