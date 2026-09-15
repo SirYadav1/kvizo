@@ -9,11 +9,7 @@ class CommunityQuizManager(private val context: Context) {
     init { CacheProvider.appContext = context }
 
     fun fetchByCategory(category: String = "all"): List<CommunityQuiz> {
-        return try {
-            CommunityFetch.fetchQuizzesByCategory(category)
-        } catch (e: Exception) {
-            CommunityFetch.fetchLegacy()
-        }
+        return CommunityFetch.fetchQuizzesByCategory(category)
     }
 
     fun fetchQuizFull(quizId: String): CommunityQuiz? {

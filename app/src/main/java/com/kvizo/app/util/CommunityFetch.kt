@@ -16,34 +16,18 @@ import java.security.spec.X509EncodedKeySpec
 
 object CommunityFetch {
     const val COMMUNITY_JSON = "community.json"
-    private const val WORKER_BASE = "https://kvizo-api.sundramy807.workers.dev/v1"
     private const val GITHUB_RAW = "https://raw.githubusercontent.com/SirYadav1/kvizo-community/master"
+    private const val WORKER_URL = "https://kvizo-api.sundramy807.workers.dev/v1"
     private const val PUBLIC_KEY_B64 = "2pNaP8tVsRA5zAkwvYQ7CGDMWcydDsx67QmqJ5HhMD0="
     private const val CONNECT_TIMEOUT = 8_000
     private const val READ_TIMEOUT = 10_000
 
-    fun fetchManifest(): JSONObject? {
-        return try {
-            val data = downloadBytes("$WORKER_BASE/manifest")
-            val json = JSONObject(String(data, Charsets.UTF_8))
-            val cachedVersion = readCache("manifest_version")?.toString()?.toIntOrNull() ?: 0
-            val serverVersion = json.optInt("version", 0)
-            if (serverVersion < cachedVersion) {
-                readCache("manifest.json")?.let { JSONObject(String(it, Charsets.UTF_8)) }
-            } else {
-                cache("manifest.json", data)
-                cache("manifest_version", serverVersion.toString().toByteArray())
-                json
-            }
-        } catch (_: Exception) {
-            readCache("manifest.json")?.let { JSONObject(String(it, Charsets.UTF_8)) }
-        }
-    }
-
+    // Simple fetch — no signature blocking, just get quizzes
     fun fetchQuizzesByCategory(category: String = "all"): List<CommunityQuiz> {
+        // Try Worker first (fast), fallback to GitHub raw
         return try {
             val catParam = if (category == "all") "" else "?category=$category"
-            val data = downloadBytes("$WORKER_BASE/quizzes$catParam")
+            val data = downloadBytes("$WORKER_URL/quizzes$catParam")
             val json = JSONObject(String(data, Charsets.UTF_8))
             val arr = json.getJSONArray("quizzes")
             (0 until arr.length()).map { i ->
@@ -64,7 +48,7 @@ object CommunityFetch {
 
     fun fetchQuizFull(quizId: String): CommunityQuiz? {
         return try {
-            val data = downloadBytes("$WORKER_BASE/quiz/$quizId")
+            val data = downloadBytes("$WORKER_URL/quiz/$quizId")
             val q = JSONObject(String(data, Charsets.UTF_8))
             parseQuiz(q)
         } catch (_: Exception) {
@@ -72,15 +56,13 @@ object CommunityFetch {
         }
     }
 
+    // Legacy: download full community.json from GitHub raw
     fun fetchLegacy(): List<CommunityQuiz> {
         return try {
             val data = downloadBytes("$GITHUB_RAW/community.json")
-            val sigText = downloadText("$GITHUB_RAW/community.json.sig")
-            verify(sigText, data)
             cache(COMMUNITY_JSON, data)
             parseAll(data)
-        } catch (e: SecurityException) { throw e }
-        catch (_: Exception) {
+        } catch (_: Exception) {
             val cached = readCache(COMMUNITY_JSON) ?: return emptyList()
             parseAll(cached)
         }
@@ -89,18 +71,10 @@ object CommunityFetch {
     fun fetch(name: String): ByteArray {
         return try {
             val data = downloadBytes("$GITHUB_RAW/$name")
-            val sigText = downloadText("$GITHUB_RAW/$name.sig")
-            verify(sigText, data)
             cache(name, data)
             data
-        } catch (e: SecurityException) { throw e }
-        catch (_: Exception) {
-            val cached = readCache(name) ?: throw IllegalStateException("no network and no cache for $name")
-            val sig = readCache(name + ".sig") ?: throw IllegalStateException("no cached signature for $name")
-            if (!verifySignature(String(sig, Charsets.UTF_8), cached)) {
-                throw SecurityException("Signature verification failed")
-            }
-            cached
+        } catch (_: Exception) {
+            readCache(name) ?: throw IllegalStateException("no network and no cache for $name")
         }
     }
 
@@ -168,59 +142,8 @@ object CommunityFetch {
         if (code < 200 || code >= 300) throw java.io.IOException("HTTP $code")
     }
 
-    private fun verify(sigTextB64: String, data: ByteArray) {
-        if (!verifySignature(sigTextB64, data)) {
-            throw SecurityException("Signature verification failed")
-        }
-    }
-
     private fun cache(name: String, data: ByteArray) = CacheProvider.write(name, data)
     private fun readCache(name: String): ByteArray? = CacheProvider.read(name)
-
-    @androidx.annotation.Keep
-    fun verifySignature(sigB64: String, data: ByteArray): Boolean = try {
-        val sigBytes = Base64.decode(sigB64.trim(), Base64.DEFAULT)
-        val keyBytes = Base64.decode(PUBLIC_KEY_B64, Base64.DEFAULT)
-        val x509Prefix = byteArrayOf(
-            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00
-        )
-        val keySpec = X509EncodedKeySpec(x509Prefix + keyBytes)
-        val publicKey = KeyFactory.getInstance("Ed25519").generatePublic(keySpec)
-        val sigObj = Signature.getInstance("Ed25519")
-        sigObj.initVerify(publicKey)
-        sigObj.update(data)
-        sigObj.verify(sigBytes)
-    } catch (e: Exception) {
-        tryEdDsaFallback(sigB64, data)
-    }
-
-    private fun tryEdDsaFallback(sigB64: String, data: ByteArray): Boolean = try {
-        val sigBytes = Base64.decode(sigB64.trim(), Base64.DEFAULT)
-        val keyBytes = Base64.decode(PUBLIC_KEY_B64, Base64.DEFAULT)
-        val x509Prefix = byteArrayOf(
-            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00
-        )
-        val keySpec = X509EncodedKeySpec(x509Prefix + keyBytes)
-        val publicKey = KeyFactory.getInstance("EdDSA").generatePublic(keySpec)
-        val sigObj = Signature.getInstance("EdDSA")
-        sigObj.initVerify(publicKey)
-        sigObj.update(data)
-        sigObj.verify(sigBytes)
-    } catch (_: Exception) { false }
-
-    @androidx.annotation.Keep
-    fun generateSignature(data: ByteArray, privateKeyB64: String): String = try {
-        val keyBytes = Base64.decode(privateKeyB64, Base64.DEFAULT)
-        val pkcs8Prefix = byteArrayOf(
-            0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20
-        )
-        val keySpec = java.security.spec.PKCS8EncodedKeySpec(pkcs8Prefix + keyBytes)
-        val privateKey = KeyFactory.getInstance("Ed25519").generatePrivate(keySpec)
-        val sigObj = Signature.getInstance("Ed25519")
-        sigObj.initSign(privateKey)
-        sigObj.update(data)
-        Base64.encodeToString(sigObj.sign(), Base64.NO_WRAP)
-    } catch (_: Exception) { "" }
 
     object CacheProvider {
         @Volatile lateinit var appContext: android.content.Context
