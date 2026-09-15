@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -398,6 +400,15 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
 private data class ChangelogEntry(val version: String, val date: String, val items: List<String>)
 
 private val changelog = listOf(
+    ChangelogEntry("2.1.0", "Sep 15, 2026", listOf(
+        "Backend upgrade: Cloudflare Worker API for quiz delivery (signed Ed25519)",
+        "Backend upgrade method: Community repo → GitHub webhook → Worker KV → app fetch",
+        "Improved startup time and smoother transitions via R8 optimization",
+        "About Me section added — tap to visit https://kvizo.indevs.in/",
+        "Performance: faster quiz loading, reduced APK size to 3.3MB",
+        "Fixed community quiz import reliability",
+        "Minor UI polish and bug fixes"
+    )),
     ChangelogEntry("2.0.0", "Sep 9, 2026", listOf(
         "80+ badges across 15 categories with unlock celebrations",
         "Community quizzes with one-tap import",
@@ -528,6 +539,8 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
                         icon = { Icon(painterResource(com.kvizo.app.R.drawable.ic_github), contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp)) })
                     SocialButton("Telegram", "Siryadav", "https://t.me/SirYadav1", Modifier.weight(1f),
                         icon = { Icon(Icons.Filled.Send, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp)) })
+                    SocialButton("Website", "kvizo.indevs.in", "https://kvizo.indevs.in", Modifier.weight(1f),
+                        icon = { Icon(Icons.Filled.Public, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp)) })
                 }
             }
         }
