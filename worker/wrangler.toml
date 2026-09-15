@@ -4,3 +4,13 @@ compatibility_date = "2026-09-14"
 
 [observability]
 enabled = true
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+experimentals = { migration_disable_reads = false }
+
+[[kv_namespaces]]
+binding = "KV_NS"
+
+[vars]
+ED25519_PUBLIC_KEY = "edca7daf5e8222d97918ed950441dcdbe295e5c41d23f9a5da665081323a20c5"
