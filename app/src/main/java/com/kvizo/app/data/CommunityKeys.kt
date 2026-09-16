@@ -2,7 +2,7 @@ package com.kvizo.app.data
 
 object CommunityKeys {
     const val CURRENT_KEY_ID = "kvizo-pub-2026-09"
-    const val CURRENT_PUBLIC_KEY = "edca7daf5e8222d97918ed950441dcdbe295e5c41d23f9a5da665081323a20c5"
+    const val CURRENT_PUBLIC_KEY = "302a300506032b657003210023e0654185aae485dee7a6a8e8ad4a513a0c5df12e97447d2289e86dbe5ac149"
 
     const val PREV_KEY_ID = "kvizo-pub-2024-01"
     const val PREV_PUBLIC_KEY = "120f69eae51f05b9c73ef14a0848080d096904f0db9f8d8a3506e85b5a29aee1"
