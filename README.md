@@ -5,14 +5,14 @@
 <h1 align="center">Kvizo</h1>
 <p align="center"><strong>Forge knowledge. Earn XP. Play anywhere.</strong></p>
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.0.0-purple?style=flat-square" />
+  <img src="https://img.shields.io/badge/Version-2.0.1-purple?style=flat-square" />
   <img src="https://img.shields.io/badge/Platform-Android%208.0%2B-green?style=flat-square&logo=android" />
   <img src="https://img.shields.io/badge/UI-Jetpack%20Compose-blue?style=flat-square&logo=jetpackcompose" />
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/SirYadav1/kvizo/releases/tag/v2.0.0"><strong>⬇ Download Kvizo v2.0.0 (APK)</strong></a>
+  <a href="https://github.com/SirYadav1/kvizo/releases/latest"><strong>⬇ Download Kvizo v2.0.1 (APK)</strong></a>
 </p>
 
 ---
@@ -38,7 +38,7 @@ The `server/` folder is an optional companion (admin panel + community feed host
 
 ## Install
 
-1. Download `Kvizo-v2.0.0.apk` from the [v2.0.0 release](https://github.com/SirYadav1/kvizo/releases/tag/v2.0.0)
+1. Download `kvizo-2.0.1.apk` from the [latest release](https://github.com/SirYadav1/kvizo/releases/latest)
 2. Open it on your phone and allow "install unknown apps" when asked
 3. Play. No login needed.
 

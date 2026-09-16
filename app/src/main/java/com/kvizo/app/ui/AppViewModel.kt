@@ -25,12 +25,10 @@ import com.kvizo.app.data.Question
 import com.kvizo.app.data.QuizRepository
 import com.kvizo.app.data.CommunityQuiz
 import com.kvizo.app.data.CommunityQuizManager
-import com.kvizo.app.data.RemoteNotification
 import com.kvizo.app.data.SettingsRepo
 import com.kvizo.app.data.STATUS_DRAFT
 import com.kvizo.app.data.STATUS_PUBLISHED
 import com.kvizo.app.logic.XpEngine
-import com.kvizo.app.util.AnnouncementNotifier
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -111,10 +109,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var syncNotice by mutableStateOf<String?>(null)
         private set
 
-    /** All community announcements fetched from the server (newest first). */
-    var announcements by mutableStateOf<List<RemoteNotification>>(emptyList())
-        private set
-
     init {
         refreshProfile()
         viewModelScope.launch {
@@ -134,52 +128,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val now = System.currentTimeMillis()
             if (now - lastSync > 5 * 60_000L) {
                 syncRemoteQuizzesNow()
-                checkAnnouncementsNow()
                 lastSync = now
             }
             kotlinx.coroutines.delay(25_000)
         }
     }
-
-    /**
-     * Fetches announcements for the Settings screen and keeps the app's
-     * notification baseline in sync. Notification POSTING is handled solely
-     * by AnnouncementWorker (WorkManager) so the flow is identical whether
-     * the app is open or closed. Never throws.
-     */
-    suspend fun checkAnnouncementsNow() {
-        try {
-            val list = try {
-                com.kvizo.app.util.AnnouncementWorker.fetchSignedNotificationsPublic()
-            } catch (_: Exception) { emptyList() }
-            if (list.isEmpty()) return
-            announcements = list
-            // first run after install: seed the baseline so old server
-            // announcements are never delivered as notifications
-            if (settingsRepo.lastAnnouncementSeen() == 0L) {
-                settingsRepo.setLastAnnouncementSeen(
-                    maxOf(list.maxOfOrNull { it.createdAt } ?: 0L, System.currentTimeMillis())
-                )
-            }
-            // trigger an immediate background notification check (app is open)
-            com.kvizo.app.util.AnnouncementWorker.checkNow(getApplication())
-        } catch (_: Exception) {
-            // offline — try again on the next sync tick
-        }
-    }
-
-    /** Instant test: requests notification permission (if needed) and posts a test notification. */
-    fun testAnnouncementNotification() {
-        viewModelScope.launch {
-            val app = getApplication<Application>()
-            AnnouncementNotifier.post(
-                app,
-                com.kvizo.app.data.RemoteNotification("test-" + System.currentTimeMillis(), "🔔 Kvizo notifications work!", "You will now receive community announcements here. This is a test message.", System.currentTimeMillis())
-            )
-        }
-    }
-
-    fun setAnnouncementsEnabled(v: Boolean) = viewModelScope.launch { settingsRepo.setAnnouncementsEnabled(v) }
 
     /** Fetch community quizzes from the trusted GitHub Pages source (used on app start / manual refresh). */
     fun syncRemoteQuizzes() {
@@ -189,12 +142,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun syncRemoteQuizzesNow() {
         val pid = profile?.id ?: return
         try {
-            val manager = CommunityQuizManager(getApplication())
-            val remote = manager.fetchAll()
-            val added = manager.importToDatabase(remote, repo, pid)
-            if (added > 0) {
-                syncNotice = if (added == 1) "New community quiz added!"
-                else "$added new community quizzes added!"
+            // HTTP and SQLite belong on the IO dispatcher. Running these on the main thread threw
+            // NetworkOnMainThreadException, which the catch below swallowed, so community sync
+            // silently did nothing at all.
+            val result = withContext(Dispatchers.IO) {
+                val manager = CommunityQuizManager(getApplication())
+                manager.importToDatabase(manager.fetchAll(), repo, pid)
+            }
+            syncNotice = when {
+                result.added == 1 -> "New community quiz added!"
+                result.added > 1 -> "${result.added} new community quizzes added!"
+                result.repaired == 1 -> "An older community quiz was repaired"
+                result.repaired > 1 -> "${result.repaired} older community quizzes were repaired"
+                else -> null
             }
             refreshQuizzes()
             invalidateData()
@@ -204,11 +164,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Load community quizzes for the Community screen (with signature verification + cache fallback). */
-    suspend fun fetchCommunityQuizzes(): Result<List<CommunityQuiz>> {
-        return try {
-            val manager = CommunityQuizManager(getApplication())
-            val quizzes = manager.fetchAll()
-            Result.success(quizzes)
+    suspend fun fetchCommunityQuizzes(): Result<List<CommunityQuiz>> = withContext(Dispatchers.IO) {
+        try {
+            Result.success(CommunityQuizManager(getApplication()).fetchAll())
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -219,11 +177,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val pid = profile?.id
             if (pid == null) { onDone("No active profile"); return@launch }
-            val existing = repo.getQuizzes(pid).any { it.title == quiz.title && it.isRemote }
-            if (existing) { onDone("Already in your quizzes"); return@launch }
             val manager = CommunityQuizManager(getApplication())
-            val n = manager.importToDatabase(listOf(quiz), repo, pid)
-            onDone(if (n > 0) "Imported: ${quiz.title}" else "Import failed")
+            val result = withContext(Dispatchers.IO) { manager.importToDatabase(listOf(quiz), repo, pid) }
+            onDone(
+                when {
+                    result.added > 0 -> "Imported: ${quiz.title}"
+                    result.repaired > 0 -> "Repaired: ${quiz.title}"
+                    else -> "Already in your quizzes"
+                }
+            )
             refreshQuizzes()
             invalidateData()
         }

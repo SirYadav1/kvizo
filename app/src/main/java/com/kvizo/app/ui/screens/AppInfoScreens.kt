@@ -27,18 +27,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -246,7 +243,7 @@ fun BackupScreen(vm: AppViewModel, nav: NavHostController) {
 
 @Composable
 fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
-    var settings by remember { mutableStateOf(AppSettings("system", true, true)) }
+    var settings by remember { mutableStateOf(AppSettings(themeMode = "system", soundEnabled = true, hapticsEnabled = true)) }
     var state by remember { mutableStateOf("idle") } // idle | checking | current | available | none
     var updateUrl by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -313,27 +310,6 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
                         Text("notify me when a new version is out", fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = settings.updateNotifications, onCheckedChange = { scope.launch { vm.setUpdateNotifications(it) } })
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                        Icon(Icons.Filled.Campaign, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Announcement notifications", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                            Text("news from the Kvizo community", fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(checked = settings.announcementsEnabled, onCheckedChange = { scope.launch { vm.setAnnouncementsEnabled(it) } })
-                    }
-                }
-                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    OutlinedButton(
-                        onClick = {
-                            vm.testAnnouncementNotification()
-                            scope.launch { vm.checkAnnouncementsNow() }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Filled.Notifications, contentDescription = null, modifier = Modifier.size(16.dp), tint = Indigo)
-                        Text("  Send test notification", fontSize = 12.5.sp)
-                    }
                 }
             }
         }
@@ -400,14 +376,14 @@ fun UpdaterScreen(vm: AppViewModel, nav: NavHostController) {
 private data class ChangelogEntry(val version: String, val date: String, val items: List<String>)
 
 private val changelog = listOf(
-    ChangelogEntry("2.1.0", "Sep 15, 2026", listOf(
-        "Backend upgrade: Cloudflare Worker API for quiz delivery (signed Ed25519)",
-        "Backend upgrade method: Community repo → GitHub webhook → Worker KV → app fetch",
-        "Improved startup time and smoother transitions via R8 optimization",
-        "About Me section added — tap to visit https://kvizo.indevs.in/",
-        "Performance: faster quiz loading, reduced APK size to 3.3MB",
-        "Fixed community quiz import reliability",
-        "Minor UI polish and bug fixes"
+    ChangelogEntry("2.0.1", "Sep 16, 2026", listOf(
+        "Community quizzes are signature-verified — only quizzes signed with the Kvizo key load",
+        "Fixed: correct answers in downloaded community quizzes were marked wrong",
+        "Community quizzes imported by an older build repair themselves after this update",
+        "Community fetch now uses free static mirrors (GitHub raw + jsDelivr) — nothing to deploy",
+        "About: website link added under Developer",
+        "Removed the community announcement notification feature",
+        "Faster startup and smoother transitions via R8 — APK down to 3.3 MB"
     )),
     ChangelogEntry("2.0.0", "Sep 9, 2026", listOf(
         "80+ badges across 15 categories with unlock celebrations",
@@ -486,8 +462,20 @@ fun ChangelogScreen(vm: AppViewModel, nav: NavHostController) {
 /*  About                                                             */
 /* ================================================================== */
 
+/** App website, shown in the About screen under Developer. Hosted on Netlify. */
+private const val APP_WEBSITE_URL = "https://kvizo-appp.netlify.app"
+
+/** Host part of [APP_WEBSITE_URL] — displayed as text, so it stays readable without opening it. */
+private val APP_WEBSITE_HOST = APP_WEBSITE_URL.removePrefix("https://").removePrefix("http://")
+
+private fun openUrl(context: android.content.Context, url: String) {
+    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+    androidx.core.content.ContextCompat.startActivity(context, intent, null)
+}
+
 @Composable
 fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Column(
         modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
     ) {
@@ -539,8 +527,31 @@ fun AboutScreen(vm: AppViewModel, nav: NavHostController) {
                         icon = { Icon(painterResource(com.kvizo.app.R.drawable.ic_github), contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp)) })
                     SocialButton("Telegram", "Siryadav", "https://t.me/SirYadav1", Modifier.weight(1f),
                         icon = { Icon(Icons.Filled.Send, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp)) })
-                    SocialButton("Website", "kvizo.indevs.in", "https://kvizo.indevs.in", Modifier.weight(1f),
-                        icon = { Icon(Icons.Filled.Public, contentDescription = null, tint = Indigo, modifier = Modifier.size(20.dp)) })
+                }
+                // App website — the domain stays visible, so it can be read without tapping.
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .clickable(
+                            onClick = { openUrl(context, APP_WEBSITE_URL) },
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)
+                    ) {
+                        Icon(Icons.Filled.Public, contentDescription = null, tint = Indigo, modifier = Modifier.size(18.dp))
+                        Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
+                            Text("Website", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Indigo)
+                            Text(APP_WEBSITE_HOST, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    }
                 }
             }
         }
@@ -575,10 +586,7 @@ private fun SocialButton(label: String, handle: String, url: String, modifier: M
         color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = modifier
             .clickable(
-                onClick = {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
-                    androidx.core.content.ContextCompat.startActivity(context, intent, null)
-                },
+                onClick = { openUrl(context, url) },
                 indication = null,
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
             )

@@ -1,25 +1,39 @@
 package com.kvizo.app.data
 
+/**
+ * Trust anchors for community content.
+ *
+ * The private half of [CURRENT_PUBLIC_KEY] exists only as the `ED25519_PRIVATE_KEY` secret inside
+ * the `SirYadav1/kvizo-community` GitHub repository, where the signing Action uses it. It is never
+ * in the app and never in the repository, so neither a leaked repo nor a hostile CDN can make the
+ * app show a quiz that was not published by the owner.
+ *
+ * Rotating this key means shipping a new app build, so it is deliberately a single, explicit
+ * constant rather than a collection of keys nobody remembers the provenance of.
+ */
 object CommunityKeys {
+
     const val CURRENT_KEY_ID = "kvizo-pub-2026-09"
-    const val CURRENT_PUBLIC_KEY = "302a300506032b657003210023e0654185aae485dee7a6a8e8ad4a513a0c5df12e97447d2289e86dbe5ac149"
 
-    const val PREV_KEY_ID = "kvizo-pub-2024-01"
-    const val PREV_PUBLIC_KEY = "120f69eae51f05b9c73ef14a0848080d096904f0db9f8d8a3506e85b5a29aee1"
+    /** Raw 32-byte Ed25519 public key as hex — same value as `public_key.hex` in the content repo. */
+    const val CURRENT_PUBLIC_KEY = "bbbd809c2cf94f734f50868f5d6fd447d13526373539f21778ec145f970ef9c0"
 
-    val TRUSTED_KEYS = mapOf(
-        CURRENT_KEY_ID to CURRENT_PUBLIC_KEY,
-        PREV_KEY_ID to PREV_PUBLIC_KEY
+    /** Key id -> raw public key. The manifest's `key_id` selects which one must have signed it. */
+    val TRUSTED_KEYS: Map<String, String> = mapOf(CURRENT_KEY_ID to CURRENT_PUBLIC_KEY)
+
+    /**
+     * Free, static mirrors of the same signed bytes ($0, no server, nothing to deploy).
+     * The first one that verifies wins; the mirror exists so one CDN being down or blocked
+     * does not take community quizzes with it.
+     */
+    val SOURCES: List<String> = listOf(
+        "https://raw.githubusercontent.com/SirYadav1/kvizo-community/master",
+        "https://cdn.jsdelivr.net/gh/SirYadav1/kvizo-community@master",
     )
 
-    private const val GITHUB_RAW = "https://raw.githubusercontent.com/SirYadav1/kvizo-community/master"
+    const val MANIFEST_FILE = "manifest.json"
     const val COMMUNITY_FILE = "community.json"
-    const val COMMUNITY_JSON_URL = "$GITHUB_RAW/community.json"
-    const val COMMUNITY_SIG_URL = "$GITHUB_RAW/community.json.sig"
-    const val NOTIFICATIONS_JSON_URL = "$GITHUB_RAW/notifications.json"
-    const val NOTIFICATIONS_SIG_URL = "$GITHUB_RAW/notifications.json.sig"
 
-    const val CACHE_FILE = "community_quiz_cache.json"
-    const val CACHE_SIG_FILE = "community_quiz_cache.sig"
+    const val CACHE_DIR = "community"
     const val MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000L
 }

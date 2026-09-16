@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,6 +34,7 @@ import com.kvizo.app.ui.theme.Red
 import com.kvizo.app.ui.theme.SpaceGrotesk
 import com.kvizo.app.ui.theme.Violet
 import com.kvizo.app.ui.theme.VioletPale
+import com.kvizo.app.util.CommunityFetch
 import com.kvizo.app.util.StringProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,10 +46,11 @@ fun CommunityQuizScreen(
     var quizzes by remember { mutableStateOf<List<CommunityQuiz>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var verifiedNote by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings("system", true, true, false, true, true, true, "en"))
+    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings(themeMode = "system", soundEnabled = true, hapticsEnabled = true))
 
     LaunchedEffect(settings.language) { StringProvider.setLanguage(settings.language) }
 
@@ -55,7 +58,7 @@ fun CommunityQuizScreen(
         if (quizzes.isEmpty()) {
             isLoading = true
             val result = vm.fetchCommunityQuizzes()
-            result.onSuccess { quizzes = it }
+            result.onSuccess { quizzes = it; verifiedNote = CommunityFetch.lastStatus }
             result.onFailure { error = it.message ?: "Failed to load" }
             isLoading = false
         }
@@ -85,7 +88,7 @@ fun CommunityQuizScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            // Compact title
+            // Compact title + proof that the list on screen is signed, not just downloaded
             Text(
                 StringProvider.t("download_quizzes"),
                 fontFamily = SpaceGrotesk,
@@ -93,6 +96,29 @@ fun CommunityQuizScreen(
                 fontSize = 16.sp,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
+
+            verifiedNote?.let { note ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Verified,
+                        contentDescription = null,
+                        tint = Green,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.size(6.dp))
+                    Text(
+                        note,
+                        fontFamily = SpaceGrotesk,
+                        fontSize = 11.sp,
+                        color = Green,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
 
             // Search bar
             OutlinedTextField(
@@ -152,7 +178,7 @@ fun CommunityQuizScreen(
                                     isLoading = true
                                     error = null
                                     val result = vm.fetchCommunityQuizzes()
-                                    result.onSuccess { quizzes = it }
+                                    result.onSuccess { quizzes = it; verifiedNote = CommunityFetch.lastStatus }
                                     result.onFailure { error = it.message ?: "Failed to load" }
                                     isLoading = false
                                 }

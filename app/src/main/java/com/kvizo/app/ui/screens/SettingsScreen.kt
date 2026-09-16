@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(vm: AppViewModel, nav: NavHostController) {
-    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings("system", true, true, false, true, true, true, "en"))
+    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings(themeMode = "system", soundEnabled = true, hapticsEnabled = true))
     val coroutineScope = rememberCoroutineScope()
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showSignOutDialog by remember { mutableStateOf(false) }

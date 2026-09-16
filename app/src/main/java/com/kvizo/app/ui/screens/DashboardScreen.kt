@@ -51,8 +51,7 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
     var totalTime by remember { mutableStateOf(0L) }
     var quizzes by remember { mutableStateOf(listOf<Quiz>()) }
     var questionCounts by remember { mutableStateOf(mapOf<String, Int>()) }
-    var showNotifications by remember { mutableStateOf(false) }
-    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings("system", true, true, false, true, true, true, "en"))
+    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings(themeMode = "system", soundEnabled = true, hapticsEnabled = true))
 
     LaunchedEffect(settings.language) { StringProvider.setLanguage(settings.language) }
 
@@ -83,7 +82,6 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
                 Icon(painterResource(R.drawable.ic_kvizo_logo), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Kvizo", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                IconButtonBox(Icons.Filled.Notifications) { showNotifications = true }
                 IconButtonBox(Icons.Filled.Settings) { nav.navigate(Routes.SETTINGS) }
             }
         }
@@ -206,9 +204,6 @@ fun DashboardScreen(vm: AppViewModel, nav: NavHostController) {
         item { Spacer(Modifier.height(80.dp)) }
     }
 
-    if (showNotifications) {
-        NotificationsBottomSheet(notifications = vm.announcements, onDismiss = { showNotifications = false })
-    }
 }
 
 @Composable
@@ -257,23 +252,6 @@ private fun PopularQuizCard(quiz: Quiz, questionCount: Int, onClick: () -> Unit)
             Text("$score% avg", fontSize = 11.sp, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, color = if (score >= 60) Green else Amber)
         }
     }
-}
-
-@Composable
-private fun NotificationsBottomSheet(notifications: List<com.kvizo.app.data.RemoteNotification>, onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(StringProvider.t("notifications"), fontWeight = FontWeight.Bold, fontSize = 18.sp) }, text = {
-        if (notifications.isEmpty()) Text(StringProvider.t("no_notifications"), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            notifications.take(10).forEach { n ->
-                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(n.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                        if (n.body.isNotBlank()) Text(n.body, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                    }
-                }
-            }
-        }
-    }, confirmButton = { TextButton(onClick = onDismiss) { Text(StringProvider.t("close")) } })
 }
 
 @Composable

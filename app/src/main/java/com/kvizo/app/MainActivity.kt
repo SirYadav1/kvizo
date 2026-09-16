@@ -88,6 +88,7 @@ import com.kvizo.app.ui.theme.KvizoTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // production builds keep the crash logger: uncaught exceptions land in files/crash/
         com.kvizo.app.util.CrashLogger.install(this)
         // system bars follow the app's own theme (manual dark setting included),
         // so status bar icons never turn black-on-black in dark mode
@@ -109,9 +110,6 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
         }
-        // community announcements: periodic background check (15 min) + immediate one-shot on launch
-        com.kvizo.app.util.AnnouncementWorker.schedule(this)
-        com.kvizo.app.util.AnnouncementWorker.checkNow(this)
         setContent {
             val vm: AppViewModel = viewModel()
             val settings by vm.settings.collectAsState(initial = null)

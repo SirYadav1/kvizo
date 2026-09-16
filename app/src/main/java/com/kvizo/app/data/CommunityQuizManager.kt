@@ -3,65 +3,86 @@ package com.kvizo.app.data
 import android.content.Context
 import com.kvizo.app.util.CommunityFetch
 import com.kvizo.app.util.CommunityFetch.CacheProvider
+import java.util.UUID
+
+/** What an import actually did, so the UI can report it without guessing. */
+data class CommunityImportResult(val added: Int, val repaired: Int) {
+    val total: Int get() = added + repaired
+}
 
 class CommunityQuizManager(private val context: Context) {
 
     init { CacheProvider.appContext = context }
 
-    fun fetchByCategory(category: String = "all"): List<CommunityQuiz> {
-        return try {
-            CommunityFetch.fetchQuizzesByCategory(category)
-        } catch (e: Exception) {
-            CommunityFetch.fetchLegacy()
-        }
-    }
+    /** Verified community quizzes. Throws when nothing could be verified (see CommunityFetch). */
+    fun fetchAll(): List<CommunityQuiz> = CommunityFetch.fetchAll()
 
-    fun fetchQuizFull(quizId: String): CommunityQuiz? {
-        return CommunityFetch.fetchQuizFull(quizId)
-    }
+    fun fetchByCategory(category: String = "all"): List<CommunityQuiz> = CommunityFetch.fetchByCategory(category)
 
-    fun fetchAll(): List<CommunityQuiz> {
-        return CommunityFetch.fetchLegacy()
-    }
+    fun fetchQuizFull(quizId: String): CommunityQuiz? = CommunityFetch.fetchQuizFull(quizId)
 
-    fun importToDatabase(quizzes: List<CommunityQuiz>, repo: QuizRepository, profileId: Long): Int {
-        var count = 0
+    /**
+     * Copies verified quizzes into the local database.
+     *
+     * Three things matter here:
+     *  - quizzes the profile already has are matched on title, so a sync can never pile up duplicates;
+     *  - rows are stored as [STATUS_PUBLISHED], the status the rest of the app actually reads
+     *    (older builds wrote "active", which no screen recognises);
+     *  - a quiz that an older build imported with the answer stored as text, or with no questions at
+     *    all, is rebuilt in place. Every answer in such a quiz scored as wrong, and remote quizzes
+     *    cannot be deleted from inside the app, so it would otherwise stay broken forever.
+     */
+    fun importToDatabase(
+        quizzes: List<CommunityQuiz>,
+        repo: QuizRepository,
+        profileId: Long
+    ): CommunityImportResult {
+        val existingByTitle = repo.getQuizzes(profileId)
+            .filter { it.isRemote }
+            .associateBy { it.title.trim().lowercase() }
+
+        var added = 0
+        var repaired = 0
+
         for (quiz in quizzes) {
-            if (quiz.questions.isEmpty()) continue
-            val quizId = java.util.UUID.randomUUID().toString()
-            val q = Quiz(
-                id = quizId,
-                profileId = profileId,
-                title = quiz.title,
-                category = quiz.category,
-                difficulty = quiz.difficulty,
-                tags = "",
-                timeLimitSeconds = null,
-                status = "active",
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis(),
-                attemptsCount = 0,
-                averageScore = 0.0,
-                isRemote = true
-            )
-            repo.insertQuiz(q)
-            val questions = quiz.questions.mapIndexed { i, cq ->
-                Question(
-                    id = java.util.UUID.randomUUID().toString(),
-                    quizId = quizId,
-                    questionText = cq.question,
-                    optionA = cq.options.getOrElse(0) { "" },
-                    optionB = cq.options.getOrElse(1) { "" },
-                    optionC = cq.options.getOrElse(2) { "" },
-                    optionD = cq.options.getOrElse(3) { "" },
-                    correctOption = cq.options.getOrElse(cq.correctIndex) { "" },
-                    position = i + 1,
-                    isBookmarked = false
+            val title = quiz.title.trim().lowercase()
+            if (title.isEmpty()) continue
+
+            val local = existingByTitle[title]
+            if (local == null) {
+                val quizId = UUID.randomUUID().toString()
+                val rows = quiz.toLocalQuestions(quizId)
+                if (rows.isEmpty()) continue // nothing playable — better no quiz than an empty one
+                val now = System.currentTimeMillis()
+                repo.insertQuiz(
+                    Quiz(
+                        id = quizId,
+                        profileId = profileId,
+                        title = quiz.title,
+                        category = quiz.category,
+                        difficulty = quiz.difficulty,
+                        tags = "",
+                        timeLimitSeconds = null,
+                        status = STATUS_PUBLISHED,
+                        createdAt = now,
+                        updatedAt = now,
+                        attemptsCount = 0,
+                        averageScore = 0.0,
+                        isRemote = true
+                    )
                 )
+                repo.insertQuestions(rows)
+                added++
+            } else {
+                val current = repo.getQuestions(local.id)
+                val broken = current.isEmpty() || current.any { !isValidCorrectOption(it.correctOption) }
+                if (!broken) continue
+                val rows = quiz.toLocalQuestions(local.id)
+                if (rows.isEmpty()) continue
+                repo.replaceQuestions(local.id, rows)
+                repaired++
             }
-            repo.insertQuestions(questions)
-            count++
         }
-        return count
+        return CommunityImportResult(added, repaired)
     }
 }

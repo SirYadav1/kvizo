@@ -40,7 +40,7 @@ import androidx.compose.material3.TextButton
 
 @Composable
 fun ProfileScreen(vm: AppViewModel, nav: NavHostController) {
-    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings("system", true, true, false, true, true, true, "en"))
+    val settings by vm.settings.collectAsState(com.kvizo.app.data.AppSettings(themeMode = "system", soundEnabled = true, hapticsEnabled = true))
     val profile = vm.profile
     val quizzes: List<Quiz> = vm.quizzes.filter { !it.isRemote }
     val profileData = vm.profileData
