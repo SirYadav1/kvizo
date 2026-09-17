@@ -463,7 +463,7 @@ fun ChangelogScreen(vm: AppViewModel, nav: NavHostController) {
 /* ================================================================== */
 
 /** App website, shown in the About screen under Developer. Hosted on Netlify. */
-private const val APP_WEBSITE_URL = "https://kvizo-appp.netlify.app"
+private const val APP_WEBSITE_URL = "https://kvizo.indevs.in"
 
 /** Host part of [APP_WEBSITE_URL] — displayed as text, so it stays readable without opening it. */
 private val APP_WEBSITE_HOST = APP_WEBSITE_URL.removePrefix("https://").removePrefix("http://")
